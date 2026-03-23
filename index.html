@@ -516,15 +516,15 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
     <div class="an-sec">Credenziali Azure</div>
     <div class="an-fg">
       <label class="an-lbl">Client ID (Application ID)</label>
-      <input class="an-inp" id="anClientId" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false">
+      <input class="an-inp" id="anClientId" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false" oninput="this.style.borderColor=''">
     </div>
     <div class="an-fg">
       <label class="an-lbl">Tenant ID (Directory ID)</label>
-      <input class="an-inp" id="anTenantId" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false">
+      <input class="an-inp" id="anTenantId" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false" oninput="this.style.borderColor=''">
     </div>
     <div class="an-fg">
       <label class="an-lbl">SharePoint URL</label>
-      <input class="an-inp" id="anSpUrl" type="text" placeholder="https://anymapack.sharepoint.com/sites/anyma">
+      <input class="an-inp" id="anSpUrl" type="text" placeholder="https://anymapack.sharepoint.com/sites/anyma" oninput="this.style.borderColor=''">
       <div class="an-hint">Es: https://anymapack.sharepoint.com/sites/anyma</div>
     </div>
     <button class="an-btn an-btn-primary" onclick="anSaveConfig()">
@@ -1143,10 +1143,21 @@ function anSaveConfig(){
   const c=document.getElementById('anClientId').value.trim();
   const t=document.getElementById('anTenantId').value.trim();
   const s=document.getElementById('anSpUrl').value.trim();
-  if(!c||!t||!s){showToast('Compila tutti i campi');return;}
+  if(!c||!t||!s){
+    // Evidenzia i campi vuoti
+    if(!c) document.getElementById('anClientId').style.borderColor='#e74c3c';
+    if(!t) document.getElementById('anTenantId').style.borderColor='#e74c3c';
+    if(!s) document.getElementById('anSpUrl').style.borderColor='#e74c3c';
+    return;
+  }
   anPersist(c,t,s);
-  showToast('Credenziali salvate');
-  setTimeout(()=>location.reload(),700);
+  // Feedback visivo sul pulsante
+  const btn=document.querySelector('#anConfigOverlay .an-btn-primary');
+  if(btn){btn.textContent='✓ Salvato — caricamento...';btn.disabled=true;}
+  // Ricarica dopo breve pausa
+  setTimeout(()=>{
+    window.location.href=window.location.href.split('?')[0].split('#')[0];
+  },600);
 }
 function anShowLogin(){
   document.getElementById('anConfigOverlay').classList.add('hidden');
@@ -1180,7 +1191,11 @@ function anInitMsal(cfg){
   }).catch(err=>{console.error('MSAL:',err);anShowLogin();});
 }
 function anDoLogin(){
-  if(!_msal){showToast('Configura prima le credenziali');return;}
+  if(!_msal){
+    alert('Configura prima le credenziali Azure (Client ID, Tenant ID, URL SharePoint)');
+    anShowConfig();
+    return;
+  }
   _msal.loginRedirect({scopes:['User.Read','Sites.Read.All'],prompt:'select_account'});
 }
 function anDoLogout(){
