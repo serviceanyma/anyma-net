@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d0d0d">
+<title>ANYMA — Portale</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- MSAL.js Microsoft Authentication -->
+<script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+<style>
+:root{
+  --bg:#0d0d0d;--s1:#161616;--s2:#1e1e1e;--s3:#272727;
+  --b1:#2a2a2a;--b2:#383838;
+  --cr:#c0392b;--cr2:#e74c3c;--cr3:#ff7070;
+  --crd:rgba(192,57,43,.12);--crg:rgba(192,57,43,.28);
+  --ok:#27ae60;--ok2:#2ecc71;--warn:#f39c12;--blue:#3498db;
+  --tx:#f0ebe6;--tx2:#b8a898;--tx3:#7a6858;
+  --r:10px;--rs:7px;
+  --sh:0 4px 24px rgba(0,0,0,.6);
+  --shr:0 3px 16px rgba(192,57,43,.25);
+  --font:'Barlow',sans-serif;
+  --cond:'Barlow Condensed',sans-serif;
+  --mono:'DM Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:var(--font)}
+#app{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column}
+
+/* ── TOPBAR ── */
+.tb{background:var(--bg);border-bottom:1px solid var(--b1);padding:0 16px;height:50px;
+    display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative}
+.tb-logo{display:flex;align-items:center;gap:9px}
+.tb-mark{width:30px;height:30px;border-radius:8px;background:var(--cr);display:flex;align-items:center;
+          justify-content:center;font-family:var(--cond);font-weight:800;font-size:14px;color:#fff;
+          letter-spacing:1px;box-shadow:var(--shr)}
+.tb-name{font-family:var(--cond);font-weight:700;font-size:16px;letter-spacing:2px;text-transform:uppercase;color:var(--tx)}
+.tb-sub{font-size:9px;color:var(--tx3);letter-spacing:1.5px;text-transform:uppercase;font-weight:500}
+.tb-title{position:absolute;left:50%;transform:translateX(-50%);
+          font-size:11px;font-weight:700;color:var(--tx3);letter-spacing:2.5px;text-transform:uppercase;white-space:nowrap}
+.tb-right{display:flex;align-items:center;gap:8px}
+.ib{width:34px;height:34px;border-radius:var(--rs);background:var(--s2);border:1px solid var(--b2);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx2);transition:all .2s}
+.ib:hover{background:var(--s3);color:var(--tx)}
+.ib.active{background:var(--crd);border-color:var(--crg);color:var(--cr2)}
+.user-chip{display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--b2);
+           border-radius:20px;padding:4px 10px 4px 5px;cursor:default}
+.user-av{width:22px;height:22px;border-radius:50%;background:var(--cr);display:flex;align-items:center;
+          justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+.user-name{font-size:11px;color:var(--tx2);font-weight:500;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── SCREENS ── */
+.scr{display:none;flex:1;min-height:0;overflow-y:auto;padding:16px 16px 20px;flex-direction:column;-webkit-overflow-scrolling:touch}
+.scr.on{display:flex}
+
+/* ── BOTTOM NAV ── */
+.bnav{background:var(--bg);border-top:1px solid var(--b1);display:flex;height:58px;
+      position:relative;flex-shrink:0;z-index:100}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    cursor:pointer;color:var(--tx3);font-size:9px;font-weight:700;letter-spacing:.6px;
+    text-transform:uppercase;border:none;background:none;transition:color .2s;position:relative}
+.nb.on{color:var(--cr2)}
+.nb.on::before{content:'';position:absolute;top:0;left:20%;right:20%;height:2px;background:var(--cr);border-radius:0 0 4px 4px}
+.nb svg{width:20px;height:20px;stroke-width:1.6}
+
+/* ── CONFIG SCREEN ── */
+.cfg-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:20px}
+.cfg-card{width:100%;max-width:440px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:24px}
+.cfg-logo{text-align:center;margin-bottom:24px}
+.cfg-logo .mark{width:56px;height:56px;border-radius:14px;background:var(--cr);display:inline-flex;
+                align-items:center;justify-content:center;font-family:var(--cond);font-weight:800;
+                font-size:22px;color:#fff;box-shadow:var(--shr);letter-spacing:2px}
+.cfg-title{font-family:var(--cond);font-size:22px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+           color:var(--tx);text-align:center;margin-top:10px}
+.cfg-sub{font-size:12px;color:var(--tx3);text-align:center;margin-top:4px;letter-spacing:.5px}
+.sec-title{font-family:var(--cond);font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
+           color:var(--tx2);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--b2)}
+.fg{margin-bottom:12px}
+.fl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--tx3);margin-bottom:5px;display:block}
+.fc{width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--rs);color:var(--tx);
+    font-family:var(--font);font-size:14px;padding:10px 13px;outline:none;transition:border-color .2s}
+.fc:focus{border-color:var(--cr)}
+.fc::placeholder{color:var(--tx3)}
+.fc-hint{font-size:10px;color:var(--tx3);margin-top:4px;line-height:1.5}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 18px;
+     border-radius:var(--rs);font-family:var(--font);font-size:13px;font-weight:700;letter-spacing:.4px;
+     cursor:pointer;border:none;transition:all .2s;text-transform:uppercase}
+.btn-full{width:100%}
+.btn-primary{background:var(--cr);color:#fff;box-shadow:var(--shr)}
+.btn-primary:hover{background:var(--cr2)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-ghost{background:var(--s2);color:var(--tx2);border:1px solid var(--b2)}
+.btn-ghost:hover{color:var(--tx);border-color:var(--b2)}
+.btn-danger{background:rgba(192,57,43,.1);color:var(--cr2);border:1px solid var(--crg)}
+.info-box{background:var(--s2);border:1px solid var(--b2);border-radius:var(--rs);padding:10px 13px;
+          font-size:11px;color:var(--tx3);line-height:1.7}
+.info-box a{color:var(--cr2);text-decoration:none}
+.info-box a:hover{text-decoration:underline}
+
+/* ── LOGIN SCREEN ── */
+.login-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.login-card{width:100%;max-width:360px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:28px;text-align:center}
+.login-icon{width:64px;height:64px;border-radius:16px;background:var(--cr);display:inline-flex;
+            align-items:center;justify-content:center;font-family:var(--cond);font-weight:800;
+            font-size:26px;color:#fff;box-shadow:var(--shr);letter-spacing:2px;margin-bottom:16px}
+.login-title{font-family:var(--cond);font-size:24px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px}
+.login-sub{font-size:12px;color:var(--tx3);margin-bottom:24px;line-height:1.6}
+.ms-btn{width:100%;background:#fff;color:#1a1a1a;border:none;border-radius:var(--rs);
+        padding:12px 18px;font-size:14px;font-weight:600;cursor:pointer;display:flex;
+        align-items:center;justify-content:center;gap:10px;transition:background .2s}
+.ms-btn:hover{background:#f0f0f0}
+.ms-btn img{width:20px;height:20px}
+.login-note{font-size:10px;color:var(--tx3);margin-top:16px;line-height:1.6}
+.login-cfg{font-size:11px;color:var(--cr2);cursor:pointer;margin-top:12px;text-decoration:underline}
+
+/* ── STATI / BADGE ── */
+.bdg{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px;display:inline-flex;align-items:center;gap:4px}
+.bdg-completato{background:rgba(39,174,96,.1);color:var(--ok2);border:1px solid rgba(39,174,96,.2)}
+.bdg-attesa{background:rgba(243,156,18,.1);color:var(--warn);border:1px solid rgba(243,156,18,.2)}
+.bdg-noniniziato{background:rgba(122,104,88,.1);color:var(--tx3);border:1px solid var(--b2)}
+.bdg-bloccato{background:var(--crd);color:var(--cr3);border:1px solid var(--crg)}
+.bdg-preventivo{background:var(--crd);color:var(--cr3)}
+.bdg-materiale{background:rgba(155,89,182,.12);color:#c39bd3}
+.bdg-intervento{background:rgba(243,156,18,.1);color:var(--warn)}
+.bdg-sviluppo{background:rgba(39,174,96,.1);color:var(--ok2)}
+.bdg-pagamento{background:rgba(52,152,219,.1);color:#5dade2}
+
+/* ── STAT CARDS ── */
+.srow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.sc{background:var(--s1);border:1px solid var(--b1);border-radius:var(--rs);padding:12px 8px;text-align:center}
+.sn{font-family:var(--cond);font-size:26px;font-weight:800;color:var(--cr2)}
+.sl{font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+
+/* ── FILTRI ── */
+.frow{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;flex-shrink:0;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+.frow::-webkit-scrollbar{display:none}
+.fch{flex-shrink:0;padding:5px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;
+     border:1px solid var(--b2);color:var(--tx3);background:var(--s2);transition:all .2s;letter-spacing:.3px}
+.fch.on{background:var(--cr);color:#fff;border-color:var(--cr)}
+
+/* ── SEARCH ── */
+.sw{position:relative;margin-bottom:12px}
+.sw svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--tx3);pointer-events:none}
+.si{padding-left:34px!important}
+
+/* ── KANBAN ── */
+.kanban-wrap{display:flex;flex-direction:column;gap:0;flex:1}
+.k-col{margin-bottom:12px}
+.k-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 0;cursor:pointer;user-select:none}
+.k-hdr-left{display:flex;align-items:center;gap:8px}
+.k-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.k-label{font-family:var(--cond);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--tx2)}
+.k-count{font-family:var(--mono);font-size:10px;color:var(--tx3);background:var(--s2);border:1px solid var(--b1);
+          padding:1px 7px;border-radius:20px}
+.k-toggle{color:var(--tx3);transition:transform .2s}
+.k-toggle.open{transform:rotate(180deg)}
+.k-divider{height:1px;background:var(--b1);margin-bottom:8px}
+.k-cards{display:flex;flex-direction:column;gap:6px;padding-bottom:4px}
+.k-cards.collapsed{display:none}
+
+/* ── PROJECT CARD ── */
+.pcard{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:12px 14px;
+       cursor:pointer;transition:border-color .15s,background .15s;position:relative}
+.pcard:hover{background:var(--s2);border-color:var(--b2)}
+.pcard:active{background:var(--s3)}
+.pc-client{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;
+            font-family:var(--cond);font-weight:600}
+.pc-title{font-size:14px;font-weight:600;color:var(--tx);line-height:1.35;margin-bottom:7px}
+.pc-footer{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pc-date{font-size:10px;color:var(--tx3);font-family:var(--mono);margin-left:auto}
+.pc-note{font-size:11px;color:var(--tx3);margin-top:6px;line-height:1.5;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── MODAL ── */
+.ovl{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;align-items:flex-end}
+.ovl.on{display:flex}
+.modal{background:var(--s1);border-radius:14px 14px 0 0;padding:18px;width:100%;
+       max-height:88vh;overflow-y:auto;border-top:2px solid var(--cr)}
+.mh{width:38px;height:4px;background:var(--b2);border-radius:2px;margin:0 auto 14px}
+.modal-title{font-family:var(--cond);font-size:18px;font-weight:700;letter-spacing:1px;margin-bottom:4px}
+.modal-client{font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px}
+.m-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.m-field{background:var(--s2);border-radius:var(--rs);padding:9px 11px}
+.m-field-label{font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px;font-weight:600}
+.m-field-val{font-size:13px;font-weight:600;color:var(--tx)}
+.m-notes{background:var(--s2);border-radius:var(--rs);padding:10px 12px;margin-bottom:14px}
+.m-notes-text{font-size:12px;color:var(--tx2);line-height:1.6;white-space:pre-wrap}
+.m-sp-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--cr2);text-decoration:none}
+.m-sp-link:hover{text-decoration:underline}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:74px;left:50%;transform:translateX(-50%) translateY(20px);
+       background:var(--s2);border:1px solid var(--b2);border-radius:var(--rs);
+       padding:10px 16px;font-size:13px;font-weight:600;z-index:999;
+       opacity:0;transition:all .3s;white-space:nowrap;box-shadow:var(--sh);pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.suc{border-color:var(--ok);color:var(--ok2)}
+.toast.err{border-color:var(--cr2);color:var(--cr3)}
+.toast.wrn{border-color:var(--warn);color:var(--warn)}
+
+/* ── LOADING ── */
+.loading{display:none;position:fixed;inset:0;background:rgba(13,13,13,.9);z-index:500;
+          align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.loading.on{display:flex}
+.spin{width:32px;height:32px;border:3px solid var(--b2);border-top-color:var(--cr);
+      border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-msg{font-size:12px;color:var(--tx3);letter-spacing:1px;text-transform:uppercase}
+
+/* ── EMPTY STATE ── */
+.es{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:48px 18px;color:var(--tx3);text-align:center;flex:1}
+.es svg{width:40px;height:40px;margin-bottom:10px;opacity:.25}
+.es-title{font-family:var(--cond);font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;color:var(--tx2)}
+.es-sub{font-size:12px;line-height:1.6}
+
+/* ── SETTINGS OVERLAY ── */
+.cfg-ovl{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:400;align-items:flex-end}
+.cfg-ovl.on{display:flex}
+.cfg-sheet{background:var(--s1);border-radius:14px 14px 0 0;padding:20px;width:100%;
+           max-height:90vh;overflow-y:auto;border-top:2px solid var(--cr)}
+
+/* ── ANIMATIONS ── */
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.pcard{animation:fi .2s ease both}
+
+/* ── PROGRESS TAG ── */
+.prog-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* scrollbar */
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- TOPBAR -->
+<div class="tb" id="topbar" style="display:none">
+  <div class="tb-logo">
+    <div class="tb-mark">A</div>
+    <div>
+      <div class="tb-name">ANYMA</div>
+      <div class="tb-sub">Portale</div>
+    </div>
+  </div>
+  <span class="tb-title" id="ttl">Progetti</span>
+  <div class="tb-right">
+    <div class="user-chip" id="userChip" style="display:none">
+      <div class="user-av" id="userAv">?</div>
+      <span class="user-name" id="userName">...</span>
+    </div>
+    <button class="ib" id="btnSettings" onclick="openSettings()" title="Impostazioni">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ══ CONFIG SCREEN (primo avvio) ══ -->
+<div class="scr on" id="scrConfig" style="align-items:center;justify-content:center;padding:20px">
+  <div style="width:100%;max-width:440px">
+    <div class="cfg-logo">
+      <div class="mark">A</div>
+      <div class="cfg-title">ANYMA Portale</div>
+      <div class="cfg-sub">Configura le credenziali Azure per continuare</div>
+    </div>
+    <div class="cfg-card">
+      <div class="sec-title">Credenziali Azure AD</div>
+      <div class="fg">
+        <label class="fl">Client ID (Application ID)</label>
+        <input class="fc" id="cfgClientId" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="fg">
+        <label class="fl">Tenant ID (Directory ID)</label>
+        <input class="fc" id="cfgTenantId" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="fg">
+        <label class="fl">SharePoint URL</label>
+        <input class="fc" id="cfgSpUrl" type="text" placeholder="https://tuodominio.sharepoint.com/sites/anyma" autocomplete="off">
+        <div class="fc-hint">Es: https://anymapack.sharepoint.com/sites/anyma</div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="saveConfig()" style="margin-top:4px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Salva e Continua
+      </button>
+      <div class="info-box" style="margin-top:12px">
+        <strong style="color:var(--tx2)">Come ottenere le credenziali:</strong><br>
+        1. <a href="https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/CreateApplicationBlade" target="_blank">Registra app su Azure →</a><br>
+        2. Tipo: <em>Account in questa directory</em><br>
+        3. Redirect URI: <em>l'URL di questa pagina</em><br>
+        4. API Permissions: <em>Sites.Read.All, User.Read</em>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LOGIN SCREEN ══ -->
+<div class="scr" id="scrLogin" style="align-items:center;justify-content:center">
+  <div class="login-card">
+    <div class="login-icon">A</div>
+    <div class="login-title">ANYMA Portale</div>
+    <div class="login-sub" id="loginSub">Accedi con il tuo account Microsoft 365 ANYMA per visualizzare progetti e documenti.</div>
+    <button class="ms-btn" onclick="doLogin()">
+      <svg viewBox="0 0 21 21" width="20" height="20"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+      Accedi con Microsoft
+    </button>
+    <div class="login-note">Verranno richieste le credenziali ANYMA SRL.<br>Nessun dato viene inviato a server esterni.</div>
+    <div class="login-cfg" onclick="showConfig()">⚙ Modifica configurazione Azure</div>
+  </div>
+</div>
+
+<!-- ══ SCREEN PROGETTI ══ -->
+<div class="scr" id="scrProgetti">
+  <!-- Stats -->
+  <div class="srow" id="projStats">
+    <div class="sc"><div class="sn" id="st-tot">—</div><div class="sl">Totale</div></div>
+    <div class="sc"><div class="sn" id="st-att" style="color:var(--warn)">—</div><div class="sl">Attesa</div></div>
+    <div class="sc"><div class="sn" id="st-blk" style="color:var(--cr2)">—</div><div class="sl">Bloccati</div></div>
+  </div>
+  <!-- Filtri fase -->
+  <div class="frow" id="faseRow">
+    <div class="fch on" data-fase="" onclick="setFase(this)">Tutti</div>
+    <div class="fch" data-fase="Preventivo" onclick="setFase(this)">Preventivo</div>
+    <div class="fch" data-fase="Materiale" onclick="setFase(this)">Materiale</div>
+    <div class="fch" data-fase="Intervento" onclick="setFase(this)">Intervento</div>
+    <div class="fch" data-fase="Sviluppo" onclick="setFase(this)">Sviluppo</div>
+    <div class="fch" data-fase="Pagamento" onclick="setFase(this)">Pagamento</div>
+  </div>
+  <!-- Filtri progresso -->
+  <div class="frow" id="progRow">
+    <div class="fch on" data-prog="" onclick="setProg(this)">Tutti</div>
+    <div class="fch" data-prog="Non iniziato" onclick="setProg(this)">Non iniziato</div>
+    <div class="fch" data-prog="Attesa" onclick="setProg(this)">Attesa</div>
+    <div class="fch" data-prog="Completato" onclick="setProg(this)">Completato</div>
+    <div class="fch" data-prog="Bloccato" onclick="setProg(this)">Bloccato</div>
+  </div>
+  <!-- Search -->
+  <div class="sw">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input class="fc si" id="projSearch" type="text" placeholder="Cerca cliente o progetto..." oninput="renderKanban()">
+  </div>
+  <!-- Kanban -->
+  <div id="kanbanWrap" class="kanban-wrap"></div>
+</div>
+
+<!-- ══ SCREEN PLACEHOLDER FUTURO ══ -->
+<div class="scr" id="scrAlt">
+  <div class="es">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17.5h7M17.5 14v7"/></svg>
+    <div class="es-title">Prossimamente</div>
+    <div class="es-sub">Altre sezioni in arrivo:<br>Interventi · Issue Tracker · Ordini</div>
+  </div>
+</div>
+
+<!-- ══ BOTTOM NAV ══ -->
+<div class="bnav" id="bottomNav" style="display:none">
+  <button class="nb on" id="nb-progetti" onclick="showScreen('scrProgetti','Progetti','nb-progetti')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17.5h7M17.5 14v7"/></svg>
+    Progetti
+  </button>
+  <button class="nb" id="nb-alt" onclick="showScreen('scrAlt','Dashboard','nb-alt')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    Dashboard
+  </button>
+</div>
+
+<!-- ══ MODAL DETTAGLIO PROGETTO ══ -->
+<div class="ovl" id="projModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="mh" onclick="closeModal()"></div>
+    <div class="modal-client" id="m-client"></div>
+    <div class="modal-title" id="m-title"></div>
+    <div class="m-fields">
+      <div class="m-field"><div class="m-field-label">Fase</div><div class="m-field-val" id="m-fase"></div></div>
+      <div class="m-field"><div class="m-field-label">Progresso</div><div class="m-field-val" id="m-prog"></div></div>
+      <div class="m-field"><div class="m-field-label">Data inizio</div><div class="m-field-val" id="m-start"></div></div>
+      <div class="m-field"><div class="m-field-label">Due date</div><div class="m-field-val" id="m-due"></div></div>
+    </div>
+    <div class="m-notes" id="m-notes-block" style="display:none">
+      <div class="m-field-label" style="margin-bottom:6px">Note</div>
+      <div class="m-notes-text" id="m-notes"></div>
+    </div>
+    <a class="m-sp-link" id="m-sp-link" href="#" target="_blank">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      Apri in SharePoint
+    </a>
+  </div>
+</div>
+
+<!-- ══ SETTINGS OVERLAY ══ -->
+<div class="cfg-ovl" id="settingsOvl" onclick="if(event.target===this)closeSettings()">
+  <div class="cfg-sheet">
+    <div class="mh" onclick="closeSettings()"></div>
+    <div class="sec-title">Credenziali Azure</div>
+    <div class="fg">
+      <label class="fl">Client ID</label>
+      <input class="fc" id="sCfgClientId" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off">
+    </div>
+    <div class="fg">
+      <label class="fl">Tenant ID</label>
+      <input class="fc" id="sCfgTenantId" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off">
+    </div>
+    <div class="fg">
+      <label class="fl">SharePoint URL</label>
+      <input class="fc" id="sCfgSpUrl" type="text" placeholder="https://tuodominio.sharepoint.com/sites/anyma">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveSettingsConfig()" style="margin-bottom:8px">
+      Salva e Riconnetti
+    </button>
+    <button class="btn btn-danger btn-full" onclick="doLogout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Disconnetti account
+    </button>
+    <div class="info-box" style="margin-top:10px;font-size:10px">
+      Versione 1.0 · ANYMA Portale<br>
+      Le credenziali sono salvate localmente nel browser (localStorage).<br>
+      Non vengono mai inviate a server esterni.
+    </div>
+  </div>
+</div>
+
+<!-- ══ LOADING ══ -->
+<div class="loading" id="loading">
+  <div class="spin"></div>
+  <div class="loading-msg" id="loadingMsg">Caricamento...</div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div class="toast" id="toast"></div>
+
+</div><!-- /#app -->
+
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════════
+   STATO GLOBALE
+══════════════════════════════════════════════ */
+const G = {
+  msalApp: null,
+  account: null,
+  progetti: [],
+  faseFilter: '',
+  progFilter: '',
+  SP_LIST_ID: '40e7123d-d54f-4a5c-8f1a-8a06af0542f4',
+};
+
+/* ══════════════════════════════════════════════
+   CONFIG — localStorage
+══════════════════════════════════════════════ */
+function loadConfig() {
+  return {
+    clientId: localStorage.getItem('anyma_clientId') || '',
+    tenantId: localStorage.getItem('anyma_tenantId') || '',
+    spUrl:    localStorage.getItem('anyma_spUrl')    || '',
+  };
+}
+function persistConfig(clientId, tenantId, spUrl) {
+  localStorage.setItem('anyma_clientId', clientId.trim());
+  localStorage.setItem('anyma_tenantId', tenantId.trim());
+  localStorage.setItem('anyma_spUrl',    spUrl.trim().replace(/\/$/, ''));
+}
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  const cfg = loadConfig();
+  if (!cfg.clientId || !cfg.tenantId || !cfg.spUrl) {
+    showScreen_raw('scrConfig');
+    return;
+  }
+  initMsal(cfg);
+});
+
+function initMsal(cfg) {
+  G.msalApp = new msal.PublicClientApplication({
+    auth: {
+      clientId:    cfg.clientId,
+      authority:   `https://login.microsoftonline.com/${cfg.tenantId}`,
+      redirectUri: window.location.href.split('?')[0].split('#')[0],
+    },
+    cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: true },
+  });
+
+  G.msalApp.handleRedirectPromise().then(resp => {
+    if (resp && resp.account) {
+      G.account = resp.account;
+      afterLogin();
+    } else {
+      const accounts = G.msalApp.getAllAccounts();
+      if (accounts.length > 0) {
+        G.account = accounts[0];
+        afterLogin();
+      } else {
+        showScreen_raw('scrLogin');
+        document.getElementById('loginSub').textContent =
+          `Accedi con il tuo account Microsoft 365 ANYMA per visualizzare progetti e documenti.`;
+      }
+    }
+  }).catch(err => {
+    console.error('MSAL redirect error:', err);
+    showScreen_raw('scrLogin');
+  });
+}
+
+/* ══════════════════════════════════════════════
+   AUTH
+══════════════════════════════════════════════ */
+function doLogin() {
+  if (!G.msalApp) {
+    toast('Configura prima Client ID e Tenant ID', 'err');
+    return;
+  }
+  const cfg = loadConfig();
+  G.msalApp.loginRedirect({
+    scopes: ['User.Read', 'Sites.Read.All'],
+    prompt: 'select_account',
+  });
+}
+
+function doLogout() {
+  if (!G.msalApp) return;
+  closeSettings();
+  G.account = null;
+  G.progetti = [];
+  G.msalApp.logoutRedirect({ postLogoutRedirectUri: window.location.href });
+}
+
+async function getToken() {
+  if (!G.msalApp || !G.account) return null;
+  try {
+    const r = await G.msalApp.acquireTokenSilent({
+      scopes: ['Sites.Read.All'],
+      account: G.account,
+    });
+    return r.accessToken;
+  } catch(e) {
+    try {
+      const r = await G.msalApp.acquireTokenPopup({ scopes: ['Sites.Read.All'] });
+      return r.accessToken;
+    } catch(e2) {
+      toast('Sessione scaduta. Rieffettua il login.', 'err');
+      return null;
+    }
+  }
+}
+
+function afterLogin() {
+  // Aggiorna UI utente
+  const name = G.account.name || G.account.username || '';
+  const initials = name.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase() || '?';
+  document.getElementById('userAv').textContent   = initials;
+  document.getElementById('userName').textContent = name.split(' ')[0] || name;
+  document.getElementById('userChip').style.display = 'flex';
+  document.getElementById('topbar').style.display   = 'flex';
+  document.getElementById('bottomNav').style.display = 'flex';
+  document.getElementById('btnSettings').style.display = 'flex';
+  showScreen_raw('scrProgetti');
+  loadProgetti();
+}
+
+/* ══════════════════════════════════════════════
+   SHAREPOINT — PROGETTI
+══════════════════════════════════════════════ */
+async function loadProgetti() {
+  showLoading('Caricamento progetti...');
+  const token = await getToken();
+  if (!token) { hideLoading(); return; }
+
+  const cfg = loadConfig();
+  const base = cfg.spUrl;
+  const url  = `${base}/_api/web/lists(guid'${G.SP_LIST_ID}')/items?`
+    + `$select=ID,Title,Description,Category0,Progress,StartDate,DueDate,Notes`
+    + `&$orderby=StartDate desc&$top=500`;
+
+  try {
+    const resp = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json;odata=verbose',
+      }
+    });
+
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    G.progetti = (data?.d?.results || []).map(i => ({
+      id:       i.ID,
+      client:   i.Title    || '',
+      title:    i.Description || i.Title || '(senza titolo)',
+      fase:     i.Category0 || 'Preventivo',
+      prog:     i.Progress  || 'Non iniziato',
+      start:    i.StartDate ? i.StartDate.split('T')[0] : null,
+      due:      i.DueDate   ? i.DueDate.split('T')[0]   : null,
+      note:     i.Notes     || '',
+    }));
+
+    hideLoading();
+    renderKanban();
+    updateStats();
+    toast(`${G.progetti.length} progetti caricati`, 'suc');
+  } catch(e) {
+    hideLoading();
+    console.error('loadProgetti error:', e);
+    toast('Errore caricamento: ' + e.message, 'err');
+  }
+}
+
+/* ══════════════════════════════════════════════
+   RENDER KANBAN
+══════════════════════════════════════════════ */
+const FASI = ['Preventivo','Materiale','Intervento','Sviluppo','Pagamento'];
+const FASE_COLORS = {
+  Preventivo: '#c0392b', Materiale: '#8e44ad',
+  Intervento: '#f39c12', Sviluppo:  '#27ae60', Pagamento: '#2980b9',
+};
+const PROG_BADGE = {
+  'Completato':   'bdg-completato',
+  'Attesa':       'bdg-attesa',
+  'Non iniziato': 'bdg-noniniziato',
+  'Bloccato':     'bdg-bloccato',
+};
+
+function setFase(el) {
+  document.querySelectorAll('#faseRow .fch').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+  G.faseFilter = el.dataset.fase;
+  renderKanban();
+}
+function setProg(el) {
+  document.querySelectorAll('#progRow .fch').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+  G.progFilter = el.dataset.prog;
+  renderKanban();
+}
+
+function renderKanban() {
+  const q = (document.getElementById('projSearch')?.value || '').toLowerCase();
+  const items = G.progetti.filter(p => {
+    if (G.faseFilter && p.fase !== G.faseFilter) return false;
+    if (G.progFilter && p.prog !== G.progFilter) return false;
+    if (q && !p.client.toLowerCase().includes(q) && !p.title.toLowerCase().includes(q) && !p.note.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  updateStats(items);
+
+  const fasiFiltrate = G.faseFilter ? [G.faseFilter] : FASI;
+  const wrap = document.getElementById('kanbanWrap');
+  wrap.innerHTML = '';
+
+  if (items.length === 0) {
+    wrap.innerHTML = `<div class="es">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <div class="es-title">Nessun risultato</div>
+      <div class="es-sub">Prova a modificare i filtri</div>
+    </div>`;
+    return;
+  }
+
+  fasiFiltrate.forEach(fase => {
+    const fItems = items.filter(p => p.fase === fase);
+    if (fItems.length === 0) return;
+
+    const colId = 'kcol_' + fase.toLowerCase();
+    const cardsId = 'kcards_' + fase.toLowerCase();
+    const color = FASE_COLORS[fase] || '#999';
+
+    const col = document.createElement('div');
+    col.className = 'k-col';
+    col.innerHTML = `
+      <div class="k-hdr" onclick="toggleCol('${cardsId}','${colId}_toggle')">
+        <div class="k-hdr-left">
+          <div class="k-dot" style="background:${color}"></div>
+          <span class="k-label">${fase}</span>
+          <span class="k-count">${fItems.length}</span>
+        </div>
+        <svg id="${colId}_toggle" class="k-toggle open" viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="k-divider"></div>
+      <div class="k-cards" id="${cardsId}">
+        ${fItems.map(p => cardHTML(p)).join('')}
+      </div>`;
+    wrap.appendChild(col);
+  });
+}
+
+function cardHTML(p) {
+  const progCls = PROG_BADGE[p.prog] || 'bdg-noniniziato';
+  const dateStr = p.due ? fmtDate(p.due) : (p.start ? fmtDate(p.start) : '');
+  const note = p.note ? `<div class="pc-note">${esc(p.note)}</div>` : '';
+  return `<div class="pcard" onclick="openModal(${p.id})">
+    <div class="pc-client">${esc(p.client)}</div>
+    <div class="pc-title">${esc(p.title)}</div>
+    <div class="pc-footer">
+      <span class="bdg ${progCls}">${p.prog}</span>
+      ${dateStr ? `<span class="pc-date">${dateStr}</span>` : ''}
+    </div>
+    ${note}
+  </div>`;
+}
+
+function toggleCol(cardsId, toggleId) {
+  const cards   = document.getElementById(cardsId);
+  const toggle  = document.getElementById(toggleId);
+  if (!cards) return;
+  const collapsed = cards.classList.toggle('collapsed');
+  if (toggle) toggle.classList.toggle('open', !collapsed);
+}
+
+function updateStats(items) {
+  const list = items || G.progetti;
+  document.getElementById('st-tot').textContent = list.length;
+  document.getElementById('st-att').textContent = list.filter(p=>p.prog==='Attesa').length;
+  document.getElementById('st-blk').textContent = list.filter(p=>p.prog==='Bloccato').length;
+}
+
+/* ══════════════════════════════════════════════
+   MODAL DETTAGLIO
+══════════════════════════════════════════════ */
+function openModal(id) {
+  const p = G.progetti.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('m-client').textContent = p.client;
+  document.getElementById('m-title').textContent  = p.title;
+  document.getElementById('m-fase').innerHTML     = `<span class="bdg bdg-${p.fase.toLowerCase()}">${p.fase}</span>`;
+  document.getElementById('m-prog').innerHTML     = `<span class="bdg ${PROG_BADGE[p.prog]||'bdg-noniniziato'}">${p.prog}</span>`;
+  document.getElementById('m-start').textContent  = p.start ? fmtDate(p.start) : '—';
+  document.getElementById('m-due').textContent    = p.due   ? fmtDate(p.due)   : '—';
+  const notesBlock = document.getElementById('m-notes-block');
+  if (p.note) {
+    document.getElementById('m-notes').textContent = p.note;
+    notesBlock.style.display = '';
+  } else {
+    notesBlock.style.display = 'none';
+  }
+  const cfg = loadConfig();
+  document.getElementById('m-sp-link').href = `${cfg.spUrl}/Lists/Progetti/DispForm.aspx?ID=${p.id}`;
+  document.getElementById('projModal').classList.add('on');
+}
+function closeModal() { document.getElementById('projModal').classList.remove('on'); }
+
+/* ══════════════════════════════════════════════
+   CONFIG SCREEN
+══════════════════════════════════════════════ */
+function saveConfig() {
+  const clientId = document.getElementById('cfgClientId').value.trim();
+  const tenantId = document.getElementById('cfgTenantId').value.trim();
+  const spUrl    = document.getElementById('cfgSpUrl').value.trim();
+  if (!clientId || !tenantId || !spUrl) {
+    toast('Compila tutti i campi', 'err'); return;
+  }
+  persistConfig(clientId, tenantId, spUrl);
+  toast('Configurazione salvata', 'suc');
+  setTimeout(() => { location.reload(); }, 800);
+}
+
+function showConfig() {
+  showScreen_raw('scrConfig');
+  const cfg = loadConfig();
+  document.getElementById('cfgClientId').value = cfg.clientId;
+  document.getElementById('cfgTenantId').value = cfg.tenantId;
+  document.getElementById('cfgSpUrl').value    = cfg.spUrl;
+}
+
+/* ══════════════════════════════════════════════
+   SETTINGS OVERLAY
+══════════════════════════════════════════════ */
+function openSettings() {
+  const cfg = loadConfig();
+  document.getElementById('sCfgClientId').value = cfg.clientId;
+  document.getElementById('sCfgTenantId').value = cfg.tenantId;
+  document.getElementById('sCfgSpUrl').value    = cfg.spUrl;
+  document.getElementById('settingsOvl').classList.add('on');
+}
+function closeSettings() { document.getElementById('settingsOvl').classList.remove('on'); }
+
+function saveSettingsConfig() {
+  const clientId = document.getElementById('sCfgClientId').value.trim();
+  const tenantId = document.getElementById('sCfgTenantId').value.trim();
+  const spUrl    = document.getElementById('sCfgSpUrl').value.trim();
+  if (!clientId || !tenantId || !spUrl) {
+    toast('Compila tutti i campi', 'err'); return;
+  }
+  persistConfig(clientId, tenantId, spUrl);
+  closeSettings();
+  toast('Salvato — ricarico...', 'suc');
+  setTimeout(() => { location.reload(); }, 900);
+}
+
+/* ══════════════════════════════════════════════
+   UI HELPERS
+══════════════════════════════════════════════ */
+function showScreen_raw(id) {
+  document.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
+  document.getElementById(id)?.classList.add('on');
+}
+
+function showScreen(id, title, navId) {
+  showScreen_raw(id);
+  document.getElementById('ttl').textContent = title;
+  document.querySelectorAll('.nb').forEach(n => n.classList.remove('on'));
+  document.getElementById(navId)?.classList.add('on');
+  if (id === 'scrProgetti' && G.progetti.length === 0 && G.account) loadProgetti();
+}
+
+function showLoading(msg) {
+  document.getElementById('loadingMsg').textContent = msg || 'Caricamento...';
+  document.getElementById('loading').classList.add('on');
+}
+function hideLoading() { document.getElementById('loading').classList.remove('on'); }
+
+let _toastTimer;
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast on' + (type ? ' '+type : '');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('on'), 3000);
+}
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
