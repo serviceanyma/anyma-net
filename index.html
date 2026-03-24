@@ -5,23 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0d0d0d;--bg2:#141414;--bg3:#1c1c1c;--bg4:#242424;--bg5:#2c2c2c;
+  --bg:#0d0d0d;--bg2:#141414;--bg3:#1c1c1c;--bg4:#242424;--bg5:#2d2f3a;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
   --text:#f0ebe6;--text2:#b8a898;--text3:#7a6858;
-  --accent:#c0392b;--green:#2ecc71;--amber:#f39c12;--red:#e74c3c;--purple:#a78bfa;
-  --radius:10px;
-  --font:'Barlow',system-ui,sans-serif;
-  --cond:'Barlow Condensed',system-ui,sans-serif;
-  --mono:'DM Mono',monospace;
+  --accent:#c0392b;--green:#3ecf8e;--amber:#f5a623;--red:#f05c5c;--purple:#a78bfa;
+  --radius:10px;--font:'Barlow',system-ui,sans-serif;--cond:'Barlow Condensed',system-ui,sans-serif;--cr-shadow:0 3px 16px rgba(192,57,43,.25);--cr-bg:rgba(192,57,43,.12);--mono:'DM Mono',monospace;
   --sidebar:220px;--header:52px;
-  --cr-bg:rgba(192,57,43,.12);--cr-border:rgba(192,57,43,.28);
-  --cr-shadow:0 3px 16px rgba(192,57,43,.25);
 }
 html,body{height:100%}
-body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;overflow:hidden;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;overflow:hidden}
 
 /* ══ SHELL ══ */
 .shell{display:grid;grid-template-rows:var(--header) 1fr;grid-template-columns:var(--sidebar) 1fr;height:100vh;overflow:hidden}
@@ -456,62 +451,41 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 .ea-ctx-toggle{font-size:11px;color:var(--accent);cursor:pointer;background:none;border:none;font-weight:600}
 
 
-/* ══ ANYMA-NET: overlay config/login ══ */
-.an-overlay{position:fixed;inset:0;background:rgba(13,13,13,.97);z-index:1000;
-  display:flex;align-items:center;justify-content:center;padding:20px}
+/* == ANYMA-NET overlay == */
+.an-overlay{position:fixed;inset:0;background:rgba(13,13,13,.97);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
 .an-overlay.hidden{display:none}
-.an-card{width:100%;max-width:420px;background:#141414;border:1px solid rgba(255,255,255,.08);
-  border-radius:14px;padding:28px;border-top:3px solid #c0392b}
-.an-logo{text-align:center;margin-bottom:22px}
-.an-mark{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;
-  border-radius:13px;background:#c0392b;font-family:var(--cond);font-weight:800;font-size:20px;
-  color:#fff;letter-spacing:2px;box-shadow:var(--cr-shadow)}
-.an-title{font-family:var(--cond);font-size:22px;font-weight:700;letter-spacing:3px;
-  text-transform:uppercase;color:var(--text);text-align:center;margin-top:10px}
-.an-sub{font-size:11px;color:var(--text3);text-align:center;margin-top:4px;
-  letter-spacing:.5px;margin-bottom:20px;line-height:1.6}
-.an-sec{font-family:var(--cond);font-size:9px;font-weight:700;letter-spacing:2.5px;
-  text-transform:uppercase;color:var(--text2);margin-bottom:10px;
-  display:flex;align-items:center;gap:8px}
+.an-card{width:100%;max-width:420px;background:#141414;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:28px;border-top:3px solid #c0392b}
+.an-mark{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:13px;background:#c0392b;font-weight:800;font-size:20px;color:#fff;letter-spacing:2px}
+.an-title{font-size:22px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#f0ebe6;text-align:center;margin-top:10px}
+.an-sub{font-size:11px;color:#7a6858;text-align:center;margin-top:4px;letter-spacing:.5px;margin-bottom:20px;line-height:1.6}
+.an-sec{font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#b8a898;margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .an-sec::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.08)}
 .an-fg{margin-bottom:12px}
-.an-lbl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-  color:var(--text3);margin-bottom:5px;display:block}
-.an-inp{width:100%;background:#1c1c1c;border:1px solid rgba(255,255,255,.1);border-radius:8px;
-  color:var(--text);font-family:var(--mono);font-size:12px;padding:10px 13px;outline:none;
-  transition:border-color .2s;box-sizing:border-box}
+.an-lbl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#7a6858;margin-bottom:5px;display:block}
+.an-inp{width:100%;background:#1c1c1c;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#f0ebe6;font-family:monospace;font-size:12px;padding:10px 13px;outline:none;transition:border-color .2s;box-sizing:border-box}
 .an-inp:focus{border-color:#c0392b}
-.an-inp::placeholder{color:var(--text3)}
-.an-hint{font-size:10px;color:var(--text3);margin-top:4px;line-height:1.6}
+.an-inp::placeholder{color:#7a6858}
+.an-hint{font-size:10px;color:#7a6858;margin-top:4px;line-height:1.6}
 .an-hint a{color:#e74c3c;text-decoration:none}
-.an-hint a:hover{text-decoration:underline}
-.an-btn{width:100%;padding:12px;border:none;border-radius:8px;font-family:var(--font);
-  font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
-  cursor:pointer;transition:all .2s;display:flex;align-items:center;
-  justify-content:center;gap:8px;box-sizing:border-box}
-.an-btn-primary{background:#c0392b;color:#fff;box-shadow:var(--cr-shadow);margin-bottom:8px}
-.an-btn-primary:hover{background:#e74c3c}
-.an-btn-ms{background:#fff;color:#1a1a1a;margin-bottom:0}
-.an-btn-ms:hover{background:#f0f0f0}
-.an-btn-ghost{background:rgba(192,57,43,.08);color:#e74c3c;
-  border:1px solid rgba(192,57,43,.25);margin-top:8px;font-size:11px}
-.an-btn-ghost:hover{background:rgba(192,57,43,.15)}
-.an-info{background:#1c1c1c;border:1px solid rgba(255,255,255,.06);border-radius:8px;
-  padding:10px 13px;font-size:10px;color:var(--text3);line-height:1.8;margin-top:12px}
-.an-info a{color:#e74c3c;text-decoration:none}
-.an-info a:hover{text-decoration:underline}
-
-</style>
+.an-abtn{width:100%;padding:12px;border:none;border-radius:8px;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;box-sizing:border-box;margin-bottom:8px;font-family:inherit}
+.an-primary{background:#c0392b;color:#fff}
+.an-primary:hover{background:#e74c3c}
+.an-ms{background:#fff;color:#1a1a1a}
+.an-ms:hover{background:#f0f0f0}
+.an-ghost{background:rgba(192,57,43,.08);color:#e74c3c;border:1px solid rgba(192,57,43,.25);font-size:11px}
+.an-ghost:hover{background:rgba(192,57,43,.15)}
+.an-info{background:#1c1c1c;border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:10px 13px;font-size:10px;color:#7a6858;line-height:1.8;margin-top:12px}
+.an-info a{color:#e74c3c;text-decoration:none}</style>
 <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
 </head>
 <body>
-<!-- ══ CONFIG OVERLAY ══ -->
+<!-- CONFIG OVERLAY -->
 <div class="an-overlay" id="anConfigOverlay">
   <div class="an-card">
-    <div class="an-logo">
+    <div style="text-align:center;margin-bottom:22px">
       <div class="an-mark">A</div>
       <div class="an-title">ANYMA-NET</div>
-      <div class="an-sub">Inserisci le credenziali Azure AD per continuare</div>
+      <div class="an-sub">Inserisci le credenziali Azure AD</div>
     </div>
     <div class="an-sec">Credenziali Azure</div>
     <div class="an-fg">
@@ -527,49 +501,37 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
       <input class="an-inp" id="anSpUrl" type="text" placeholder="https://anymapack.sharepoint.com/sites/anyma" oninput="this.style.borderColor=''">
       <div class="an-hint">Es: https://anymapack.sharepoint.com/sites/anyma</div>
     </div>
-    <button class="an-btn an-btn-primary" onclick="anSaveConfig()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-      Salva e Continua
-    </button>
+    <button class="an-abtn an-primary" id="anSaveBtn" onclick="anSaveConfig()">Salva e Continua</button>
     <div class="an-info">
-      <strong style="color:var(--text2)">Come ottenere le credenziali:</strong><br>
-      1. <a href="https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" target="_blank">Apri Azure App Registrations →</a><br>
-      2. Clicca <em>ANYMA-NET</em> → copia Client ID e Tenant ID<br>
-      3. Authentication → aggiungi questo URL come Redirect URI (SPA)<br>
-      4. API Permissions → <em>User.Read · Sites.Read.All</em> → Concedi consenso admin
+      <strong style="color:#b8a898">Dove trovo le credenziali?</strong><br>
+      Vai su <a href="https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" target="_blank">Azure App Registrations</a>, clicca su ANYMA-NET e copia Client ID e Tenant ID dalla pagina principale.
     </div>
   </div>
 </div>
-
-<!-- ══ LOGIN OVERLAY ══ -->
+<!-- LOGIN OVERLAY -->
 <div class="an-overlay hidden" id="anLoginOverlay">
   <div class="an-card" style="max-width:360px;text-align:center">
     <div class="an-mark" style="margin:0 auto 14px">A</div>
     <div class="an-title">ANYMA-NET</div>
     <div class="an-sub">Accedi con il tuo account<br>Microsoft 365 ANYMA SRL</div>
-    <button class="an-btn an-btn-ms" onclick="anDoLogin()">
+    <button class="an-abtn an-ms" onclick="anDoLogin()">
       <svg viewBox="0 0 21 21" width="18" height="18"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
       Accedi con Microsoft
     </button>
-    <button class="an-btn an-btn-ghost" onclick="anShowConfig()">⚙ Modifica credenziali Azure</button>
-    <div class="an-info" style="margin-top:14px;font-size:10px">
-      Nessun dato inviato a server esterni.<br>
-      Le credenziali restano salvate solo su questo dispositivo.
-    </div>
+    <button class="an-abtn an-ghost" onclick="anShowConfig()">Modifica credenziali Azure</button>
+    <div class="an-info" style="margin-top:12px;font-size:10px">Nessun dato inviato a server esterni. Le credenziali restano solo su questo dispositivo.</div>
   </div>
-</div>
-
-<div class="shell" id="appShell" style="display:none">
+</div><div class="shell" id="appShell" style="display:none">
 
 <!-- ══ HEADER ══ -->
 <header>
   <div class="logo">
-    <div class="logo-mark" style="background:#c0392b;box-shadow:var(--cr-shadow);font-family:var(--cond);font-weight:800;letter-spacing:1px;font-size:13px">A</div>
-    <div><div class="logo-text" style="font-family:var(--cond);font-weight:700;letter-spacing:3px;text-transform:uppercase;font-size:15px">ANYMA<span style="color:#c0392b">-NET</span></div><div class="logo-sub" style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:500">Portale Documenti</div></div>
+    <div class="logo-mark" style="background:#c0392b">A</div>
+    <div><div class="logo-text">ANYMA Portale</div><div class="logo-sub">Documenti & Interventi</div></div>
   </div>
   <div class="header-actions">
     <span class="folder-chip" id="folderChip" style="display:none"></span>
-    <div id="anUserChip" style="display:none;align-items:center;gap:6px;background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.25);border-radius:20px;padding:4px 10px 4px 5px"><div id="anUserAv" style="width:22px;height:22px;border-radius:50%;background:#c0392b;display:flex;align-items:center;justify-content:center;font-family:var(--cond);font-size:10px;font-weight:700;color:#fff;flex-shrink:0">?</div><span id="anUserName" style="font-size:11px;color:#ff7070;font-weight:600;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span></div><button id="anLogoutBtn" onclick="anDoLogout()" style="display:none;padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--text3);font-family:var(--font);font-size:11px;cursor:pointer">Esci</button><button class="btn" id="btnRefresh" onclick="refreshAll()" style="display:none">
+    <div id="anUserChip" style="display:none;align-items:center;gap:6px;background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.25);border-radius:20px;padding:4px 10px 4px 5px"><div id="anUserAv" style="width:22px;height:22px;border-radius:50%;background:#c0392b;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">?</div><span id="anUserName" style="font-size:11px;color:#ff7070;font-weight:600;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span></div><button id="anLogoutBtn" onclick="anDoLogout()" style="display:none;padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--text3);font-family:var(--font);font-size:11px;cursor:pointer">Esci</button><button class="btn" id="btnRefresh" onclick="refreshAll()" style="display:none">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5M13.5 2.5v3.5h-3.5"/></svg>
       Aggiorna
     </button>
@@ -652,7 +614,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
     <div class="setup-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
     </div>
-    <h2>ANYMA-NET</h2>
+    <h2>ANYMA Portale</h2>
     <p>Per iniziare, configura le cartelle sorgente nelle <strong style="color:var(--text);cursor:pointer;text-decoration:underline" onclick="showView('impostazioni')">Impostazioni</strong>.</p>
     <div class="setup-status-list">
       <div class="setup-status-row">
@@ -977,7 +939,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         <!-- Firma -->
         <div class="ea-card">
           <span class="ea-label">Firma</span>
-          <div class="ea-firma-prev" id="ea-fp">Daniel Consolaro<br>Servizio Tecnico — ANYMA SRL<br><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d8abbdaaaeb1bbbd98b9b6a1b5b9a8b9bbb3f6b1ac">[email&#160;protected]</a></div>
+          <div class="ea-firma-prev" id="ea-fp">Daniel Consolaro<br>Servizio Tecnico — ANYMA SRL<br>service@anymapack.it</div>
           <div class="ea-inp-row">
             <input class="ea-inp" id="ea-fn" value="Daniel Consolaro" placeholder="Nome" oninput="eaUpdFirma()">
             <input class="ea-inp" id="ea-fr" value="Servizio Tecnico" placeholder="Ruolo" oninput="eaUpdFirma()">
@@ -1109,118 +1071,54 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 
 <div class="toast" id="toast"></div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-/* ══════════════════════════════════════════════
-   ANYMA-NET — Auth Microsoft (MSAL.js)
-   Credenziali in localStorage, mai su server.
-══════════════════════════════════════════════ */
-
-// ── Config helpers ──────────────────────────
-function anLoadCfg(){
-  return {
-    clientId: localStorage.getItem('an_clientId')||'',
-    tenantId: localStorage.getItem('an_tenantId')||'',
-    spUrl:   (localStorage.getItem('an_spUrl')||'').replace(/\/$/,''),
-  };
-}
-function anPersist(c,t,s){
-  localStorage.setItem('an_clientId',c.trim());
-  localStorage.setItem('an_tenantId',t.trim());
-  localStorage.setItem('an_spUrl',s.trim().replace(/\/$/, ''));
-}
-
-// ── UI helpers ───────────────────────────────
+/* == ANYMA-NET Auth == */
+function anLoadCfg(){return{clientId:localStorage.getItem('an_cid')||'',tenantId:localStorage.getItem('an_tid')||'',spUrl:(localStorage.getItem('an_sp')||'').replace(/\/$/,'')}}
+function anPersist(c,t,s){localStorage.setItem('an_cid',c);localStorage.setItem('an_tid',t);localStorage.setItem('an_sp',s.replace(/\/$/,''))}
 function anShowConfig(){
   document.getElementById('anLoginOverlay').classList.add('hidden');
   document.getElementById('anConfigOverlay').classList.remove('hidden');
-  const c=anLoadCfg();
+  var c=anLoadCfg();
   document.getElementById('anClientId').value=c.clientId;
   document.getElementById('anTenantId').value=c.tenantId;
   document.getElementById('anSpUrl').value=c.spUrl;
 }
 function anSaveConfig(){
-  const c=document.getElementById('anClientId').value.trim();
-  const t=document.getElementById('anTenantId').value.trim();
-  const s=document.getElementById('anSpUrl').value.trim();
-  if(!c||!t||!s){
-    // Evidenzia i campi vuoti
-    if(!c) document.getElementById('anClientId').style.borderColor='#e74c3c';
-    if(!t) document.getElementById('anTenantId').style.borderColor='#e74c3c';
-    if(!s) document.getElementById('anSpUrl').style.borderColor='#e74c3c';
-    return;
-  }
+  var c=document.getElementById('anClientId').value.trim();
+  var t=document.getElementById('anTenantId').value.trim();
+  var s=document.getElementById('anSpUrl').value.trim();
+  var ok=true;
+  if(!c){document.getElementById('anClientId').style.borderColor='#e74c3c';ok=false;}
+  if(!t){document.getElementById('anTenantId').style.borderColor='#e74c3c';ok=false;}
+  if(!s){document.getElementById('anSpUrl').style.borderColor='#e74c3c';ok=false;}
+  if(!ok)return;
   anPersist(c,t,s);
-  // Feedback visivo sul pulsante
-  const btn=document.querySelector('#anConfigOverlay .an-btn-primary');
-  if(btn){btn.textContent='✓ Salvato — caricamento...';btn.disabled=true;}
-  // Ricarica dopo breve pausa
-  setTimeout(()=>{
-    window.location.href=window.location.href.split('?')[0].split('#')[0];
-  },600);
+  var btn=document.getElementById('anSaveBtn');
+  btn.textContent='Salvato — ricarico...';
+  btn.disabled=true;
+  setTimeout(function(){window.location.href=window.location.href.split('?')[0].split('#')[0];},800);
 }
-function anShowLogin(){
-  document.getElementById('anConfigOverlay').classList.add('hidden');
-  document.getElementById('anLoginOverlay').classList.remove('hidden');
-}
-function anRevealApp(){
-  document.getElementById('anConfigOverlay').classList.add('hidden');
-  document.getElementById('anLoginOverlay').classList.add('hidden');
-  document.getElementById('appShell').style.display='';
-}
-
-// ── MSAL ────────────────────────────────────
-let _msal=null, _msalAcc=null;
-
+function anShowLogin(){document.getElementById('anConfigOverlay').classList.add('hidden');document.getElementById('anLoginOverlay').classList.remove('hidden');}
+function anRevealApp(){document.getElementById('anConfigOverlay').classList.add('hidden');document.getElementById('anLoginOverlay').classList.add('hidden');document.getElementById('appShell').style.display='';}
+var _msal=null,_msalAcc=null;
 function anInitMsal(cfg){
-  _msal=new msal.PublicClientApplication({
-    auth:{
-      clientId:cfg.clientId,
-      authority:'https://login.microsoftonline.com/'+cfg.tenantId,
-      redirectUri:window.location.href.split('?')[0].split('#')[0],
-    },
-    cache:{cacheLocation:'localStorage',storeAuthStateInCookie:true},
-  });
-  _msal.handleRedirectPromise().then(resp=>{
+  _msal=new msal.PublicClientApplication({auth:{clientId:cfg.clientId,authority:'https://login.microsoftonline.com/'+cfg.tenantId,redirectUri:window.location.href.split('?')[0].split('#')[0]},cache:{cacheLocation:'localStorage',storeAuthStateInCookie:true}});
+  _msal.handleRedirectPromise().then(function(resp){
     if(resp&&resp.account){_msalAcc=resp.account;anAfterLogin();}
-    else{
-      const accs=_msal.getAllAccounts();
-      if(accs.length>0){_msalAcc=accs[0];anAfterLogin();}
-      else{anShowLogin();}
-    }
-  }).catch(err=>{console.error('MSAL:',err);anShowLogin();});
+    else{var accs=_msal.getAllAccounts();if(accs.length>0){_msalAcc=accs[0];anAfterLogin();}else{anShowLogin();}}
+  }).catch(function(err){console.error('MSAL:',err);anShowLogin();});
 }
-function anDoLogin(){
-  if(!_msal){
-    alert('Configura prima le credenziali Azure (Client ID, Tenant ID, URL SharePoint)');
-    anShowConfig();
-    return;
-  }
-  _msal.loginRedirect({scopes:['User.Read','Sites.Read.All'],prompt:'select_account'});
-}
-function anDoLogout(){
-  if(!_msal)return;
-  _msalAcc=null;
-  state.serviceHandle=null;
-  state.adminHandle=null;
-  _msal.logoutRedirect({postLogoutRedirectUri:window.location.href});
-}
-async function anGetToken(){
-  if(!_msal||!_msalAcc)return null;
-  try{
-    const r=await _msal.acquireTokenSilent({scopes:['Sites.Read.All'],account:_msalAcc});
-    return r.accessToken;
-  }catch(e){
-    try{
-      const r=await _msal.acquireTokenPopup({scopes:['Sites.Read.All']});
-      return r.accessToken;
-    }catch(e2){showToast('Sessione scaduta — effettua di nuovo il login');return null;}
-  }
+function anDoLogin(){if(!_msal){anShowConfig();return;}_msal.loginRedirect({scopes:['User.Read','Sites.Read.All'],prompt:'select_account'});}
+function anDoLogout(){if(!_msal)return;_msalAcc=null;state.serviceHandle=null;state.adminHandle=null;_msal.logoutRedirect({postLogoutRedirectUri:window.location.href});}
+function anGetToken(){
+  if(!_msal||!_msalAcc)return Promise.resolve(null);
+  return _msal.acquireTokenSilent({scopes:['Sites.Read.All'],account:_msalAcc}).then(function(r){return r.accessToken;}).catch(function(){return _msal.acquireTokenPopup({scopes:['Sites.Read.All']}).then(function(r){return r.accessToken;}).catch(function(){return null;});});
 }
 function anAfterLogin(){
-  const name=_msalAcc.name||_msalAcc.username||'';
-  const init=name.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase()||'A';
-  const first=name.split(' ')[0]||name.split('@')[0]||'';
+  var name=_msalAcc.name||_msalAcc.username||'';
+  var init=name.split(' ').map(function(p){return p[0]||'';}).join('').substring(0,2).toUpperCase()||'A';
+  var first=name.split(' ')[0]||name.split('@')[0]||'';
   document.getElementById('anUserAv').textContent=init;
   document.getElementById('anUserName').textContent=first;
   document.getElementById('anUserChip').style.display='flex';
@@ -1228,31 +1126,22 @@ function anAfterLogin(){
   anRevealApp();
   anAfterLoginInit();
 }
-
-// ── Post-login: ripristino cartelle + SP config ──
-async function anAfterLoginInit(){
+function anAfterLoginInit(){
   showLoading('Ripristino cartelle...');
-  const sv=await loadHandle('service');
-  const av=await loadHandle('admin');
-  let loaded=false;
-  if(sv){const ok=await restoreHandle('service',sv.handle,false);if(ok)loaded=true;}
-  if(av){const ok=await restoreHandle('admin',av.handle,false);if(ok)loaded=true;}
-  hideLoading();
-  updateDots();
-  if(!loaded){showView('setup');}
-  else{if(state.serviceHandle)showView('interventi');else showView('preventivi');}
-  // Ripristina URL SharePoint dalla config ANYMA-NET
-  const cfg=anLoadCfg();
-  if(cfg.spUrl){
-    state.spUrl=cfg.spUrl;
-    const inp=document.getElementById('settings-sp-url');
-    if(inp){inp.value=cfg.spUrl;updateSPStatus(cfg.spUrl);}
-  }
-  emInit();
+  Promise.all([loadHandle('service'),loadHandle('admin')]).then(function(results){
+    var sv=results[0],av=results[1];
+    var p=Promise.resolve(false);
+    if(sv)p=p.then(function(){return restoreHandle('service',sv.handle,false);});
+    if(av)p=p.then(function(){return restoreHandle('admin',av.handle,false);});
+    return p;
+  }).then(function(loaded){
+    hideLoading();updateDots();
+    if(!loaded){showView('setup');}else{if(state.serviceHandle)showView('interventi');else showView('preventivi');}
+    var cfg=anLoadCfg();
+    if(cfg.spUrl){state.spUrl=cfg.spUrl;var inp=document.getElementById('settings-sp-url');if(inp){inp.value=cfg.spUrl;if(typeof updateSPStatus==='function')updateSPStatus(cfg.spUrl);}}
+    if(typeof emInit==='function')emInit();
+  }).catch(function(){hideLoading();showView('setup');if(typeof emInit==='function')emInit();});
 }
-
-// ── SP token per loadProgetti ──────────────────
-async function anGetSpToken(){return anGetToken();}
 
 /* ══════════════════════════════════════
    STATE
@@ -1320,15 +1209,12 @@ async function loadHandle(id) {
 /* ══════════════════════════════════════
    INIT — auto-ripristino silenzioso
 ══════════════════════════════════════ */
-window.addEventListener('DOMContentLoaded', () => {
-  // ANYMA-NET: controlla credenziali Azure prima di tutto
-  const cfg = anLoadCfg();
+window.addEventListener('DOMContentLoaded', function() {
+  var cfg = anLoadCfg();
   if (!cfg.clientId || !cfg.tenantId || !cfg.spUrl) {
-    // Prima configurazione — mostra overlay config
     anShowConfig();
     return;
   }
-  // Credenziali presenti — init MSAL (gestisce login/redirect automaticamente)
   anInitMsal(cfg);
 });
 
@@ -1738,9 +1624,9 @@ function renderIntCharts(filtered){
   if(charts.rt) charts.rt.destroy();
   if(charts.tipi) charts.tipi.destroy();
   const c1=document.getElementById('chartRT').getContext('2d');
-  charts.rt=new Chart(c1,{type:'bar',data:{labels:top.map(c=>c.name),datasets:[{data:top.map(c=>c.rt),backgroundColor:'rgba(79,143,255,.7)',borderColor:'rgba(79,143,255,1)',borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9498a8',font:{size:10},autoSkip:false,maxRotation:30},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#9498a8',font:{size:10},stepSize:1},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}});
+  charts.rt=new Chart(c1,{type:'bar',data:{labels:top.map(c=>c.name),datasets:[{data:top.map(c=>c.rt),backgroundColor:'rgba(192,57,43,.7)',borderColor:'rgba(192,57,43,1)',borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9498a8',font:{size:10},autoSkip:false,maxRotation:30},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#9498a8',font:{size:10},stepSize:1},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}});
   const c2=document.getElementById('chartTipi').getContext('2d');
-  charts.tipi=new Chart(c2,{type:'doughnut',data:{labels:['RT','BO','ZIP'],datasets:[{data:[tRT,tBO,tZip],backgroundColor:['rgba(79,143,255,.8)','rgba(62,207,142,.8)','rgba(245,166,35,.8)'],borderColor:['#0f1117','#0f1117','#0f1117'],borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'#9498a8',font:{size:10},padding:8,boxWidth:9,boxHeight:9}}}}});
+  charts.tipi=new Chart(c2,{type:'doughnut',data:{labels:['RT','BO','ZIP'],datasets:[{data:[tRT,tBO,tZip],backgroundColor:['rgba(192,57,43,.8)','rgba(62,207,142,.8)','rgba(245,166,35,.8)'],borderColor:['#0f1117','#0f1117','#0f1117'],borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'#9498a8',font:{size:10},padding:8,boxWidth:9,boxHeight:9}}}}});
 }
 
 /* ══════════════════════════════════════
@@ -1824,7 +1710,7 @@ function renderAdmCharts(items) {
   });
   const subLabels=Object.keys(bySub);
   const subData=subLabels.map(k=>bySub[k]);
-  const subColors=['rgba(79,143,255,.8)','rgba(62,207,142,.8)','rgba(167,139,250,.8)','rgba(245,166,35,.8)'];
+  const subColors=['rgba(192,57,43,.8)','rgba(62,207,142,.8)','rgba(167,139,250,.8)','rgba(245,166,35,.8)'];
 
   // Label grafico 1
   const cfg=Object.values(ADM_CATS).find(c=>c.key===state.currentAdmCat);
@@ -1843,8 +1729,8 @@ function renderAdmCharts(items) {
         labels:top10.map(e=>e[0].split(' ')[0]),
         datasets:[{
           data:top10.map(e=>e[1]),
-          backgroundColor:'rgba(79,143,255,.7)',
-          borderColor:'rgba(79,143,255,1)',
+          backgroundColor:'rgba(192,57,43,.7)',
+          borderColor:'rgba(192,57,43,1)',
           borderWidth:1,borderRadius:4
         }]
       },
@@ -1871,7 +1757,7 @@ function renderAdmCharts(items) {
       items.forEach(i=>{byY[i.year]=(byY[i.year]||0)+i.files.length;});
       const ySorted=Object.keys(byY).sort().reverse();
       labels2=ySorted; data2=ySorted.map(y=>byY[y]);
-      colors2=['rgba(62,207,142,.8)','rgba(79,143,255,.8)','rgba(245,166,35,.8)','rgba(167,139,250,.8)','rgba(240,92,92,.8)'];
+      colors2=['rgba(62,207,142,.8)','rgba(192,57,43,.8)','rgba(245,166,35,.8)','rgba(167,139,250,.8)','rgba(240,92,92,.8)'];
       label2='Distribuzione per anno';
     }
     const l2=document.getElementById('adm-chart2-label');
@@ -1975,7 +1861,7 @@ const SP_LIST_URL= `${SP_BASE}/_api/web/lists(guid'${SP_LIST_ID}')`;
 const FASI = ['Preventivo','Materiale','Intervento','Sviluppo','Pagamento'];
 
 const FASE_COLORS = {
-  Preventivo: '#4f8fff',
+  Preventivo: '#c0392b',
   Materiale:  '#a78bfa',
   Intervento: '#f5a623',
   Sviluppo:   '#3ecf8e',
@@ -2372,4 +2258,8 @@ function eaCopy(which) {
 
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
-function showLoading(msg='Caricamento...'){document.ge
+function showLoading(msg='Caricamento...'){document.getElementById('loadingMsg').textContent=msg;document.getElementById('loadingOverlay').classList.remove('hidden');}
+function hideLoading(){document.getElementById('loadingOverlay').classList.add('hidden');}
+</script>
+</body>
+</html>
