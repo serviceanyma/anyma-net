@@ -1123,7 +1123,7 @@ function anInitMsal(cfg){
 function anDoLogin(){
   if(!_msal){anShowConfig();return;}
   // loginRedirect: funziona sempre, torna sulla stessa pagina
-  _msal.loginRedirect({scopes:['User.Read','Sites.Read.All'],prompt:'select_account'});
+  _msal.loginRedirect({scopes:['User.Read','https://graph.microsoft.com/Sites.Read.All'],prompt:'select_account'});
 }
 function anDoLogout(){
   if(!_msal)return;
@@ -1134,8 +1134,8 @@ function anDoLogout(){
 }
 function anGetToken(){
   if(!_msal||!_msalAcc)return Promise.resolve(null);
-  // Solo silent — il token SP è già in cache dal login iniziale con Sites.Read.All
-  return _msal.acquireTokenSilent({scopes:['Sites.Read.All'],account:_msalAcc})
+  // Usa scope Graph per supporto CORS corretto
+  return _msal.acquireTokenSilent({scopes:['https://graph.microsoft.com/Sites.Read.All'],account:_msalAcc})
     .then(function(r){return r.accessToken;})
     .catch(function(e){
       console.warn('Token silent fallito:',e);
@@ -1877,9 +1877,13 @@ function fmtSize(b){return b>0?(b>1048576?(b/1048576).toFixed(1)+'MB':Math.round
           Category0 (Fase), Progress (Progresso),
           StartDate, DueDate, Notes
 ══════════════════════════════════════ */
-const SP_BASE    = 'https://anymapack.sharepoint.com/sites/anyma';
-const SP_LIST_ID = '40e7123d-d54f-4a5c-8f1a-8a06af0542f4';
-const SP_LIST_URL= SP_BASE + "/_api/web/lists(guid'" + SP_LIST_ID + "')";
+const SP_SITE_HOSTNAME = 'anymapack.sharepoint.com';
+const SP_SITE_PATH     = '/sites/anyma';
+const SP_LIST_ID       = '40e7123d-d54f-4a5c-8f1a-8a06af0542f4';
+// Graph API endpoint — supporta CORS con Bearer token, a differenza della SP REST API diretta
+const GRAPH_BASE       = 'https://graph.microsoft.com/v1.0';
+// Site ID ottenuto da Graph: GET /sites/{hostname}:{path}
+var _spSiteId = null;
 
 const FASI = ['Preventivo','Materiale','Intervento','Sviluppo','Pagamento'];
 
@@ -1909,47 +1913,59 @@ async function loadProgetti() {
   document.getElementById('btn-sp-load').disabled = true;
 
   try {
-    // Tenta con Bearer token MSAL, fallback a credentials:include
-    var fetchHeaders = { 'Accept': 'application/json;odata=verbose' };
-    if(typeof anGetToken === 'function') {
-      var tok = await anGetToken();
-      if(tok) fetchHeaders['Authorization'] = 'Bearer ' + tok;
+    // Ottieni Bearer token Graph
+    var tok = typeof anGetToken === 'function' ? await anGetToken() : null;
+    if(!tok){
+      spSetStatus('err', 'Token non disponibile — rieffettua il login');
+      showToast('Rieffettua il login per aggiornare il token.');
+      document.getElementById('btn-sp-load').disabled = false;
+      return;
+    }
+    var headers = {
+      'Authorization': 'Bearer ' + tok,
+      'Accept': 'application/json'
+    };
+
+    // Step 1: ottieni Site ID (una volta sola)
+    if(!_spSiteId){
+      var siteResp = await fetch(GRAPH_BASE + '/sites/' + SP_SITE_HOSTNAME + ':' + SP_SITE_PATH, {headers: headers});
+      if(!siteResp.ok){ throw new Error('Site fetch HTTP ' + siteResp.status); }
+      var siteData = await siteResp.json();
+      _spSiteId = siteData.id;
     }
 
-    const url = SP_LIST_URL + '/items?' +
-      '$select=ID,Title,Description,Category0,Progress,StartDate,DueDate,Notes' +
-      '&$orderby=StartDate desc' +
+    // Step 2: carica gli item della lista tramite Graph
+    var listUrl = GRAPH_BASE + '/sites/' + _spSiteId + '/lists/' + SP_LIST_ID +
+      '/items?expand=fields(select=Title,Description,Category0,Progress,StartDate,DueDate,Notes)' +
       '&$top=500';
 
-    const resp = await fetch(url, {
-      credentials: 'include',
-      headers: fetchHeaders
-    });
-
-    if (!resp.ok) {
-      if (resp.status === 401 || resp.status === 403) {
-        spSetStatus('err', 'Accesso negato — rieffettua il login Microsoft');
-        showToast('Token SharePoint scaduto. Premi Esci e riaccedi.');
+    var resp = await fetch(listUrl, {headers: headers});
+    if(!resp.ok){
+      if(resp.status === 401 || resp.status === 403){
+        spSetStatus('err', 'Accesso negato — rieffettua il login');
+        showToast('Sessione scaduta. Premi Esci e riaccedi.');
       } else {
         spSetStatus('err', 'Errore HTTP ' + resp.status);
-        showToast('Errore SharePoint: ' + resp.status + '. Verifica che l\'URL SharePoint sia corretto.');
+        showToast('Errore SharePoint ' + resp.status);
       }
       document.getElementById('btn-sp-load').disabled = false;
       return;
     }
 
-    const data = await resp.json();
-    const items = (data?.d?.results || []).map(i => ({
-      id:          i.ID,
-      title:       i.Description || i.Title || '(senza titolo)',
-      client:      i.Title || '',
-      descrizione: i.Description || '',
-      fase:        i.Category0 || 'Preventivo',
-      progresso:   i.Progress  || 'Non iniziato',
-      startDate:   i.StartDate ? i.StartDate.split('T')[0] : null,
-      dueDate:     i.DueDate   ? i.DueDate.split('T')[0]   : null,
-      note:        i.Notes || '',
-    }));
+    var data = await resp.json();
+    var items = (data.value || []).map(function(i){
+      var f = i.fields || {};
+      return {
+        id:        i.id,
+        title:     f.Description || f.Title || '(senza titolo)',
+        client:    f.Title || '',
+        fase:      f.Category0 || 'Preventivo',
+        progresso: f.Progress  || 'Non iniziato',
+        startDate: f.StartDate ? f.StartDate.split('T')[0] : null,
+        dueDate:   f.DueDate   ? f.DueDate.split('T')[0]   : null,
+        note:      f.Notes || '',
+      };
+    });
 
     state.progetti = items;
     document.getElementById('cnt-progetti').textContent = items.length;
