@@ -1507,9 +1507,10 @@ async function processAdmin() {
    VIEW ROUTING
 ══════════════════════════════════════ */
 function showView(view) {
-  // Nasconde tutto
+  // Nasconde tutto esplicitamente con display:none
   document.querySelectorAll('.content-view,.settings-view,.email-view').forEach(el=>{
-    el.classList.remove('visible'); el.style.display='';
+    el.classList.remove('visible');
+    el.style.display='none';
   });
   document.getElementById('view-setup').style.display='none';
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
@@ -1564,8 +1565,7 @@ function showView(view) {
   if (view==='progetti') {
     const el=document.getElementById('view-progetti');
     el.style.display='flex'; el.classList.add('visible');
-    // Se già caricati, ri-renderizza; altrimenti lascia il prompt
-    if(state.progetti && state.progetti.length) renderKanban();
+    if(state.progetti && state.progetti.length) renderProjView();
     return;
   }
   if (view==='email') {
