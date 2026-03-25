@@ -1102,17 +1102,53 @@ function anShowLogin(){document.getElementById('anConfigOverlay').classList.add(
 function anRevealApp(){document.getElementById('anConfigOverlay').classList.add('hidden');document.getElementById('anLoginOverlay').classList.add('hidden');document.getElementById('appShell').style.display='';}
 var _msal=null,_msalAcc=null;
 function anInitMsal(cfg){
-  _msal=new msal.PublicClientApplication({auth:{clientId:cfg.clientId,authority:'https://login.microsoftonline.com/'+cfg.tenantId,redirectUri:window.location.href.split('?')[0].split('#')[0]},cache:{cacheLocation:'localStorage',storeAuthStateInCookie:true}});
+  _msal=new msal.PublicClientApplication({
+    auth:{
+      clientId:cfg.clientId,
+      authority:'https://login.microsoftonline.com/'+cfg.tenantId,
+      redirectUri:window.location.href.split('?')[0].split('#')[0]
+    },
+    cache:{cacheLocation:'localStorage',storeAuthStateInCookie:true}
+  });
+  // Gestisci il redirect di ritorno (se qualcuno era atterrato via redirect)
   _msal.handleRedirectPromise().then(function(resp){
     if(resp&&resp.account){_msalAcc=resp.account;anAfterLogin();}
-    else{var accs=_msal.getAllAccounts();if(accs.length>0){_msalAcc=accs[0];anAfterLogin();}else{anShowLogin();}}
+    else{
+      var accs=_msal.getAllAccounts();
+      if(accs.length>0){_msalAcc=accs[0];anAfterLogin();}
+      else{anShowLogin();}
+    }
   }).catch(function(err){console.error('MSAL:',err);anShowLogin();});
 }
-function anDoLogin(){if(!_msal){anShowConfig();return;}_msal.loginRedirect({scopes:['User.Read','Sites.Read.All'],prompt:'select_account'});}
-function anDoLogout(){if(!_msal)return;_msalAcc=null;state.serviceHandle=null;state.adminHandle=null;_msal.logoutRedirect({postLogoutRedirectUri:window.location.href});}
+function anDoLogin(){
+  if(!_msal){anShowConfig();return;}
+  // Usa POPUP invece di redirect — non cambia pagina, non apre nuova tab
+  _msal.loginPopup({scopes:['User.Read','Sites.Read.All'],prompt:'select_account'})
+    .then(function(resp){
+      if(resp&&resp.account){_msalAcc=resp.account;anAfterLogin();}
+    })
+    .catch(function(err){
+      if(err.errorCode!=='user_cancelled')
+        console.error('MSAL login error:',err);
+    });
+}
+function anDoLogout(){
+  if(!_msal)return;
+  _msalAcc=null;
+  state.serviceHandle=null;
+  state.adminHandle=null;
+  // Logout popup — non reindirizza la pagina
+  _msal.logoutPopup({mainWindowRedirectUri:window.location.href}).catch(function(){});
+}
 function anGetToken(){
   if(!_msal||!_msalAcc)return Promise.resolve(null);
-  return _msal.acquireTokenSilent({scopes:['Sites.Read.All'],account:_msalAcc}).then(function(r){return r.accessToken;}).catch(function(){return _msal.acquireTokenPopup({scopes:['Sites.Read.All']}).then(function(r){return r.accessToken;}).catch(function(){return null;});});
+  return _msal.acquireTokenSilent({scopes:['Sites.Read.All'],account:_msalAcc})
+    .then(function(r){return r.accessToken;})
+    .catch(function(){
+      return _msal.acquireTokenPopup({scopes:['Sites.Read.All'],account:_msalAcc})
+        .then(function(r){return r.accessToken;})
+        .catch(function(){return null;});
+    });
 }
 function anAfterLogin(){
   var name=_msalAcc.name||_msalAcc.username||'';
