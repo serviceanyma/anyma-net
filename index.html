@@ -513,7 +513,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
   <div class="an-card" style="max-width:360px;text-align:center">
     <div class="an-mark" style="margin:0 auto 14px">A</div>
     <div class="an-title">ANYMA-NET</div>
-    <div class="an-sub">Accedi con il tuo account<br>Microsoft 365 ANYMA SRL</div>
+    <div class="an-sub">Accedi con il tuo account Microsoft 365.<br><span style="font-size:10px;color:#7a6858">La pagina si ricaricherà dopo il login — è normale.</span></div>
     <button class="an-abtn an-ms" onclick="anDoLogin()">
       <svg viewBox="0 0 21 21" width="18" height="18"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
       Accedi con Microsoft
@@ -1110,7 +1110,7 @@ function anInitMsal(cfg){
     },
     cache:{cacheLocation:'localStorage',storeAuthStateInCookie:true}
   });
-  // Gestisci il redirect di ritorno (se qualcuno era atterrato via redirect)
+  // Gestisce il ritorno dal redirect login Microsoft
   _msal.handleRedirectPromise().then(function(resp){
     if(resp&&resp.account){_msalAcc=resp.account;anAfterLogin();}
     else{
@@ -1122,32 +1122,24 @@ function anInitMsal(cfg){
 }
 function anDoLogin(){
   if(!_msal){anShowConfig();return;}
-  // Usa POPUP invece di redirect — non cambia pagina, non apre nuova tab
-  _msal.loginPopup({scopes:['User.Read','Sites.Read.All'],prompt:'select_account'})
-    .then(function(resp){
-      if(resp&&resp.account){_msalAcc=resp.account;anAfterLogin();}
-    })
-    .catch(function(err){
-      if(err.errorCode!=='user_cancelled')
-        console.error('MSAL login error:',err);
-    });
+  // loginRedirect: funziona sempre, torna sulla stessa pagina
+  _msal.loginRedirect({scopes:['User.Read','Sites.Read.All'],prompt:'select_account'});
 }
 function anDoLogout(){
   if(!_msal)return;
   _msalAcc=null;
   state.serviceHandle=null;
   state.adminHandle=null;
-  // Logout popup — non reindirizza la pagina
-  _msal.logoutPopup({mainWindowRedirectUri:window.location.href}).catch(function(){});
+  _msal.logoutRedirect({postLogoutRedirectUri:window.location.href.split('?')[0].split('#')[0]});
 }
 function anGetToken(){
   if(!_msal||!_msalAcc)return Promise.resolve(null);
+  // Solo silent — il token SP è già in cache dal login iniziale con Sites.Read.All
   return _msal.acquireTokenSilent({scopes:['Sites.Read.All'],account:_msalAcc})
     .then(function(r){return r.accessToken;})
-    .catch(function(){
-      return _msal.acquireTokenPopup({scopes:['Sites.Read.All'],account:_msalAcc})
-        .then(function(r){return r.accessToken;})
-        .catch(function(){return null;});
+    .catch(function(e){
+      console.warn('Token silent fallito:',e);
+      return null;
     });
 }
 function anAfterLogin(){
