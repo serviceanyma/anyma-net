@@ -385,7 +385,20 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 .loading-overlay{position:fixed;inset:0;background:rgba(15,17,23,.85);display:flex;align-items:center;justify-content:center;gap:12px;font-size:13px;color:var(--text2);z-index:500;backdrop-filter:blur(4px)}
 .loading-overlay.hidden{display:none}
 
-/* ══ EMAIL ASSISTANT v2 ══ */
+/* ── Proj view tabs ── */
+.proj-view-tabs{display:flex;gap:4px;margin-left:auto}
+.proj-vtab{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--font);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.proj-vtab:hover{color:var(--text);background:var(--bg4)}
+.proj-vtab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+/* ── Lista table ── */
+#proj-table tbody tr{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+#proj-table tbody tr:hover{background:var(--bg3)}
+#proj-table tbody td{padding:8px 12px;color:var(--text)}
+#proj-table tbody tr:last-child{border-bottom:none}
+/* ── Cliente view ── */
+#cli-list .row-item{border-left:none}
+
+ */
 .email-view{display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden;position:relative}
 .email-view.visible{display:flex}
 .ea-wrap{display:grid;grid-template-columns:380px 1fr;gap:0;flex:1;min-height:0;overflow:hidden;height:100%}
@@ -787,7 +800,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
   <div id="view-progetti" class="content-view">
     <div class="proj-view" id="proj-inner">
 
-      <!-- Stato connessione + stats + filtri -->
+      <!-- Toolbar -->
       <div class="proj-top">
         <div class="sp-status"><div class="sp-dot" id="sp-dot"></div><span id="sp-status-txt">Non connesso</span></div>
         <button class="btn btn-sm" id="btn-sp-load" onclick="loadProgetti()">
@@ -795,10 +808,29 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           Carica da SharePoint
         </button>
         <span class="tag-count" id="proj-count" style="display:none"></span>
-        <input type="text" class="filter-input" id="proj-search" placeholder="Cerca cliente o progetto..." oninput="renderKanban()" style="display:none;max-width:220px">
+        <input type="text" class="filter-input" id="proj-search" placeholder="Cerca cliente o progetto..." oninput="renderProjView()" style="display:none;max-width:200px">
+        <!-- Seletor vista -->
+        <div class="proj-view-tabs" id="proj-view-tabs" style="display:none">
+          <button class="proj-vtab active" data-view="kanban" onclick="setProjView('kanban')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><rect x="1" y="1" width="4" height="14" rx="1"/><rect x="6" y="1" width="4" height="10" rx="1"/><rect x="11" y="1" width="4" height="12" rx="1"/></svg>
+            Kanban
+          </button>
+          <button class="proj-vtab" data-view="cliente" onclick="setProjView('cliente')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+            Per Cliente
+          </button>
+          <button class="proj-vtab" data-view="grafici" onclick="setProjView('grafici')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M1 12l4-4 3 3 4-5 3 2"/></svg>
+            Grafici
+          </button>
+          <button class="proj-vtab" data-view="lista" onclick="setProjView('lista')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><line x1="3" y1="4" x2="13" y2="4"/><line x1="3" y1="8" x2="13" y2="8"/><line x1="3" y1="12" x2="13" y2="12"/></svg>
+            Lista
+          </button>
+        </div>
       </div>
 
-      <!-- Filtri fase (chip) -->
+      <!-- Filtri fase -->
       <div class="proj-filters" id="proj-fase-filters" style="display:none">
         <span class="pf-chip active" data-fase="" onclick="setFaseFilter(this)">Tutte le fasi</span>
         <span class="pf-chip" data-fase="Preventivo" onclick="setFaseFilter(this)">Preventivo</span>
@@ -808,34 +840,64 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         <span class="pf-chip" data-fase="Pagamento" onclick="setFaseFilter(this)">Pagamento</span>
       </div>
 
-      <!-- Kanban -->
+      <!-- ── VISTA KANBAN ── -->
       <div class="kanban" id="proj-kanban" style="display:none">
-        <div class="kanban-col">
-          <div class="kanban-col-hdr kh-preventivo"><span>Preventivo</span><span id="kc-preventivo" class="badge-count">0</span></div>
-          <div class="kanban-cards" id="kc-cards-Preventivo"></div>
-        </div>
-        <div class="kanban-col">
-          <div class="kanban-col-hdr kh-materiale"><span>Materiale</span><span id="kc-materiale" class="badge-count">0</span></div>
-          <div class="kanban-cards" id="kc-cards-Materiale"></div>
-        </div>
-        <div class="kanban-col">
-          <div class="kanban-col-hdr kh-intervento"><span>Intervento</span><span id="kc-intervento" class="badge-count">0</span></div>
-          <div class="kanban-cards" id="kc-cards-Intervento"></div>
-        </div>
-        <div class="kanban-col">
-          <div class="kanban-col-hdr kh-sviluppo"><span>Sviluppo</span><span id="kc-sviluppo" class="badge-count">0</span></div>
-          <div class="kanban-cards" id="kc-cards-Sviluppo"></div>
-        </div>
-        <div class="kanban-col">
-          <div class="kanban-col-hdr kh-pagamento"><span>Pagamento</span><span id="kc-pagamento" class="badge-count">0</span></div>
-          <div class="kanban-cards" id="kc-cards-Pagamento"></div>
+        <div class="kanban-col"><div class="kanban-col-hdr kh-preventivo"><span>Preventivo</span><span id="kc-preventivo" class="badge-count">0</span></div><div class="kanban-cards" id="kc-cards-Preventivo"></div></div>
+        <div class="kanban-col"><div class="kanban-col-hdr kh-materiale"><span>Materiale</span><span id="kc-materiale" class="badge-count">0</span></div><div class="kanban-cards" id="kc-cards-Materiale"></div></div>
+        <div class="kanban-col"><div class="kanban-col-hdr kh-intervento"><span>Intervento</span><span id="kc-intervento" class="badge-count">0</span></div><div class="kanban-cards" id="kc-cards-Intervento"></div></div>
+        <div class="kanban-col"><div class="kanban-col-hdr kh-sviluppo"><span>Sviluppo</span><span id="kc-sviluppo" class="badge-count">0</span></div><div class="kanban-cards" id="kc-cards-Sviluppo"></div></div>
+        <div class="kanban-col"><div class="kanban-col-hdr kh-pagamento"><span>Pagamento</span><span id="kc-pagamento" class="badge-count">0</span></div><div class="kanban-cards" id="kc-cards-Pagamento"></div></div>
+      </div>
+
+      <!-- ── VISTA PER CLIENTE ── -->
+      <div id="proj-cliente-view" style="display:none;flex:1;min-height:0;overflow:hidden;display:none">
+        <div style="display:grid;grid-template-columns:260px 1fr;gap:0;height:100%;overflow:hidden">
+          <div style="background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
+            <div class="list-header"><span>Clienti</span><span id="cli-count" style="color:var(--accent);font-size:10px"></span></div>
+            <div class="list-scroll" id="cli-list"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;overflow:hidden;padding:14px;gap:10px">
+            <div id="cli-detail-empty" class="detail-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+              Seleziona un cliente
+            </div>
+            <div id="cli-detail" style="display:none;flex-direction:column;gap:8px;flex:1;overflow-y:auto"></div>
+          </div>
         </div>
       </div>
 
-      <!-- Prompt iniziale (prima del caricamento) -->
+      <!-- ── VISTA GRAFICI ── -->
+      <div id="proj-grafici-view" style="display:none;flex:1;min-height:0;overflow-y:auto;padding:4px 0 14px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 2px">
+          <div class="chart-panel"><h3>Progetti per cliente (top 12)</h3><div class="chart-wrap" style="height:220px"><canvas id="chartProjClienti"></canvas></div></div>
+          <div class="chart-panel"><h3>Distribuzione per fase</h3><div class="chart-wrap" style="height:220px"><canvas id="chartProjFasi"></canvas></div></div>
+          <div class="chart-panel"><h3>Stato avanzamento</h3><div class="chart-wrap" style="height:220px"><canvas id="chartProjProgresso"></canvas></div></div>
+          <div class="chart-panel"><h3>Progetti per fase e cliente (top 8)</h3><div class="chart-wrap" style="height:220px"><canvas id="chartProjStacked"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- ── VISTA LISTA ── -->
+      <div id="proj-lista-view" style="display:none;flex:1;min-height:0;overflow:hidden">
+        <div style="height:100%;overflow-y:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12px" id="proj-table">
+            <thead style="position:sticky;top:0;background:var(--bg2);z-index:1">
+              <tr>
+                <th onclick="sortTable('client')" style="padding:8px 12px;text-align:left;color:var(--text2);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.7px;cursor:pointer;white-space:nowrap;border-bottom:1px solid var(--border)">Cliente ↕</th>
+                <th onclick="sortTable('title')" style="padding:8px 12px;text-align:left;color:var(--text2);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.7px;cursor:pointer;border-bottom:1px solid var(--border)">Progetto ↕</th>
+                <th onclick="sortTable('fase')" style="padding:8px 12px;text-align:left;color:var(--text2);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.7px;cursor:pointer;border-bottom:1px solid var(--border)">Fase ↕</th>
+                <th onclick="sortTable('progresso')" style="padding:8px 12px;text-align:left;color:var(--text2);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.7px;cursor:pointer;border-bottom:1px solid var(--border)">Stato ↕</th>
+                <th onclick="sortTable('dueDate')" style="padding:8px 12px;text-align:left;color:var(--text2);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.7px;cursor:pointer;border-bottom:1px solid var(--border)">Scadenza ↕</th>
+              </tr>
+            </thead>
+            <tbody id="proj-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Prompt iniziale -->
       <div class="sp-login-prompt" id="sp-prompt">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17.5h7M17.5 14v7"/></svg>
-        <p>Premi <strong style="color:var(--text)">Carica da SharePoint</strong> per recuperare i progetti live da SharePoint ANYMA.<br>Il browser deve essere già autenticato con l'account Microsoft 365.</p>
+        <p>Premi <strong style="color:var(--text)">Carica da SharePoint</strong> per recuperare i progetti live.</p>
       </div>
 
     </div>
@@ -1979,9 +2041,9 @@ async function loadProgetti() {
     document.getElementById('proj-count').style.display = '';
     document.getElementById('proj-search').style.display = '';
     document.getElementById('proj-fase-filters').style.display = '';
-    document.getElementById('proj-kanban').style.display = '';
+    document.getElementById('proj-view-tabs').style.display = '';
 
-    renderKanban();
+    renderProjView();
 
   } catch(e) {
     spSetStatus('err', 'Errore di rete — controlla la connessione');
@@ -2053,7 +2115,7 @@ function renderKanban() {
 }
 
 function openProjModal(id) {
-  const p = state.progetti.find(x => x.id === id);
+  const p = state.progetti.find(x => String(x.id) === String(id));
   if (!p) return;
 
   document.getElementById('pm-client').textContent   = p.client;
@@ -2081,6 +2143,200 @@ function openProjModal(id) {
 function closeProjModal(e) {
   if (e.target === document.getElementById('projModal'))
     document.getElementById('projModal').classList.add('hidden');
+}
+
+/* ══════════════════════════════════════
+   MULTI-VISTA PROGETTI
+══════════════════════════════════════ */
+var _projCurrentView = 'kanban';
+var _projSortKey = 'client';
+var _projSortAsc = true;
+var _projSelCliente = null;
+var _projCharts = {};
+
+function setProjView(v) {
+  _projCurrentView = v;
+  document.querySelectorAll('.proj-vtab').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+  renderProjView();
+}
+
+function renderProjView() {
+  // Nascondi tutte le viste
+  document.getElementById('proj-kanban').style.display = 'none';
+  var cv = document.getElementById('proj-cliente-view');
+  cv.style.display = 'none'; cv.style.cssText = 'display:none';
+  document.getElementById('proj-grafici-view').style.display = 'none';
+  document.getElementById('proj-lista-view').style.display = 'none';
+
+  var q = (document.getElementById('proj-search')?.value || '').toLowerCase();
+  var fFilt = state.progettiFaseFilter;
+  var items = state.progetti.filter(p => {
+    if(fFilt && p.fase !== fFilt) return false;
+    if(q && !p.client.toLowerCase().includes(q) && !p.title.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  document.getElementById('proj-count').textContent = items.length + ' progetti';
+
+  if(_projCurrentView === 'kanban') {
+    document.getElementById('proj-kanban').style.display = '';
+    renderKanban();
+  } else if(_projCurrentView === 'cliente') {
+    cv.style.display = ''; cv.style.cssText = 'display:flex;flex:1;min-height:0;overflow:hidden';
+    renderProjCliente(items);
+  } else if(_projCurrentView === 'grafici') {
+    document.getElementById('proj-grafici-view').style.display = '';
+    renderProjGrafici(items);
+  } else if(_projCurrentView === 'lista') {
+    document.getElementById('proj-lista-view').style.display = '';
+    renderProjLista(items);
+  }
+}
+
+// ── VISTA PER CLIENTE ──
+function renderProjCliente(items) {
+  var byClient = {};
+  items.forEach(p => {
+    if(!byClient[p.client]) byClient[p.client] = [];
+    byClient[p.client].push(p);
+  });
+  var clients = Object.keys(byClient).sort((a,b)=>byClient[b].length-byClient[a].length);
+  document.getElementById('cli-count').textContent = clients.length + ' clienti';
+
+  document.getElementById('cli-list').innerHTML = clients.map(c => {
+    var ps = byClient[c];
+    var fasi = [...new Set(ps.map(p=>p.fase))];
+    var dotsHtml = fasi.map(f => '<span style="width:6px;height:6px;border-radius:50%;background:' + (FASE_COLORS[f]||'#888') + ';display:inline-block"></span>').join('');
+    return '<div class="row-item ' + (_projSelCliente===c?'active':'') + '" onclick="selCliProj(\'' + escHtml(c) + '\')">' +
+      '<div class="row-avatar">' + initials(c) + '</div>' +
+      '<div class="row-info"><div class="row-name">' + escHtml(c) + '</div>' +
+      '<div class="row-meta">' + ps.length + ' progett' + (ps.length===1?'o':'i') + '</div></div>' +
+      '<div style="display:flex;gap:3px;align-items:center">' + dotsHtml + '</div>' +
+    '</div>';
+  }).join('');
+
+  if(_projSelCliente && byClient[_projSelCliente]) showCliDetail(byClient[_projSelCliente], _projSelCliente);
+}
+
+function selCliProj(name) {
+  _projSelCliente = name;
+  document.querySelectorAll('#cli-list .row-item').forEach(el => el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  var items = state.progetti.filter(p=>p.client===name);
+  showCliDetail(items, name);
+}
+
+function showCliDetail(items, name) {
+  document.getElementById('cli-detail-empty').style.display = 'none';
+  var det = document.getElementById('cli-detail');
+  det.style.display = 'flex';
+  // Header stats
+  var totFasi = {};
+  items.forEach(p => totFasi[p.fase]=(totFasi[p.fase]||0)+1);
+  var statsHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">' +
+    '<div style="font-size:15px;font-weight:700;color:var(--text);flex:1">' + escHtml(name) + '</div>' +
+    '<span class="tag-count">' + items.length + ' progetti</span></div>' +
+    '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">' +
+    Object.entries(totFasi).map(([f,n]) =>
+      '<span style="background:' + (FASE_COLORS[f]||'#888') + '22;color:' + (FASE_COLORS[f]||'#888') + ';border:1px solid ' + (FASE_COLORS[f]||'#888') + '44;border-radius:20px;font-size:10px;font-weight:600;padding:2px 9px">' + f + ' ' + n + '</span>'
+    ).join('') + '</div>';
+  // Cards
+  var cardsHtml = items.map(p => {
+    var progCls = PROG_CLASS[p.progresso] || 'pc-noniniziato';
+    var due = p.dueDate ? fmtDate(p.dueDate) : '';
+    return '<div class="proj-card" onclick="openProjModal(\'' + p.id + '\')" style="margin-bottom:7px">' +
+      '<div class="pc-title" style="font-size:12px;margin-bottom:5px">' + escHtml(p.title) + '</div>' +
+      '<div class="pc-footer">' +
+      '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:' + (FASE_COLORS[p.fase]||'#888') + '22;color:' + (FASE_COLORS[p.fase]||'#888') + '">' + p.fase + '</span>' +
+      '<span class="pc-badge ' + progCls + '">' + p.progresso + '</span>' +
+      (due ? '<span class="pc-date">' + due + '</span>' : '') +
+      '</div>' +
+      (p.note ? '<div class="pc-note" style="margin-top:5px">' + escHtml(p.note) + '</div>' : '') +
+    '</div>';
+  }).join('');
+  det.innerHTML = statsHtml + cardsHtml;
+}
+
+// ── VISTA GRAFICI ──
+function renderProjGrafici(items) {
+  // 1. Bar chart: top 12 clienti per numero progetti
+  var byClient = {};
+  items.forEach(p => byClient[p.client]=(byClient[p.client]||0)+1);
+  var topCli = Object.entries(byClient).sort((a,b)=>b[1]-a[1]).slice(0,12);
+
+  // 2. Doughnut: per fase
+  var byFase = {};
+  items.forEach(p => byFase[p.fase]=(byFase[p.fase]||0)+1);
+
+  // 3. Doughnut: per progresso
+  var byProg = {};
+  items.forEach(p => byProg[p.progresso]=(byProg[p.progresso]||0)+1);
+
+  // 4. Stacked bar: top 8 clienti x fase
+  var top8cli = Object.keys(byClient).sort((a,b)=>byClient[b]-byClient[a]).slice(0,8);
+  var stackedData = FASI.map(f => ({
+    label: f,
+    backgroundColor: (FASE_COLORS[f]||'#888') + 'cc',
+    data: top8cli.map(c => items.filter(p=>p.client===c&&p.fase===f).length)
+  }));
+
+  if(_projCharts.cli) _projCharts.cli.destroy();
+  if(_projCharts.fasi) _projCharts.fasi.destroy();
+  if(_projCharts.prog) _projCharts.prog.destroy();
+  if(_projCharts.stack) _projCharts.stack.destroy();
+
+  var opts = {responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{ticks:{color:'#b8a898',font:{size:10},maxRotation:35},grid:{color:'rgba(255,255,255,.04)'}},
+            y:{ticks:{color:'#b8a898',font:{size:10},stepSize:1},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}};
+  var dOpts = {responsive:true,maintainAspectRatio:false,cutout:'60%',
+    plugins:{legend:{position:'bottom',labels:{color:'#b8a898',font:{size:10},padding:8,boxWidth:9,boxHeight:9}}}};
+
+  _projCharts.cli = new Chart(document.getElementById('chartProjClienti').getContext('2d'),{
+    type:'bar',
+    data:{labels:topCli.map(e=>e[0]),datasets:[{data:topCli.map(e=>e[1]),backgroundColor:'rgba(192,57,43,.75)',borderColor:'#c0392b',borderWidth:1,borderRadius:4}]},
+    options: opts
+  });
+  _projCharts.fasi = new Chart(document.getElementById('chartProjFasi').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:Object.keys(byFase),datasets:[{data:Object.values(byFase),backgroundColor:Object.keys(byFase).map(f=>FASE_COLORS[f]||'#888'),borderColor:'#0d0d0d',borderWidth:3}]},
+    options: dOpts
+  });
+  _projCharts.prog = new Chart(document.getElementById('chartProjProgresso').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:Object.keys(byProg),datasets:[{data:Object.values(byProg),backgroundColor:['rgba(62,207,142,.8)','rgba(245,166,35,.8)','rgba(148,152,168,.5)','rgba(240,92,92,.8)'],borderColor:'#0d0d0d',borderWidth:3}]},
+    options: dOpts
+  });
+  _projCharts.stack = new Chart(document.getElementById('chartProjStacked').getContext('2d'),{
+    type:'bar',
+    data:{labels:top8cli,datasets:stackedData},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#b8a898',font:{size:9},padding:6,boxWidth:9,boxHeight:9}}},
+      scales:{x:{stacked:true,ticks:{color:'#b8a898',font:{size:9},maxRotation:35},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{stacked:true,ticks:{color:'#b8a898',font:{size:9},stepSize:1},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}
+  });
+}
+
+// ── VISTA LISTA ──
+function renderProjLista(items) {
+  var sorted = [...items].sort((a,b) => {
+    var va = a[_projSortKey]||'', vb = b[_projSortKey]||'';
+    return _projSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
+  document.getElementById('proj-table-body').innerHTML = sorted.map(p => {
+    var progCls = PROG_CLASS[p.progresso]||'pc-noniniziato';
+    var faseColor = FASE_COLORS[p.fase]||'#888';
+    return '<tr onclick="openProjModal(\'' + p.id + '\')">' +
+      '<td style="font-weight:500">' + escHtml(p.client) + '</td>' +
+      '<td style="color:var(--text2)">' + escHtml(p.title) + '</td>' +
+      '<td><span style="background:' + faseColor + '22;color:' + faseColor + ';border:1px solid ' + faseColor + '44;border-radius:20px;font-size:9px;font-weight:700;padding:2px 8px">' + p.fase + '</span></td>' +
+      '<td><span class="pc-badge ' + progCls + '">' + p.progresso + '</span></td>' +
+      '<td style="color:var(--text3);font-family:var(--mono);font-size:11px">' + (p.dueDate?fmtDate(p.dueDate):'—') + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function sortTable(key) {
+  if(_projSortKey===key) _projSortAsc=!_projSortAsc;
+  else { _projSortKey=key; _projSortAsc=true; }
+  renderProjView();
 }
 
 function fmtDate(iso) {
