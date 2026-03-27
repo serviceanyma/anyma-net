@@ -1821,7 +1821,7 @@ function showView(view) {
   if (view==='ordini-sp') {
     const el=document.getElementById('view-ordini-sp');
     el.style.display='flex'; el.classList.add('visible');
-    if(window._ordfData && window._ordfData.length) renderOrdiniF();
+    if(_ordfData && _ordfData.length) renderOrdfView();
     return;
   }
   if (view==='email') {
@@ -3113,6 +3113,12 @@ async function loadOrdiniF() {
 
     // Build column chips
     buildOrdfColChips();
+    // Assicura che la content-view sia visibile (showView la nasconde con display:none)
+    var vEl = document.getElementById('view-ordini-sp');
+    if(vEl && vEl.style.display === 'none') {
+      vEl.style.display = 'flex';
+      vEl.classList.add('visible');
+    }
     renderOrdfView();
 
   } catch(e) {
