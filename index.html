@@ -510,11 +510,6 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
       <label class="an-lbl">Tenant ID (Directory ID)</label>
       <input class="an-inp" id="anTenantId" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false" oninput="this.style.borderColor=''">
     </div>
-    <div class="an-fg">
-      <label class="an-lbl">SharePoint URL</label>
-      <input class="an-inp" id="anSpUrl" type="text" placeholder="https://anymapack.sharepoint.com/sites/anyma" oninput="this.style.borderColor=''">
-      <div class="an-hint">Es: https://anymapack.sharepoint.com/sites/anyma</div>
-    </div>
     <button class="an-abtn an-primary" id="anSaveBtn" onclick="anSaveConfig()">Salva e Continua</button>
     <div class="an-info">
       <strong style="color:#b8a898">Dove trovo le credenziali?</strong><br>
@@ -606,6 +601,11 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
     Progetti
     <span class="badge-count" id="cnt-progetti">—</span>
   </div>
+  <div class="nav-item" id="nav-ordini-sp" onclick="showView('ordini-sp')">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M1 6h14M5 6v7M11 6v7"/></svg>
+    Ordini Fornitori
+    <span class="badge-count" id="cnt-ordini-sp">—</span>
+  </div>
 
   <div class="nav-sep"></div>
   <div class="nav-sep"></div>
@@ -680,19 +680,49 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         </div>
         <button class="btn btn-primary" onclick="pickFolder('admin')">Seleziona</button>
       </div>
-      <!-- Card SharePoint URL -->
+      <!-- Card SharePoint Generale -->
       <div class="settings-card">
-        <div class="settings-card-icon" style="background:rgba(167,139,250,.2);flex-shrink:0">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.5" width="18" height="18"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17.5h7M17.5 14v7"/></svg>
+        <div class="settings-card-icon" style="background:rgba(56,189,248,.15);flex-shrink:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.5" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
         </div>
         <div class="settings-card-info" style="flex:1;min-width:0">
-          <div class="settings-card-title">SharePoint — Lista Progetti</div>
-          <div class="settings-card-path">URL lista SharePoint ANYMA</div>
-          <input type="text" id="settings-sp-url"
-            placeholder="https://anymapack.sharepoint.com/sites/anyma/_api/..."
+          <div class="settings-card-title">SharePoint — URL base sito</div>
+          <div class="settings-card-path">Es: https://anymapack.sharepoint.com/sites/anyma</div>
+          <input type="text" id="settings-sp-base"
+            placeholder="https://anymapack.sharepoint.com/sites/anyma"
             style="width:100%;margin-top:7px;font-size:11px;padding:5px 8px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);outline:none;box-sizing:border-box"
-            oninput="saveSPUrl(this.value)">
-          <div id="settings-sp-status" style="font-size:11px;margin-top:4px;color:var(--text3)">Non salvato</div>
+            oninput="saveSpSetting('sp_base',this.value,this)">
+          <div id="settings-sp-base-status" style="font-size:11px;margin-top:4px;color:var(--text3)">Non salvato</div>
+        </div>
+      </div>
+      <!-- Card Lista Progetti -->
+      <div class="settings-card">
+        <div class="settings-card-icon" style="background:rgba(192,57,43,.15);flex-shrink:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="1.5" width="18" height="18"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17.5h7M17.5 14v7"/></svg>
+        </div>
+        <div class="settings-card-info" style="flex:1;min-width:0">
+          <div class="settings-card-title">SharePoint — Lista Progetti (GUID)</div>
+          <div class="settings-card-path">ID lista Progetti da SharePoint</div>
+          <input type="text" id="settings-sp-proj-id"
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            style="width:100%;margin-top:7px;font-size:11px;padding:5px 8px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);outline:none;box-sizing:border-box"
+            oninput="saveSpSetting('sp_proj_id',this.value,this)">
+          <div id="settings-sp-proj-id-status" style="font-size:11px;margin-top:4px;color:var(--text3)">Non salvato</div>
+        </div>
+      </div>
+      <!-- Card Lista Ordini Fornitori -->
+      <div class="settings-card">
+        <div class="settings-card-icon" style="background:rgba(62,207,142,.15);flex-shrink:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="1.5" width="18" height="18"><path d="M2 3h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M1 6h14M5 6v7M11 6v7"/></svg>
+        </div>
+        <div class="settings-card-info" style="flex:1;min-width:0">
+          <div class="settings-card-title">SharePoint — Lista Ordini Fornitori (GUID)</div>
+          <div class="settings-card-path">ID lista Ordini Fornitori da SharePoint</div>
+          <input type="text" id="settings-sp-ordf-id"
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            style="width:100%;margin-top:7px;font-size:11px;padding:5px 8px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);outline:none;box-sizing:border-box"
+            oninput="saveSpSetting('sp_ordf_id',this.value,this)">
+          <div id="settings-sp-ordf-id-status" style="font-size:11px;margin-top:4px;color:var(--text3)">Non salvato</div>
         </div>
       </div>
     </div>
@@ -910,6 +940,38 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
     </div>
   </div>
 
+
+  <!-- VIEW: ORDINI FORNITORI SHAREPOINT -->
+  <div id="view-ordini-sp" class="content-view">
+    <div class="proj-view" id="ordf-inner">
+      <div class="proj-top">
+        <div class="sp-status"><div class="sp-dot" id="ordf-dot"></div><span id="ordf-status-txt">Non connesso</span></div>
+        <button class="btn btn-sm" id="btn-ordf-load" onclick="loadOrdiniF()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5M13.5 2.5v3.5h-3.5"/></svg>
+          Carica da SharePoint
+        </button>
+        <span class="tag-count" id="ordf-count" style="display:none"></span>
+        <input type="text" class="filter-input" id="ordf-search" placeholder="Cerca..." oninput="renderOrdiniF()" style="display:none;max-width:200px">
+      </div>
+      <!-- Tabella ordini -->
+      <div id="ordf-table-wrap" style="display:none;flex:1;min-height:0;overflow:hidden">
+        <div style="height:100%;overflow-y:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12px" id="ordf-table">
+            <thead style="position:sticky;top:0;background:var(--bg2);z-index:1">
+              <tr id="ordf-thead"></tr>
+            </thead>
+            <tbody id="ordf-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Prompt -->
+      <div class="sp-login-prompt" id="ordf-prompt">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 3h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M1 6h14M5 6v7M11 6v7"/></svg>
+        <p>Premi <strong style="color:var(--text)">Carica da SharePoint</strong> per caricare gli ordini.<br>
+        Configura il GUID della lista in <span style="color:var(--accent);cursor:pointer" onclick="showView('impostazioni')">Impostazioni</span>.</p>
+      </div>
+    </div>
+  </div>
 
   <!-- VIEW: EMAIL ASSISTANT -->
   <div id="view-email" class="email-view">
@@ -1213,26 +1275,23 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 /* == ANYMA-NET Auth == */
-function anLoadCfg(){return{clientId:localStorage.getItem('an_cid')||'',tenantId:localStorage.getItem('an_tid')||'',spUrl:(localStorage.getItem('an_sp')||'').replace(/\/$/,'')}}
-function anPersist(c,t,s){localStorage.setItem('an_cid',c);localStorage.setItem('an_tid',t);localStorage.setItem('an_sp',s.replace(/\/$/,''))}
+function anLoadCfg(){return{clientId:localStorage.getItem('an_cid')||'',tenantId:localStorage.getItem('an_tid')||''}}
+function anPersist(c,t){localStorage.setItem('an_cid',c);localStorage.setItem('an_tid',t)}
 function anShowConfig(){
   document.getElementById('anLoginOverlay').classList.add('hidden');
   document.getElementById('anConfigOverlay').classList.remove('hidden');
   var c=anLoadCfg();
   document.getElementById('anClientId').value=c.clientId;
   document.getElementById('anTenantId').value=c.tenantId;
-  document.getElementById('anSpUrl').value=c.spUrl;
 }
 function anSaveConfig(){
   var c=document.getElementById('anClientId').value.trim();
   var t=document.getElementById('anTenantId').value.trim();
-  var s=document.getElementById('anSpUrl').value.trim();
   var ok=true;
   if(!c){document.getElementById('anClientId').style.borderColor='#e74c3c';ok=false;}
   if(!t){document.getElementById('anTenantId').style.borderColor='#e74c3c';ok=false;}
-  if(!s){document.getElementById('anSpUrl').style.borderColor='#e74c3c';ok=false;}
   if(!ok)return;
-  anPersist(c,t,s);
+  anPersist(c,t);
   var btn=document.getElementById('anSaveBtn');
   btn.textContent='Salvato — ricarico...';
   btn.disabled=true;
@@ -1307,6 +1366,7 @@ async function anAfterLoginInit(){
   var cfg = anLoadCfg();
   if(cfg.spUrl){ var inp=document.getElementById('settings-sp-url'); if(inp){ inp.value=cfg.spUrl; if(typeof updateSPStatus==='function') updateSPStatus(cfg.spUrl); } }
   if(typeof emInit==='function') emInit();
+  loadSpSettings();
 }
 
 /* ══════════════════════════════════════
@@ -1377,7 +1437,7 @@ async function loadHandle(id) {
 ══════════════════════════════════════ */
 window.addEventListener('DOMContentLoaded', function() {
   var cfg = anLoadCfg();
-  if (!cfg.clientId || !cfg.tenantId || !cfg.spUrl) {
+  if (!cfg.clientId || !cfg.tenantId) {
     anShowConfig();
     return;
   }
@@ -1644,6 +1704,12 @@ function showView(view) {
     const el=document.getElementById('view-progetti');
     el.style.display='flex'; el.classList.add('visible');
     if(state.progetti && state.progetti.length) renderProjView();
+    return;
+  }
+  if (view==='ordini-sp') {
+    const el=document.getElementById('view-ordini-sp');
+    el.style.display='flex'; el.classList.add('visible');
+    if(window._ordfData && window._ordfData.length) renderOrdiniF();
     return;
   }
   if (view==='email') {
@@ -2733,26 +2799,144 @@ function escHtml(s) {
 
 
 /* ══════════════════════════════════════
-   SHAREPOINT URL — salvataggio locale
+   SHAREPOINT — Impostazioni locali
 ══════════════════════════════════════ */
-function saveSPUrl(val) {
-  const url = val.trim();
-  localStorage.setItem('anyma_sp_url', url);
-  updateSPStatus(url);
-}
-function updateSPStatus(url) {
-  const el = document.getElementById('settings-sp-status');
-  if (!el) return;
-  if (url && url.startsWith('http')) {
-    el.style.color = 'var(--green)';
-    el.textContent = 'URL salvato ✓';
-  } else if (url) {
-    el.style.color = 'var(--amber)';
-    el.textContent = 'URL non valido (deve iniziare con https://)';
-  } else {
-    el.style.color = 'var(--text3)';
-    el.textContent = 'Non salvato';
+function saveSpSetting(key, val, inputEl) {
+  val = val.trim();
+  localStorage.setItem('anyma_' + key, val);
+  var statusId = 'settings-' + key.replace(/_/g,'-') + '-status';
+  var statusEl = document.getElementById(statusId);
+  if(statusEl) {
+    if(val && val.length > 8) {
+      statusEl.style.color = 'var(--green)';
+      statusEl.textContent = 'Salvato ✓';
+    } else if(val) {
+      statusEl.style.color = 'var(--amber)';
+      statusEl.textContent = 'Valore troppo corto';
+    } else {
+      statusEl.style.color = 'var(--text3)';
+      statusEl.textContent = 'Non salvato';
+    }
   }
+}
+function loadSpSettings() {
+  var fields = [
+    {id:'settings-sp-base',    key:'sp_base'},
+    {id:'settings-sp-proj-id', key:'sp_proj_id'},
+    {id:'settings-sp-ordf-id', key:'sp_ordf_id'},
+  ];
+  fields.forEach(function(f) {
+    var el = document.getElementById(f.id);
+    if(el) {
+      var val = localStorage.getItem('anyma_'+f.key) || '';
+      el.value = val;
+      if(val) saveSpSetting(f.key, val, el);
+    }
+  });
+}
+function getSpBase() {
+  return (localStorage.getItem('anyma_sp_base') || SP_SITE_HOSTNAME && SP_SITE_PATH
+    ? 'https://' + SP_SITE_HOSTNAME + SP_SITE_PATH : '').replace(/\/$/, '');
+}
+function getSpProjId() {
+  return localStorage.getItem('anyma_sp_proj_id') || SP_LIST_ID || '';
+}
+function getSpOrdfId() {
+  return localStorage.getItem('anyma_sp_ordf_id') || '';
+}
+
+/* ══════════════════════════════════════
+   ORDINI FORNITORI — SharePoint
+══════════════════════════════════════ */
+var _ordfData = [];
+var _ordfCols = [];
+
+function ordfSetStatus(st, msg) {
+  var dot = document.getElementById('ordf-dot');
+  var txt = document.getElementById('ordf-status-txt');
+  dot.className = 'sp-dot' + (st==='ok'?' ok':st==='err'?' err':st==='loading'?' loading':'');
+  txt.textContent = msg;
+}
+
+async function loadOrdiniF() {
+  var listId = getSpOrdfId();
+  if(!listId) {
+    ordfSetStatus('err', 'Configura il GUID lista in Impostazioni');
+    showToast('Vai in Impostazioni e inserisci il GUID della lista Ordini Fornitori.');
+    return;
+  }
+  ordfSetStatus('loading', 'Connessione a SharePoint...');
+  document.getElementById('btn-ordf-load').disabled = true;
+
+  try {
+    var tok = await anGetToken();
+    if(!tok) { ordfSetStatus('err','Token scaduto — rieffettua il login'); document.getElementById('btn-ordf-load').disabled=false; return; }
+    var headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
+
+    if(!_spSiteId) {
+      var sr = await fetch(GRAPH_BASE+'/sites/'+SP_SITE_HOSTNAME+':'+SP_SITE_PATH, {headers:headers});
+      if(!sr.ok) throw new Error('Site fetch '+sr.status);
+      _spSiteId = (await sr.json()).id;
+    }
+
+    // Carica schema colonne per intestazioni tabella
+    var colResp = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+listId+'/columns', {headers:headers});
+    var colData = colResp.ok ? await colResp.json() : {value:[]};
+    _ordfCols = (colData.value || [])
+      .filter(c => !c.hidden && !['_','App','Link','Comp','Folder','Item'].some(p=>c.name.startsWith(p)))
+      .filter(c => ['Colonne personalizzate'].includes(c.columnGroup))
+      .filter(c => !['Edit','DocIcon','LinkTitle','LinkTitleNoMenu','ContentType','Attachments','_UIVersionString','_IsRecord','_ColorTag','ComplianceAssetId'].includes(c.name))
+      .slice(0, 12);
+
+    // Carica items
+    var url = GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+listId+
+      '/items?expand=fields&$top=500';
+    var resp = await fetch(url, {headers:headers});
+    if(!resp.ok) {
+      ordfSetStatus('err', 'Errore HTTP '+resp.status);
+      document.getElementById('btn-ordf-load').disabled=false;
+      return;
+    }
+    var data = await resp.json();
+    _ordfData = (data.value || []).map(i => i.fields || {});
+
+    document.getElementById('cnt-ordini-sp').textContent = _ordfData.length;
+    ordfSetStatus('ok', _ordfData.length+' ordini · '+new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}));
+    document.getElementById('btn-ordf-load').textContent = '↻ Aggiorna';
+    document.getElementById('btn-ordf-load').disabled = false;
+    document.getElementById('ordf-prompt').style.display = 'none';
+    document.getElementById('ordf-count').style.display = '';
+    document.getElementById('ordf-search').style.display = '';
+    document.getElementById('ordf-table-wrap').style.display = '';
+    renderOrdiniF();
+
+  } catch(e) {
+    ordfSetStatus('err', 'Errore: '+e.message);
+    document.getElementById('btn-ordf-load').disabled=false;
+  }
+}
+
+function renderOrdiniF() {
+  var q = (document.getElementById('ordf-search')?.value||'').toLowerCase();
+  var rows = _ordfData.filter(f => {
+    if(!q) return true;
+    return Object.values(f).some(v => String(v||'').toLowerCase().includes(q));
+  });
+  document.getElementById('ordf-count').textContent = rows.length + ' ordini';
+
+  // Intestazioni dinamiche
+  var thStyle = 'padding:8px 12px;text-align:left;color:var(--text2);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--border);white-space:nowrap';
+  document.getElementById('ordf-thead').innerHTML = _ordfCols.map(c =>
+    '<th style="'+thStyle+'">'+escHtml(c.displayName)+'</th>'
+  ).join('');
+
+  // Righe
+  var tdStyle = 'padding:7px 12px;color:var(--text);font-size:12px;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis';
+  document.getElementById('ordf-tbody').innerHTML = rows.map(f =>
+    '<tr style="border-bottom:1px solid var(--border);transition:background .1s" onmouseenter="this.style.background=\'var(--bg3)\'" onmouseleave="this.style.background=\'\'">' +
+    _ordfCols.map(c => '<td style="'+tdStyle+'" title="'+escHtml(String(f[c.name]||''))+'">'+escHtml(String(f[c.name]||'—'))+'</td>').join('') +
+    '</tr>'
+  ).join('') || '<tr><td colspan="'+_ordfCols.length+'" style="padding:20px;text-align:center;color:var(--text3)">Nessun risultato</td></tr>';
 }
 
 /* ══════════════════════════════════════
