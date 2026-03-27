@@ -3011,7 +3011,7 @@ function ordfGGLabel(gg, stato) {
   if(isNaN(g)) return gg;
   // g negativo = giorni mancanti alla consegna, g positivo = già scaduto
   var color = g < -3 ? '#38bdf8' : g <= 0 ? '#2ecc71' : g <= 3 ? '#f39c12' : '#e74c3c';
-  var label = g < 0 ? '-'+(-g)+' gg' : g === 0 ? 'oggi' : '+'+g+' gg';
+  var label = g < 0 ? '-'+(-g)+' gg' : g === 0 ? '0 gg' : '+'+g+' gg';
   return '<span style="font-weight:700;color:'+color+'">'+label+'</span>';
 }
 
