@@ -3151,7 +3151,7 @@ function renderOrdfView() {
     var va = a[_ordfSortKey] !== undefined ? a[_ordfSortKey] : '';
     var vb = b[_ordfSortKey] !== undefined ? b[_ordfSortKey] : '';
     // Numerico per GG
-    if(_ordfSortKey === 'GG') { va = parseInt(va)||9999; vb = parseInt(vb)||9999; return _ordfSortAsc ? va-vb : vb-va; }
+    if(_ordfSortKey === 'GG') { var na=parseInt(va); var nb=parseInt(vb); va=isNaN(na)?9999:na; vb=isNaN(nb)?9999:nb; return _ordfSortAsc ? va-vb : vb-va; }
     va = String(va||''); vb = String(vb||'');
     return _ordfSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
   });
