@@ -3346,14 +3346,47 @@ function openOrdfForm(id) {
   document.getElementById('of-title-lbl').textContent = r ? (r.title||'') : 'Compila i campi';
   document.getElementById('of-title').value         = r ? r.title : '';
   document.getElementById('of-conferma').value      = r ? r.conferma : '';
-  document.getElementById('of-cliente-search').value= r ? (r.cliente||'') : '';
-  document.getElementById('of-cliente-id').value    = r ? (r.clienteId||'') : '';
   document.getElementById('of-stato').value         = r ? (r.stato||'In Ordine') : 'In Ordine';
   document.getElementById('of-data-ordine').value   = r ? r.dataOrdine : '';
   document.getElementById('of-data-consegna').value = r ? r.dataConsegna : '';
   document.getElementById('of-nota2').value         = r ? r.nota2 : '';
   document.getElementById('of-note2').value         = r ? r.note2 : '';
   document.getElementById('of-error').style.display = 'none';
+
+  // Imposta cliente: usa clienteId dall'ordine se disponibile
+  var clienteName = r ? (r.cliente||'') : '';
+  var clienteId   = r ? (r.clienteId||'') : '';
+  document.getElementById('of-cliente-search').value = clienteName;
+  document.getElementById('of-cliente-id').value     = clienteId;
+
+  // Se abbiamo il nome ma non l'ID, cerca nell'elenco clienti
+  if(clienteName && !clienteId && _spClienti.length > 0) {
+    var found = _spClienti.find(c => c.name.toLowerCase() === clienteName.toLowerCase());
+    if(found) document.getElementById('of-cliente-id').value = found.id;
+  }
+
+  // Se _spClienti non è ancora caricato, caricalo ora
+  if(_spClienti.length === 0) {
+    anGetToken().then(function(tok) {
+      if(!tok || !_spSiteId) return;
+      return fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_CLIENT_LIST_ID+
+        '/items?expand=fields(select=Title,ID)&$top=500',
+        {headers:{'Authorization':'Bearer '+tok,'Accept':'application/json'}});
+    }).then(function(r){ return r ? r.json() : null; }).then(function(d) {
+      if(!d) return;
+      _spClienti = (d.value||[])
+        .map(i=>({id:parseInt(i.fields.ID), name:i.fields.Title||''}))
+        .filter(c=>c.name)
+        .sort((a,b)=>a.name.localeCompare(b.name));
+      // Ri-popola l'ID se ora lo troviamo
+      var name = document.getElementById('of-cliente-search').value;
+      if(name && !document.getElementById('of-cliente-id').value) {
+        var found = _spClienti.find(c => c.name.toLowerCase() === name.toLowerCase());
+        if(found) document.getElementById('of-cliente-id').value = found.id;
+      }
+    }).catch(function(){});
+  }
+
   var btn = document.getElementById('of-save-btn');
   btn.disabled=false;
   btn.innerHTML='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M13 2L6 9l-3-3"/></svg> Salva su SharePoint';
@@ -3367,7 +3400,7 @@ function ofFilterClienti(){
   var lista=_spClienti.filter(c=>!q||c.name.toLowerCase().includes(q));
   var dd=document.getElementById('of-cliente-dd');
   dd.innerHTML=lista.length?lista.map(c=>
-    '<div onclick="ofSelCliente('+c.id+',\''+c.name.replace(/'/g,"\\'")+'\')"+' +
+    '<div onclick="ofSelCliente('+c.id+',\''+c.name.replace(/'/g,"\\'")+'\')' +
     '" style="padding:7px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border)" '+
     'onmouseenter="this.style.background=\'var(--bg4)\'" onmouseleave="this.style.background=\'\'">' +
     escHtml(c.name)+'</div>'
@@ -3385,6 +3418,12 @@ async function saveOrdfForm() {
   var title   = document.getElementById('of-title').value.trim();
   if(!title){document.getElementById('of-error').textContent='Fornitore obbligatorio.';document.getElementById('of-error').style.display='';return;}
   var clienteId = document.getElementById('of-cliente-id').value;
+  var clienteName = document.getElementById('of-cliente-search').value.trim();
+  // Fallback: cerca ID per nome se non selezionato dal dropdown
+  if(!clienteId && clienteName && _spClienti.length > 0) {
+    var found = _spClienti.find(c => c.name.toLowerCase() === clienteName.toLowerCase());
+    if(found) clienteId = found.id;
+  }
   var stato     = document.getElementById('of-stato').value;
   var dOrdine   = document.getElementById('of-data-ordine').value;
   var dConsegna = document.getElementById('of-data-consegna').value;
