@@ -3262,14 +3262,36 @@ async function loadOrdiniF() {
       _spSiteId = (await sr.json()).id;
     }
 
+    // Carica lista clienti PRIMA degli items se non disponibile
+    if(_spClienti.length === 0) {
+      var cliResp = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_CLIENT_LIST_ID+
+        '/items?expand=fields(select=Title,ID)&$top=500', {headers});
+      if(cliResp.ok) {
+        var cliData = await cliResp.json();
+        _spClienti = (cliData.value||[])
+          .map(i=>({id:parseInt(i.fields.ID), name:i.fields.Title||''}))
+          .filter(c=>c.name)
+          .sort((a,b)=>a.name.localeCompare(b.name));
+      }
+    }
+
     var url = GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+listId+
-      '/items?expand=fields(select=Title,DataOrdine,DataConsegna,N_x002e_Conferma,GG,Stato,Nota2,Note2,ClienteRiferimento,ClienteRiferimentoLookupId)&$top=500';
+      '/items?expand=fields(select=Title,DataOrdine,DataConsegna,N_x002e_Conferma,GG,Stato,Nota2,Note2,ClienteRiferimentoLookupId)&$top=500';
     var resp = await fetch(url, {headers});
     if(!resp.ok) { ordfSetStatus('err','Errore '+resp.status); document.getElementById('btn-ordf-load').disabled=false; return; }
 
     var data = await resp.json();
     _ordfData = (data.value||[]).map(i => {
       var f = i.fields || {};
+      var cliId = f.ClienteRiferimentoLookupId ? parseInt(f.ClienteRiferimentoLookupId) : null;
+      // Risolve il nome cliente dalla cache locale _spClienti
+      var cliName = '';
+      if(cliId && _spClienti.length > 0) {
+        var cliFound = _spClienti.find(c => c.id === cliId);
+        if(cliFound) cliName = cliFound.name;
+      }
+      // Fallback: se cache non ancora pronta, usa f.ClienteRiferimento se disponibile
+      if(!cliName && f.ClienteRiferimento) cliName = f.ClienteRiferimento;
       return {
         id:         i.id,
         title:      f.Title || '',
@@ -3280,8 +3302,8 @@ async function loadOrdiniF() {
         stato:      f.Stato || '',
         nota2:      f.Nota2 || '',
         note2:      f.Note2 || '',
-        cliente:    f.ClienteRiferimento || '',
-        clienteId:  f.ClienteRiferimentoLookupId ? parseInt(f.ClienteRiferimentoLookupId) : null,
+        cliente:    cliName,
+        clienteId:  cliId,
         // Mappa per accesso rapido by key
         Title:      f.Title||'',
         DataOrdine: f.DataOrdine ? f.DataOrdine.split('T')[0] : '',
@@ -3291,7 +3313,7 @@ async function loadOrdiniF() {
         Stato:      f.Stato||'',
         Nota2:      f.Nota2||'',
         Note2:      f.Note2||'',
-        ClienteRiferimento: f.ClienteRiferimento||'',
+        ClienteRiferimento: cliName,
       };
     });
 
