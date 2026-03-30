@@ -1433,7 +1433,7 @@ function anInitMsal(cfg){
 function anDoLogin(){
   if(!_msal){anShowConfig();return;}
   // loginRedirect: funziona sempre, torna sulla stessa pagina
-  _msal.loginRedirect({scopes:['User.Read','https://graph.microsoft.com/Sites.Read.All'],prompt:'select_account'});
+  _msal.loginRedirect({scopes:['User.Read','https://graph.microsoft.com/Sites.ReadWrite.All'],prompt:'select_account'});
 }
 function anDoLogout(){
   if(!_msal)return;
@@ -1445,7 +1445,7 @@ function anDoLogout(){
 function anGetToken(){
   if(!_msal||!_msalAcc)return Promise.resolve(null);
   // Usa scope Graph per supporto CORS corretto
-  return _msal.acquireTokenSilent({scopes:['https://graph.microsoft.com/Sites.Read.All'],account:_msalAcc})
+  return _msal.acquireTokenSilent({scopes:['https://graph.microsoft.com/Sites.ReadWrite.All'],account:_msalAcc})
     .then(function(r){return r.accessToken;})
     .catch(function(e){
       console.warn('Token silent fallito:',e);
