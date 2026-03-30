@@ -386,7 +386,12 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 .loading-overlay{position:fixed;inset:0;background:rgba(15,17,23,.85);display:flex;align-items:center;justify-content:center;gap:12px;font-size:13px;color:var(--text2);z-index:500;backdrop-filter:blur(4px)}
 .loading-overlay.hidden{display:none}
 
-/* ── Proj view tabs ── */
+/* ── Colonne mobili ordini ── */
+.ordf-th-drag{cursor:grab;user-select:none}
+.ordf-th-drag:active{cursor:grabbing}
+.ordf-th-drag.drag-over{border-left:2px solid var(--accent);background:rgba(192,57,43,.08)}
+.ordf-th-drag.dragging{opacity:.4}
+
 .proj-view-tabs{display:flex;gap:4px;margin-left:auto}
 .proj-vtab{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--font);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
 .proj-vtab:hover{color:var(--text);background:var(--bg4)}
@@ -748,7 +753,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         <option value="RT">RT — Rapportini</option>
         <option value="BO">BO — Bolla Ore</option>
       </select>
-      <select class="sel" id="int-sort-cli" onchange="renderInterventi()" title="Ordina clienti">
+      <select class="sel" id="int-sort-cli" onchange="savePrefs();renderInterventi()" title="Ordina clienti">
         <option value="rt_desc">Clienti: più rapportini</option>
         <option value="az">Clienti: A → Z</option>
         <option value="za">Clienti: Z → A</option>
@@ -772,7 +777,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           <div class="detail-header">
             <div class="detail-title" id="int-detail-title"></div>
             <div class="detail-sub" id="int-detail-sub"></div>
-            <select class="sel" id="int-sort-file" onchange="resortIntFiles()" style="margin-top:6px;font-size:10px;width:100%">
+            <select class="sel" id="int-sort-file" onchange="savePrefs();resortIntFiles()" style="margin-top:6px;font-size:10px;width:100%">
               <option value="name_desc">Nome: Z → A (più recente)</option>
               <option value="name_asc">Nome: A → Z</option>
               <option value="date_desc">Data creazione: più recente</option>
@@ -1492,6 +1497,7 @@ async function anAfterLoginInit(){
   if(cfg.spUrl){ var inp=document.getElementById('settings-sp-url'); if(inp){ inp.value=cfg.spUrl; if(typeof updateSPStatus==='function') updateSPStatus(cfg.spUrl); } }
   if(typeof emInit==='function') emInit();
   loadSpSettings();
+  loadPrefs();
   // Auto-carica le sezioni SharePoint se i GUID sono configurati
   spAutoLoad();
 }
@@ -2798,6 +2804,7 @@ var _projCharts = {};
 function setProjView(v) {
   _projCurrentView = v;
   document.querySelectorAll('.proj-vtab').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+  savePrefs();
   renderProjView();
 }
 
@@ -2977,6 +2984,7 @@ function renderProjLista(items) {
 function sortTable(key) {
   if(_projSortKey===key) _projSortAsc=!_projSortAsc;
   else { _projSortKey=key; _projSortAsc=true; }
+  savePrefs();
   renderProjView();
 }
 
@@ -2992,8 +3000,111 @@ function escHtml(s) {
 
 
 /* ══════════════════════════════════════
-   SHAREPOINT — Impostazioni locali
+   PREFERENZE PERSISTENTI — localStorage
+   Salva/carica filtri, ordinamenti, viste
+   per tutta la PWA alla chiusura/apertura
 ══════════════════════════════════════ */
+const PREFS_KEY = 'anyma_prefs';
+function savePrefs() {
+  var prefs = {
+    // Interventi
+    intSortCli:   document.getElementById('int-sort-cli')?.value  || 'rt_desc',
+    intSortFile:  document.getElementById('int-sort-file')?.value || 'name_desc',
+    intType:      document.getElementById('int-type')?.value      || '',
+    intYear:      state.intYear || 'all',
+    // Ordini Fornitori
+    ordfSortKey:  _ordfSortKey,
+    ordfSortAsc:  _ordfSortAsc,
+    ordfView:     _ordfCurrentView,
+    ordfColOrder: ORDF_COLS.map(c=>c.key),
+    ordfColVis:   ORDF_COLS.reduce((a,c)=>{a[c.key]=c.visible;return a;},{}),
+    // Progetti
+    projView:     _projCurrentView,
+    projSortKey:  _projSortKey,
+    projSortAsc:  _projSortAsc,
+    // Admin
+    admYear:      state.admYear || 'all',
+  };
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch(e){}
+}
+function loadPrefs() {
+  try {
+    var raw = localStorage.getItem(PREFS_KEY);
+    if(!raw) return;
+    var p = JSON.parse(raw);
+    // Interventi
+    if(p.intSortCli)  { var el=document.getElementById('int-sort-cli');  if(el) el.value=p.intSortCli; }
+    if(p.intSortFile) { var el=document.getElementById('int-sort-file'); if(el) el.value=p.intSortFile; }
+    if(p.intType)     { var el=document.getElementById('int-type');      if(el) el.value=p.intType; }
+    if(p.intYear)     state.intYear = p.intYear;
+    // Ordini Fornitori
+    if(p.ordfSortKey) _ordfSortKey = p.ordfSortKey;
+    if(p.ordfSortAsc !== undefined) _ordfSortAsc = p.ordfSortAsc;
+    if(p.ordfView)    _ordfCurrentView = p.ordfView;
+    if(p.ordfColOrder && p.ordfColVis) {
+      // Riordina e ripristina visibilità colonne
+      var reordered = [];
+      p.ordfColOrder.forEach(function(k) {
+        var col = ORDF_COLS.find(c=>c.key===k);
+        if(col) { col.visible = p.ordfColVis[k] !== undefined ? p.ordfColVis[k] : col.visible; reordered.push(col); }
+      });
+      // Aggiungi eventuali nuove colonne non salvate
+      ORDF_COLS.forEach(function(c){ if(!reordered.find(r=>r.key===c.key)) reordered.push(c); });
+      ORDF_COLS.length = 0;
+      reordered.forEach(function(c){ ORDF_COLS.push(c); });
+    }
+    if(p.ordfView) {
+      document.querySelectorAll('#ordf-view-tabs .proj-vtab').forEach(b=>b.classList.toggle('active',b.dataset.view===p.ordfView));
+    }
+    // Aggiorna select ordinamento ordini
+    var sortSel = document.getElementById('ordf-sort-sel');
+    if(sortSel && p.ordfSortKey) {
+      var val = p.ordfSortKey + '_' + (p.ordfSortAsc ? 'asc' : 'desc');
+      sortSel.value = val;
+    }
+    // Progetti
+    if(p.projView)    _projCurrentView = p.projView;
+    if(p.projSortKey) _projSortKey = p.projSortKey;
+    if(p.projSortAsc !== undefined) _projSortAsc = p.projSortAsc;
+    // Admin
+    if(p.admYear) state.admYear = p.admYear;
+  } catch(e){}
+}
+
+/* ══════════════════════════════════════
+   COLONNE ORDINI — DRAG & DROP
+══════════════════════════════════════ */
+var _ordfDragIdx = null;
+
+function ordfDragStart(e, idx) {
+  _ordfDragIdx = idx;
+  e.target.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function ordfDragOver(e, idx) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.ordf-th-drag').forEach((el,i)=>el.classList.toggle('drag-over', i===idx && i!==_ordfDragIdx));
+}
+function ordfDragLeave(e) {
+  e.target.closest('.ordf-th-drag')?.classList.remove('drag-over');
+}
+function ordfDrop(e, toIdx) {
+  e.preventDefault();
+  document.querySelectorAll('.ordf-th-drag').forEach(el=>{el.classList.remove('drag-over');el.classList.remove('dragging');});
+  if(_ordfDragIdx === null || _ordfDragIdx === toIdx) return;
+  // Sposta colonna
+  var moved = ORDF_COLS.splice(_ordfDragIdx, 1)[0];
+  ORDF_COLS.splice(toIdx, 0, moved);
+  _ordfDragIdx = null;
+  savePrefs();
+  buildOrdfColChips();
+  renderOrdfTabella();
+}
+function ordfDragEnd(e) {
+  document.querySelectorAll('.ordf-th-drag').forEach(el=>{el.classList.remove('drag-over');el.classList.remove('dragging');});
+  _ordfDragIdx = null;
+}
 function saveSpSetting(key, val, inputEl) {
   val = val.trim();
   localStorage.setItem('anyma_' + key, val);
@@ -3107,6 +3218,7 @@ function ordfSetStatus(st, msg) {
 function setOrdfView(v) {
   _ordfCurrentView = v;
   document.querySelectorAll('#ordf-view-tabs .proj-vtab').forEach(b => b.classList.toggle('active', b.dataset.view===v));
+  savePrefs();
   renderOrdfView();
 }
 
@@ -3122,6 +3234,7 @@ function ordfApplySort() {
   var parts = val.split('_');
   _ordfSortAsc = parts.pop() === 'asc';
   _ordfSortKey = parts.join('_');
+  savePrefs();
   renderOrdfView();
 }
 
@@ -3218,6 +3331,7 @@ function toggleOrdfCol(i) {
   ORDF_COLS[i].visible = !ORDF_COLS[i].visible;
   var chip = document.getElementById('ordf-chip-'+i);
   chip.classList.toggle('active', ORDF_COLS[i].visible);
+  savePrefs();
   renderOrdfView();
 }
 
@@ -3259,10 +3373,20 @@ function renderOrdfTabella() {
   var visCols = ORDF_COLS.filter(c=>c.visible);
   var thStyle = 'padding:8px 12px;text-align:left;color:var(--text2);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none';
 
-  document.getElementById('ordf-thead').innerHTML = visCols.map(c =>
-    '<th style="'+thStyle+'" onclick="ordfSortBy(\''+c.key+'\')">' +
-    c.label + (_ordfSortKey===c.key ? (_ordfSortAsc?' ↑':' ↓'):'') + '</th>'
-  ).join('') + '<th style="'+thStyle+';width:32px"></th>';
+  document.getElementById('ordf-thead').innerHTML = visCols.map(function(c) {
+    var visIdx = ORDF_COLS.indexOf(c);
+    return '<th class="ordf-th-drag" style="'+thStyle+'" '+
+      'onclick="ordfSortBy(\''+c.key+'\')" '+
+      'draggable="true" '+
+      'ondragstart="ordfDragStart(event,'+visIdx+')" '+
+      'ondragover="ordfDragOver(event,'+visIdx+')" '+
+      'ondragleave="ordfDragLeave(event)" '+
+      'ondrop="ordfDrop(event,'+visIdx+')" '+
+      'ondragend="ordfDragEnd(event)">' +
+      c.label + (_ordfSortKey===c.key ? (_ordfSortAsc?' ↑':' ↓'):'') +
+      ' <span style="font-size:9px;opacity:.35;font-weight:400">⠿</span>' +
+      '</th>';
+  }).join('') + '<th style="'+thStyle+';width:36px;cursor:default"></th>';
 
   document.getElementById('ordf-tbody').innerHTML = _ordfFiltered.map(r => {
     var rowBg = ordfRowColor(r.gg, r.stato);
@@ -3290,6 +3414,7 @@ function renderOrdfTabella() {
 function ordfSortBy(key) {
   if(_ordfSortKey===key) _ordfSortAsc=!_ordfSortAsc;
   else { _ordfSortKey=key; _ordfSortAsc=true; }
+  savePrefs();
   renderOrdfView();
 }
 
