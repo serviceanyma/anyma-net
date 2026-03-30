@@ -748,6 +748,12 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         <option value="RT">RT — Rapportini</option>
         <option value="BO">BO — Bolla Ore</option>
       </select>
+      <select class="sel" id="int-sort-cli" onchange="renderInterventi()" title="Ordina clienti">
+        <option value="rt_desc">Clienti: più rapportini</option>
+        <option value="az">Clienti: A → Z</option>
+        <option value="za">Clienti: Z → A</option>
+        <option value="recenti">Clienti: più recenti</option>
+      </select>
       <span class="tag-count" id="int-count">—</span>
     </div>
     <div class="split-grid">
@@ -766,6 +772,14 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           <div class="detail-header">
             <div class="detail-title" id="int-detail-title"></div>
             <div class="detail-sub" id="int-detail-sub"></div>
+            <select class="sel" id="int-sort-file" onchange="resortIntFiles()" style="margin-top:6px;font-size:10px;width:100%">
+              <option value="name_desc">Nome: Z → A (più recente)</option>
+              <option value="name_asc">Nome: A → Z</option>
+              <option value="date_desc">Data creazione: più recente</option>
+              <option value="date_asc">Data creazione: meno recente</option>
+              <option value="type">Tipo (RT prima)</option>
+              <option value="size_desc">Dimensione: più grande</option>
+            </select>
           </div>
           <div class="file-list" id="int-file-list"></div>
         </div>
@@ -1478,6 +1492,26 @@ async function anAfterLoginInit(){
   if(cfg.spUrl){ var inp=document.getElementById('settings-sp-url'); if(inp){ inp.value=cfg.spUrl; if(typeof updateSPStatus==='function') updateSPStatus(cfg.spUrl); } }
   if(typeof emInit==='function') emInit();
   loadSpSettings();
+  // Auto-carica le sezioni SharePoint se i GUID sono configurati
+  spAutoLoad();
+}
+
+function spAutoLoad() {
+  setTimeout(function() {
+    var projId = getSpProjId();
+    var ordfId = getSpOrdfId();
+    // Mostra indicatore caricamento nei badge sidebar
+    if(projId) {
+      var el = document.getElementById('cnt-progetti');
+      if(el) el.textContent = '⟳';
+      loadProgetti().catch(function(){});
+    }
+    if(ordfId) {
+      var el2 = document.getElementById('cnt-ordini-sp');
+      if(el2) el2.textContent = '⟳';
+      loadOrdiniF().catch(function(){});
+    }
+  }, 800);
 }
 
 /* ══════════════════════════════════════
@@ -1855,13 +1889,21 @@ function setIntYear(y){
 function renderInterventi() {
   const q=document.getElementById('int-search').value.toLowerCase();
   const type=document.getElementById('int-type').value;
-  const filtered=state.interventi.filter(c=>{
+  const sortCli=document.getElementById('int-sort-cli')?.value || 'rt_desc';
+
+  let filtered=state.interventi.filter(c=>{
     if(q&&!c.name.toLowerCase().includes(q)) return false;
     let f=c.files.filter(x=>!isPre(x.name));
     if(state.intYear!=='all') f=f.filter(x=>getYear(x.name)===state.intYear);
     if(type) f=f.filter(x=>getType(x.name)===type);
     return f.length>0;
   });
+
+  // Ordina clienti
+  if(sortCli==='az')       filtered.sort((a,b)=>a.name.localeCompare(b.name));
+  else if(sortCli==='za')  filtered.sort((a,b)=>b.name.localeCompare(a.name));
+  else if(sortCli==='rt_desc') filtered.sort((a,b)=>b.rtFiles.length-a.rtFiles.length||a.name.localeCompare(b.name));
+  else if(sortCli==='recenti') filtered.sort((a,b)=>(b.hasRecent?1:0)-(a.hasRecent?1:0)||b.rtFiles.length-a.rtFiles.length);
   document.getElementById('int-count').textContent=filtered.length+' clienti';
   let tRT=0,tBO=0;
   filtered.forEach(c=>{
@@ -1901,7 +1943,7 @@ function selectIntClient(name) {
 
   let files=c.files.filter(f=>!isPre(f.name));
   if(state.intYear!=='all') files=files.filter(f=>getYear(f.name)===state.intYear);
-  files.sort((a,b)=>b.name.localeCompare(a.name));
+  files = sortIntFiles(files);
   window._intFiles=files;
   window._intSelFile=null;
 
@@ -1922,6 +1964,46 @@ function selectIntClient(name) {
   }).join('');
 
   // Reset preview col 3
+  renderIntPreviewEmpty();
+}
+
+function sortIntFiles(files) {
+  const s = document.getElementById('int-sort-file')?.value || 'name_desc';
+  const arr = [...files];
+  if(s==='name_desc')  arr.sort((a,b)=>b.name.localeCompare(a.name));
+  else if(s==='name_asc')   arr.sort((a,b)=>a.name.localeCompare(b.name));
+  else if(s==='date_desc')  arr.sort((a,b)=>b.name.localeCompare(a.name)); // nome desc = data desc per naming convention RT_YYYYMMDD
+  else if(s==='date_asc')   arr.sort((a,b)=>a.name.localeCompare(b.name));
+  else if(s==='type') {
+    const order = {RT:0, BO:1, PDF:2, ZIP:3, OTHER:4};
+    arr.sort((a,b)=>(order[getType(a.name)]||4)-(order[getType(b.name)]||4)||b.name.localeCompare(a.name));
+  }
+  else if(s==='size_desc') arr.sort((a,b)=>b.size-a.size);
+  return arr;
+}
+
+function resortIntFiles() {
+  if(!window._intFiles || !state.intSelected) return;
+  const c = state.interventi.find(x=>x.name===state.intSelected);
+  if(!c) return;
+  let files = c.files.filter(f=>!isPre(f.name));
+  if(state.intYear!=='all') files = files.filter(f=>getYear(f.name)===state.intYear);
+  files = sortIntFiles(files);
+  window._intFiles = files;
+  window._intSelFile = null;
+  document.getElementById('int-detail-sub').textContent = files.length+' file'+(state.intYear!=='all'?' · '+state.intYear:'');
+  document.getElementById('int-file-list').innerHTML = files.map((f,i)=>{
+    const t=getType(f.name);
+    const ic=t==='RT'?'fi-rt':t==='BO'?'fi-bo':t==='ZIP'?'fi-zip':'fi-pdf';
+    const tl=t==='RT'?'Rapportino':t==='BO'?'Bolla Ore':t==='ZIP'?'Archivio ZIP':'PDF';
+    const sz=fmtSize(f.size);
+    const canP=t!=='ZIP';
+    return `<div class="file-row ${canP?'':'no-click'}" id="int-fr-${i}" onclick="${canP?`openIntPreview(${i})`:'void(0)'}">
+      <div class="ficon ${ic}">${t}</div>
+      <div class="finfo"><div class="fname">${f.name}</div><div class="fmeta">${tl}${sz?' · '+sz:''}</div></div>
+      ${canP?`<svg class="eye-icon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><path d="M1 6s1.8-4 5-4 5 4 5 4-1.8 4-5 4-5-4-5-4z"/><circle cx="6" cy="6" r="1.5"/></svg>`:''}
+    </div>`;
+  }).join('');
   renderIntPreviewEmpty();
 }
 
