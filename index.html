@@ -3400,7 +3400,7 @@ function ofFilterClienti(){
   var lista=_spClienti.filter(c=>!q||c.name.toLowerCase().includes(q));
   var dd=document.getElementById('of-cliente-dd');
   dd.innerHTML=lista.length?lista.map(c=>
-    '<div onclick="ofSelCliente('+c.id+',\''+c.name.replace(/'/g,"\\'")+'\')' +
+    '<div onclick="ofSelCliente('+c.id+',\''+c.name.replace(/'/g,"\\'")+'\')"+' +
     '" style="padding:7px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border)" '+
     'onmouseenter="this.style.background=\'var(--bg4)\'" onmouseleave="this.style.background=\'\'">' +
     escHtml(c.name)+'</div>'
