@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v32';</script>
+<script>const APP_VERSION = 'v33';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -3263,27 +3263,19 @@ async function loadOrdiniF() {
       _spSiteId = (await sr.json()).id;
     }
 
-    // Carica lista clienti PRIMA degli items se non disponibile
-    if(_spClienti.length === 0) {
-      var cliResp = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_CLIENT_LIST_ID+
-        '/items?expand=fields(select=Title,id)&$top=500', {headers});
-      if(cliResp.ok) {
-        var cliData = await cliResp.json();
-        _spClienti = (cliData.value||[])
-          .map(function(i){
-            // id è nel campo i.id (non i.fields.ID) — è la stringa SharePoint item ID
-            // ClienteRiferimentoLookupId corrisponde all'ID numerico SharePoint
-            // che si trova in i.fields.id oppure parsando i.id
-            var numId = parseInt(i.id) || parseInt((i.fields||{}).id) || 0;
-            return {id: numId, name: (i.fields||{}).Title || ''};
-          })
-          .filter(function(c){ return c.name && c.id > 0; })
-          .sort(function(a,b){ return a.name.localeCompare(b.name); });
-      }
+    // Ricarica sempre _spClienti con i.id (stringa SP = LookupId numerico)
+    var cliResp = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_CLIENT_LIST_ID+
+      '/items?expand=fields(select=Title)&$top=500', {headers});
+    if(cliResp.ok) {
+      var cliData = await cliResp.json();
+      _spClienti = (cliData.value||[])
+        .map(function(i){ return {id: parseInt(i.id)||0, name: (i.fields||{}).Title||''}; })
+        .filter(function(c){ return c.name && c.id > 0; })
+        .sort(function(a,b){ return a.name.localeCompare(b.name); });
     }
 
     var url = GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+listId+
-      '/items?expand=fields(select=Title,DataOrdine,DataConsegna,N_x002e_Conferma,GG,Stato,Nota2,Note2,ClienteRiferimentoLookupId)&$top=500';
+      '/items?expand=fields(select=Title,DataOrdine,DataConsegna,N_x002e_Conferma,GG,Stato,Nota2,Note2,ClienteRiferimento,ClienteRiferimentoLookupId)&$top=500';
     var resp = await fetch(url, {headers});
     if(!resp.ok) { ordfSetStatus('err','Errore '+resp.status); document.getElementById('btn-ordf-load').disabled=false; return; }
 
@@ -3291,14 +3283,13 @@ async function loadOrdiniF() {
     _ordfData = (data.value||[]).map(i => {
       var f = i.fields || {};
       var cliId = f.ClienteRiferimentoLookupId ? parseInt(f.ClienteRiferimentoLookupId) : null;
-      // Risolve il nome cliente dalla cache locale _spClienti
-      var cliName = '';
-      if(cliId && _spClienti.length > 0) {
-        var cliFound = _spClienti.find(c => c.id === cliId);
+      // Usa direttamente il testo SP (sempre disponibile se il lookup è valorizzato)
+      var cliName = f.ClienteRiferimento || '';
+      // Fallback cache _spClienti se il testo non è arrivato
+      if(!cliName && cliId && _spClienti.length > 0) {
+        var cliFound = _spClienti.find(function(c){ return c.id === cliId; });
         if(cliFound) cliName = cliFound.name;
       }
-      // Fallback: se cache non ancora pronta, usa f.ClienteRiferimento se disponibile
-      if(!cliName && f.ClienteRiferimento) cliName = f.ClienteRiferimento;
       return {
         id:         i.id,
         title:      f.Title || '',
