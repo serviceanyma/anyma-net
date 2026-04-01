@@ -3265,13 +3265,19 @@ async function loadOrdiniF() {
     // Carica lista clienti PRIMA degli items se non disponibile
     if(_spClienti.length === 0) {
       var cliResp = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_CLIENT_LIST_ID+
-        '/items?expand=fields(select=Title,ID)&$top=500', {headers});
+        '/items?expand=fields(select=Title,id)&$top=500', {headers});
       if(cliResp.ok) {
         var cliData = await cliResp.json();
         _spClienti = (cliData.value||[])
-          .map(i=>({id:parseInt(i.fields.ID), name:i.fields.Title||''}))
-          .filter(c=>c.name)
-          .sort((a,b)=>a.name.localeCompare(b.name));
+          .map(function(i){
+            // id è nel campo i.id (non i.fields.ID) — è la stringa SharePoint item ID
+            // ClienteRiferimentoLookupId corrisponde all'ID numerico SharePoint
+            // che si trova in i.fields.id oppure parsando i.id
+            var numId = parseInt(i.id) || parseInt((i.fields||{}).id) || 0;
+            return {id: numId, name: (i.fields||{}).Title || ''};
+          })
+          .filter(function(c){ return c.name && c.id > 0; })
+          .sort(function(a,b){ return a.name.localeCompare(b.name); });
       }
     }
 
@@ -3515,20 +3521,20 @@ function openOrdfForm(id) {
   // Se _spClienti non è ancora caricato, caricalo ora
   if(_spClienti.length === 0) {
     anGetToken().then(function(tok) {
-      if(!tok || !_spSiteId) return;
+      if(!tok || !_spSiteId) return null;
       return fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_CLIENT_LIST_ID+
-        '/items?expand=fields(select=Title,ID)&$top=500',
+        '/items?expand=fields(select=Title)&$top=500',
         {headers:{'Authorization':'Bearer '+tok,'Accept':'application/json'}});
     }).then(function(r){ return r ? r.json() : null; }).then(function(d) {
       if(!d) return;
       _spClienti = (d.value||[])
-        .map(i=>({id:parseInt(i.fields.ID), name:i.fields.Title||''}))
-        .filter(c=>c.name)
-        .sort((a,b)=>a.name.localeCompare(b.name));
+        .map(function(i){ return {id: parseInt(i.id)||0, name: (i.fields||{}).Title||''}; })
+        .filter(function(c){ return c.name && c.id > 0; })
+        .sort(function(a,b){ return a.name.localeCompare(b.name); });
       // Ri-popola l'ID se ora lo troviamo
       var name = document.getElementById('of-cliente-search').value;
       if(name && !document.getElementById('of-cliente-id').value) {
-        var found = _spClienti.find(c => c.name.toLowerCase() === name.toLowerCase());
+        var found = _spClienti.find(function(c){ return c.name.toLowerCase() === name.toLowerCase(); });
         if(found) document.getElementById('of-cliente-id').value = found.id;
       }
     }).catch(function(){});
