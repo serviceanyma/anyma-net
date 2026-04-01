@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
+<script>const APP_VERSION = 'v32';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -541,7 +542,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 <header>
   <div class="logo">
     <div class="logo-mark" style="background:#c0392b">A</div>
-    <div><div class="logo-text">ANYMA Portale</div><div class="logo-sub">Documenti & Interventi</div></div>
+    <div><div class="logo-text">ANYMA Portale</div><div class="logo-sub">Documenti & Interventi &nbsp;<span id="app-version-lbl" style="font-size:9px;opacity:.45;font-weight:700;letter-spacing:.5px"></span></div></div>
   </div>
   <div class="header-actions">
     <span class="folder-chip" id="folderChip" style="display:none"></span>
@@ -3817,6 +3818,9 @@ function eaCopy(which) {
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 function showLoading(msg='Caricamento...'){document.getElementById('loadingMsg').textContent=msg;document.getElementById('loadingOverlay').classList.remove('hidden');}
 function hideLoading(){document.getElementById('loadingOverlay').classList.add('hidden');}
+
+// Mostra versione nel logo
+(function(){ var el=document.getElementById('app-version-lbl'); if(el && typeof APP_VERSION!=='undefined') el.textContent=APP_VERSION; })();
 </script>
 </body>
 </html>
