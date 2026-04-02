@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v34';</script>
+<script>const APP_VERSION = 'v35';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -19,7 +19,7 @@
 html,body{height:100%}
 body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;overflow:hidden}
 
-/* ══ SHELL ══ */
+/* == SHELL == */
 .shell{display:grid;grid-template-rows:var(--header) 1fr;grid-template-columns:var(--sidebar) 1fr;height:100vh;overflow:hidden}
 
 /* HEADER */
@@ -61,7 +61,7 @@ aside{
 .dot-ok{background:var(--green)}
 .dot-empty{background:var(--bg4);border:1px solid var(--border2)}
 
-/* MAIN — cella grid .shell.
+/* MAIN - cella grid .shell.
    height:100% prende l'altezza dalla cella (1fr = tutto sotto l'header).
    overflow:hidden blocca lo scroll della pagina.
    flex+min-height:0 permettono ai figli di riempire correttamente. */
@@ -73,7 +73,7 @@ main{
   min-height:0;
 }
 
-/* ══ SETUP SCREEN (solo info + rimanda a Impostazioni) ══ */
+/* == SETUP SCREEN (solo info + rimanda a Impostazioni) == */
 .setup-screen{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   flex:1;gap:20px;padding:40px;text-align:center;
@@ -95,7 +95,7 @@ main{
 .setup-status-row .sr-status{font-size:11px;margin-top:1px;color:var(--text3)}
 .sr-ok{color:var(--green)!important}
 
-/* ══ IMPOSTAZIONI VIEW ══ */
+/* == IMPOSTAZIONI VIEW == */
 .settings-view{display:none;flex-direction:column;flex:1;padding:28px}
 .settings-view.visible{display:flex}
 .settings-title{font-size:16px;font-weight:600;margin-bottom:4px}
@@ -116,7 +116,7 @@ main{
 .settings-note{margin-top:22px;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);font-size:11px;color:var(--text2);max-width:480px;line-height:1.7}
 .settings-note strong{color:var(--text);font-weight:500}
 
-/* ══ CONTENT PANELS ══
+/* == CONTENT PANELS ==
    La content-view occupa tutta l'altezza disponibile.
    Stats/toolbar/grafici sono flex-shrink:0 (non si restringono).
    split-grid prende il resto con flex:1 + min-height:0.
@@ -128,7 +128,7 @@ main{
   min-height:0;
   padding:14px 16px 0;
   gap:10px;
-  overflow:hidden;  /* NON scorre — solo le colonne interne scorrono */
+  overflow:hidden;  /* NON scorre - solo le colonne interne scorrono */
 }
 .content-view.visible{display:flex}
 
@@ -154,7 +154,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 .ytab:hover{color:var(--text)}
 .ytab.active{background:var(--accent);border-color:var(--accent);color:#fff}
 
-/* ══ 3-COL LAYOUT ══
+/* == 3-COL LAYOUT ==
    Col 1: lista aziende/clienti (270px fissi)
    Col 2: lista file / dettaglio (270px fissi)
    Col 3: anteprima PDF (tutto lo spazio rimanente)
@@ -306,7 +306,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 /* MISC */
 .spinner{width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-/* ══ PROGETTI DASHBOARD ══ */
+/* == PROGETTI DASHBOARD == */
 .proj-view{display:flex;flex-direction:column;gap:10px;flex:1;min-height:0;overflow:hidden}
 .proj-top{display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap}
 .sp-status{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:3px 10px;flex-shrink:0}
@@ -387,7 +387,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 .loading-overlay{position:fixed;inset:0;background:rgba(15,17,23,.85);display:flex;align-items:center;justify-content:center;gap:12px;font-size:13px;color:var(--text2);z-index:500;backdrop-filter:blur(4px)}
 .loading-overlay.hidden{display:none}
 
-/* ── Colonne mobili ordini ── */
+/* -- Colonne mobili ordini -- */
 .ordf-th-drag{cursor:grab;user-select:none}
 .ordf-th-drag:active{cursor:grabbing}
 .ordf-th-drag.drag-over{border-left:2px solid var(--accent);background:rgba(192,57,43,.08)}
@@ -397,12 +397,12 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 .proj-vtab{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--font);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
 .proj-vtab:hover{color:var(--text);background:var(--bg4)}
 .proj-vtab.active{background:var(--accent);border-color:var(--accent);color:#fff}
-/* ── Lista table ── */
+/* -- Lista table -- */
 #proj-table tbody tr{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
 #proj-table tbody tr:hover{background:var(--bg3)}
 #proj-table tbody td{padding:8px 12px;color:var(--text)}
 #proj-table tbody tr:last-child{border-bottom:none}
-/* ── Cliente view ── */
+/* -- Cliente view -- */
 #cli-list .row-item{border-left:none}
 
  */
@@ -528,7 +528,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
   <div class="an-card" style="max-width:360px;text-align:center">
     <div class="an-mark" style="margin:0 auto 14px">A</div>
     <div class="an-title">ANYMA-NET</div>
-    <div class="an-sub">Accedi con il tuo account Microsoft 365.<br><span style="font-size:10px;color:#7a6858">La pagina si ricaricherà dopo il login — è normale.</span></div>
+    <div class="an-sub">Accedi con il tuo account Microsoft 365.<br><span style="font-size:10px;color:#7a6858">La pagina si ricaricherà dopo il login - è normale.</span></div>
     <button class="an-abtn an-ms" onclick="anDoLogin()">
       <svg viewBox="0 0 21 21" width="18" height="18"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
       Accedi con Microsoft
@@ -538,7 +538,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
   </div>
 </div><div class="shell" id="appShell" style="display:none">
 
-<!-- ══ HEADER ══ -->
+<!-- == HEADER == -->
 <header>
   <div class="logo">
     <div class="logo-mark" style="background:#c0392b">A</div>
@@ -553,13 +553,13 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
   </div>
 </header>
 
-<!-- ══ SIDEBAR ══ -->
+<!-- == SIDEBAR == -->
 <aside id="sidebar">
   <div class="nav-section-label">Interventi</div>
   <div class="nav-item" id="nav-interventi" onclick="showView('interventi')">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h3l1.5-2h5.5a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/></svg>
     Rapportini & BO
-    <span class="badge-count" id="cnt-interventi">—</span>
+    <span class="badge-count" id="cnt-interventi">-</span>
   </div>
 
   <div class="nav-sep"></div>
@@ -567,37 +567,37 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
   <div class="nav-item" id="nav-preventivi" onclick="showView('preventivi')">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5z"/><polyline points="9 1 9 5 13 5"/></svg>
     Preventivi
-    <span class="badge-count" id="cnt-preventivi">—</span>
+    <span class="badge-count" id="cnt-preventivi">-</span>
   </div>
   <div class="nav-item" id="nav-ordini-f" onclick="showView('ordini-f')">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
     Ordini Fornitore
-    <span class="badge-count" id="cnt-ordini-f">—</span>
+    <span class="badge-count" id="cnt-ordini-f">-</span>
   </div>
   <div class="nav-item" id="nav-ordini-a" onclick="showView('ordini-a')">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h3l1.68 7.39a2 2 0 0 0 2 1.61h6.72a2 2 0 0 0 2-1.61L14 4H4"/><circle cx="5.5" cy="13.5" r="1"/><circle cx="11.5" cy="13.5" r="1"/></svg>
     Ordini Acquisto
-    <span class="badge-count" id="cnt-ordini-a">—</span>
+    <span class="badge-count" id="cnt-ordini-a">-</span>
   </div>
   <div class="nav-item" id="nav-conferme" onclick="showView('conferme')">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2L6 9l-3-3"/></svg>
     Conferme
-    <span class="badge-count" id="cnt-conferme">—</span>
+    <span class="badge-count" id="cnt-conferme">-</span>
   </div>
   <div class="nav-item" id="nav-ddt" onclick="showView('ddt')">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1"/><path d="M1 6h14"/></svg>
     DDT
-    <span class="badge-count" id="cnt-ddt">—</span>
+    <span class="badge-count" id="cnt-ddt">-</span>
   </div>
   <div class="nav-item" id="nav-fatture" onclick="showView('fatture')">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/><line x1="5" y1="5" x2="11" y2="5"/><line x1="5" y1="8" x2="11" y2="8"/><line x1="5" y1="11" x2="9" y2="11"/></svg>
     Fatture
-    <span class="badge-count" id="cnt-fatture">—</span>
+    <span class="badge-count" id="cnt-fatture">-</span>
   </div>
   <div class="nav-item" id="nav-notecredito" onclick="showView('notecredito')">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 1h8a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/><line x1="8" y1="5" x2="8" y2="11"/><line x1="5" y1="8" x2="11" y2="8"/></svg>
     Note Credito
-    <span class="badge-count" id="cnt-notecredito">—</span>
+    <span class="badge-count" id="cnt-notecredito">-</span>
   </div>
 
   <div class="nav-sep"></div>
@@ -605,12 +605,12 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
   <div class="nav-item" id="nav-progetti" onclick="showView('progetti')">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><path d="M9 12h6M12 9v6"/></svg>
     Progetti
-    <span class="badge-count" id="cnt-progetti">—</span>
+    <span class="badge-count" id="cnt-progetti">-</span>
   </div>
   <div class="nav-item" id="nav-ordini-sp" onclick="showView('ordini-sp')">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M1 6h14M5 6v7M11 6v7"/></svg>
     Ordini Fornitori
-    <span class="badge-count" id="cnt-ordini-sp">—</span>
+    <span class="badge-count" id="cnt-ordini-sp">-</span>
   </div>
 
   <div class="nav-sep"></div>
@@ -618,7 +618,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
   <div class="nav-item" id="nav-contratti" onclick="showView('contratti')">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="14" height="12" rx="1"/><path d="M4 5h8M4 8h6M4 11h4"/></svg>
     Contratti SP
-    <span class="badge-count" id="cnt-contratti">—</span>
+    <span class="badge-count" id="cnt-contratti">-</span>
   </div>
 
   <div class="nav-sep"></div>
@@ -634,7 +634,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
   </div>
 </aside>
 
-<!-- ══ MAIN ══ -->
+<!-- == MAIN == -->
 <main id="mainContent">
 
   <!-- SETUP SCREEN: solo stato + link a impostazioni, NO pulsanti selezione -->
@@ -700,7 +700,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.5" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
         </div>
         <div class="settings-card-info" style="flex:1;min-width:0">
-          <div class="settings-card-title">SharePoint — URL base sito</div>
+          <div class="settings-card-title">SharePoint - URL base sito</div>
           <div class="settings-card-path">Es: https://anymapack.sharepoint.com/sites/anyma</div>
           <input type="text" id="settings-sp-base"
             placeholder="https://anymapack.sharepoint.com/sites/anyma"
@@ -715,7 +715,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           <svg viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="1.5" width="18" height="18"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17.5h7M17.5 14v7"/></svg>
         </div>
         <div class="settings-card-info" style="flex:1;min-width:0">
-          <div class="settings-card-title">SharePoint — Lista Progetti (GUID)</div>
+          <div class="settings-card-title">SharePoint - Lista Progetti (GUID)</div>
           <div class="settings-card-path">ID lista Progetti da SharePoint</div>
           <input type="text" id="settings-sp-proj-id"
             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
@@ -730,7 +730,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           <svg viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="1.5" width="18" height="18"><path d="M2 3h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M1 6h14M5 6v7M11 6v7"/></svg>
         </div>
         <div class="settings-card-info" style="flex:1;min-width:0">
-          <div class="settings-card-title">SharePoint — Lista Ordini Fornitori (GUID)</div>
+          <div class="settings-card-title">SharePoint - Lista Ordini Fornitori (GUID)</div>
           <div class="settings-card-path">ID lista Ordini Fornitori da SharePoint</div>
           <input type="text" id="settings-sp-ordf-id"
             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
@@ -742,7 +742,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         <!-- AnymaContratti -->
         <div class="settings-card" style="flex-direction:column;align-items:flex-start">
           <div class="settings-card-info" style="flex:1;min-width:0;width:100%">
-            <div class="settings-card-title">SharePoint — Lista AnymaContratti (GUID)</div>
+            <div class="settings-card-title">SharePoint - Lista AnymaContratti (GUID)</div>
             <div class="settings-card-path">ID lista Contratti da SharePoint</div>
             <input type="text" id="settings-sp-contr-id"
               placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
@@ -784,8 +784,8 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
       <input type="text" class="filter-input" id="int-search" placeholder="Cerca cliente..." oninput="renderInterventi()">
       <select class="sel" id="int-type" onchange="renderInterventi()">
         <option value="">Tutti i tipi</option>
-        <option value="RT">RT — Rapportini</option>
-        <option value="BO">BO — Bolla Ore</option>
+        <option value="RT">RT - Rapportini</option>
+        <option value="BO">BO - Bolla Ore</option>
       </select>
       <select class="sel" id="int-sort-cli" onchange="savePrefs();renderInterventi()" title="Ordina clienti">
         <option value="rt_desc">Clienti: più rapportini</option>
@@ -793,7 +793,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         <option value="za">Clienti: Z → A</option>
         <option value="recenti">Clienti: più recenti</option>
       </select>
-      <span class="tag-count" id="int-count">—</span>
+      <span class="tag-count" id="int-count">-</span>
     </div>
     <div class="split-grid">
       <!-- Col 1: lista clienti -->
@@ -848,7 +848,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         <option value="Clienti">Solo Clienti</option>
         <option value="Fornitori">Solo Fornitori</option>
       </select>
-      <span class="tag-count" id="adm-count">—</span>
+      <span class="tag-count" id="adm-count">-</span>
     </div>
     <div class="split-grid">
       <!-- Col 1: lista aziende -->
@@ -929,7 +929,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         <span class="pf-chip" data-fase="Pagamento" onclick="setFaseFilter(this)">Pagamento</span>
       </div>
 
-      <!-- ── VISTA KANBAN ── -->
+      <!-- -- VISTA KANBAN -- -->
       <div class="kanban" id="proj-kanban" style="display:none">
         <div class="kanban-col"><div class="kanban-col-hdr kh-preventivo"><span>Preventivo</span><span id="kc-preventivo" class="badge-count">0</span></div><div class="kanban-cards" id="kc-cards-Preventivo"></div></div>
         <div class="kanban-col"><div class="kanban-col-hdr kh-materiale"><span>Materiale</span><span id="kc-materiale" class="badge-count">0</span></div><div class="kanban-cards" id="kc-cards-Materiale"></div></div>
@@ -939,7 +939,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         <div class="kanban-col"><div class="kanban-col-hdr kh-pagamento"><span>Pagamento</span><span id="kc-pagamento" class="badge-count">0</span></div><div class="kanban-cards" id="kc-cards-Pagamento"></div></div>
       </div>
 
-      <!-- ── VISTA PER CLIENTE ── -->
+      <!-- -- VISTA PER CLIENTE -- -->
       <div id="proj-cliente-view" style="display:none;flex:1;min-height:0;overflow:hidden;display:none">
         <div style="display:grid;grid-template-columns:260px 1fr;gap:0;height:100%;overflow:hidden">
           <div style="background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
@@ -956,7 +956,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         </div>
       </div>
 
-      <!-- ── VISTA GRAFICI ── -->
+      <!-- -- VISTA GRAFICI -- -->
       <div id="proj-grafici-view" style="display:none;flex:1;min-height:0;overflow-y:auto;padding:4px 0 14px">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 2px">
           <div class="chart-panel"><h3>Progetti per cliente (top 12)</h3><div class="chart-wrap" style="height:220px"><canvas id="chartProjClienti"></canvas></div></div>
@@ -966,7 +966,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         </div>
       </div>
 
-      <!-- ── VISTA LISTA ── -->
+      <!-- -- VISTA LISTA -- -->
       <div id="proj-lista-view" style="display:none;flex:1;min-height:0;overflow:hidden">
         <div style="height:100%;overflow-y:auto">
           <table style="width:100%;border-collapse:collapse;font-size:12px" id="proj-table">
@@ -1356,7 +1356,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         <div class="ea-card">
           <span class="ea-label">Traduci anche in</span>
           <select class="ea-select" id="ea-trans-lang">
-            <option value="">— Nessuna traduzione —</option>
+            <option value="">- Nessuna traduzione -</option>
             <option value="en" selected>🇬🇧 Inglese</option>
             <option value="fr">🇫🇷 Francese</option>
             <option value="de">🇩🇪 Tedesco</option>
@@ -1368,7 +1368,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         <!-- Firma -->
         <div class="ea-card">
           <span class="ea-label">Firma</span>
-          <div class="ea-firma-prev" id="ea-fp">Daniel Consolaro<br>Servizio Tecnico — ANYMA SRL<br><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5e2d3b2c28373d3b1e3f3027333f2e3f3d3570372a">[email&#160;protected]</a></div>
+          <div class="ea-firma-prev" id="ea-fp">Daniel Consolaro<br>Servizio Tecnico - ANYMA SRL<br><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5e2d3b2c28373d3b1e3f3027333f2e3f3d3570372a">[email&#160;protected]</a></div>
           <div class="ea-inp-row">
             <input class="ea-inp" id="ea-fn" value="Daniel Consolaro" placeholder="Nome" oninput="eaUpdFirma()">
             <input class="ea-inp" id="ea-fr" value="Servizio Tecnico" placeholder="Ruolo" oninput="eaUpdFirma()">
@@ -1496,7 +1496,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
   </div>
 </div>
 
-<!-- ══ MODALE FORM PROGETTO (aggiunta/modifica) ══ -->
+<!-- == MODALE FORM PROGETTO (aggiunta/modifica) == -->
 <div class="proj-modal-overlay hidden" id="projFormOverlay" onclick="closeProjForm(event)">
   <div class="proj-modal" style="max-width:500px" onclick="event.stopPropagation()">
     <div class="pm-hdr">
@@ -1592,7 +1592,7 @@ function anSaveConfig(){
   if(!ok)return;
   anPersist(c,t);
   var btn=document.getElementById('anSaveBtn');
-  btn.textContent='Salvato — ricarico...';
+  btn.textContent='Salvato - ricarico...';
   btn.disabled=true;
   setTimeout(function(){window.location.href=window.location.href.split('?')[0].split('#')[0];},800);
 }
@@ -1696,9 +1696,9 @@ function spAutoLoad() {
   }, 800);
 }
 
-/* ══════════════════════════════════════
+/* ======================================
    STATE
-══════════════════════════════════════ */
+====================================== */
 const state = {
   serviceHandle: null,
   adminHandle: null,
@@ -1715,11 +1715,11 @@ const state = {
 };
 let charts = {};
 
-/* ══════════════════════════════════════
+/* ======================================
    CATEGORIE ADMIN
    hasSub=true  → anno / Clienti|Fornitori / NOMEAZIENDA / files
    hasSub=false → anno / NOMEAZIENDA / files
-══════════════════════════════════════ */
+====================================== */
 const ADM_CATS = {
   '1_Preventivi':       {key:'preventivi',  label:'Preventivi',       hasSub:true},
   '2_Ordine fornitore': {key:'ordini-f',    label:'Ordini Fornitore', hasSub:false, defaultSub:'Fornitori'},
@@ -1730,9 +1730,9 @@ const ADM_CATS = {
   '7_Note credito':     {key:'notecredito', label:'Note Credito',     hasSub:true},
 };
 
-/* ══════════════════════════════════════
+/* ======================================
    INDEXEDDB
-══════════════════════════════════════ */
+====================================== */
 async function openDB() {
   return new Promise((res,rej) => {
     const r = indexedDB.open('anyma_v5', 1);
@@ -1759,9 +1759,9 @@ async function loadHandle(id) {
   } catch(e){return null;}
 }
 
-/* ══════════════════════════════════════
-   INIT — auto-ripristino silenzioso
-══════════════════════════════════════ */
+/* ======================================
+   INIT - auto-ripristino silenzioso
+====================================== */
 window.addEventListener('DOMContentLoaded', function() {
   var cfg = anLoadCfg();
   if (!cfg.clientId || !cfg.tenantId) {
@@ -1845,9 +1845,9 @@ function updateDots() {
   }
 }
 
-/* ══════════════════════════════════════
+/* ======================================
    PROCESS SERVICE
-══════════════════════════════════════ */
+====================================== */
 async function processService() {
   const h = state.serviceHandle; if(!h) return;
   const clients = [];
@@ -1887,7 +1887,7 @@ async function processService() {
   if (state.currentView==='interventi') renderInterventi();
 }
 
-/* ══════════════════════════════════════
+/* ======================================
    PROCESS ADMIN
    Struttura REALE confermata da filesystem:
    
@@ -1898,7 +1898,7 @@ async function processService() {
    hasSub=false (Ordine Fornitore, Ordine Acquisto):
      catFolder / anno / NOMEAZIENDA / *.pdf
      (nessun livello Clienti/Fornitori)
-══════════════════════════════════════ */
+====================================== */
 async function processAdmin() {
   const h = state.adminHandle; if(!h) return;
   const result = {};
@@ -1960,7 +1960,7 @@ async function processAdmin() {
 
     const totalFiles = items.reduce((s,i)=>s+i.files.length, 0);
     const el = document.getElementById('cnt-'+catCfg.key);
-    if(el) el.textContent = totalFiles || '—';
+    if(el) el.textContent = totalFiles || '-';
   }
 
   state.adminData = result;
@@ -1968,9 +1968,9 @@ async function processAdmin() {
   if (admViews.includes(state.currentView)) renderAdmin();
 }
 
-/* ══════════════════════════════════════
+/* ======================================
    VIEW ROUTING
-══════════════════════════════════════ */
+====================================== */
 function showView(view) {
   // Nasconde tutto esplicitamente con display:none
   document.querySelectorAll('.content-view,.settings-view,.email-view').forEach(el=>{
@@ -2052,9 +2052,9 @@ function showView(view) {
   }
 }
 
-/* ══════════════════════════════════════
+/* ======================================
    INTERVENTI RENDER
-══════════════════════════════════════ */
+====================================== */
 function buildIntYears() {
   const years=new Set();
   state.interventi.forEach(c=>c.files.forEach(f=>{const y=getYear(f.name);if(y)years.add(y);}));
@@ -2239,12 +2239,12 @@ function renderIntCharts(filtered){
   charts.tipi=new Chart(c2,{type:'doughnut',data:{labels:['RT','BO','ZIP'],datasets:[{data:[tRT,tBO,tZip],backgroundColor:['rgba(192,57,43,.8)','rgba(62,207,142,.8)','rgba(245,166,35,.8)'],borderColor:['#0f1117','#0f1117','#0f1117'],borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'#9498a8',font:{size:10},padding:8,boxWidth:9,boxHeight:9}}}}});
 }
 
-/* ══════════════════════════════════════
+/* ======================================
    ADMIN RENDER
    hasSub=true  → ogni item è {year, sub:'Clienti'|'Fornitori', name:entityName, files}
    hasSub=false → ogni item è {year, sub:defaultSub, name:entityName, files}
    In entrambi i casi: lista per azienda, click → file list + preview
-══════════════════════════════════════ */
+====================================== */
 function buildAdmYears(){
   const cat=state.currentAdmCat;
   const items=state.adminData[cat]||[];
@@ -2278,7 +2278,7 @@ function renderAdmin(){
 
   const totalFiles=items.reduce((s,i)=>s+i.files.length,0);
   const byYear={};items.forEach(i=>{byYear[i.year]=(byYear[i.year]||0)+i.files.length;});
-  const latestY=Object.keys(byYear).sort().reverse()[0]||'—';
+  const latestY=Object.keys(byYear).sort().reverse()[0]||'-';
 
   document.getElementById('adm-stats').innerHTML=`
     <div class="stat-card"><div class="stat-label">Aziende</div><div class="stat-value c-accent">${items.length}</div><div class="stat-sub">soggetti</div></div>
@@ -2447,32 +2447,32 @@ async function openAdmPreview(i){
 }
 function closeAdmPreview(){} // no-op, preview è inline nella col 3
 
-/* ══════════════════════════════════════
+/* ======================================
    HELPERS
-══════════════════════════════════════ */
+====================================== */
 function getType(name){const n=name.toUpperCase();if(n.startsWith('RT_'))return'RT';if(n.startsWith('BO_'))return'BO';if(n.endsWith('.ZIP'))return'ZIP';if(n.endsWith('.PDF'))return'PDF';return'OTHER';}
 function getYear(name){const m=name.match(/20(\d{2})/);return m?'20'+m[1]:null;}
 function initials(name){return name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase().slice(0,2)||'??';}
 function isPre(name){return name.includes('_Pre')||name.includes('_PRE');}
 function esc(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
 function fmtSize(b){return b>0?(b>1048576?(b/1048576).toFixed(1)+'MB':Math.round(b/1024)+'KB'):''}
-/* ══════════════════════════════════════
-   SHAREPOINT — DASHBOARD PROGETTI
+/* ======================================
+   SHAREPOINT - DASHBOARD PROGETTI
    REST API: /sites/anyma/_api/web/lists(guid'...')/items
    Lista GUID: 40e7123d-d54f-4a5c-8f1a-8a06af0542f4
    Campi: Title, Client (Lookup), Description (Note),
           Category0 (Fase), Progress (Progresso),
           StartDate, DueDate, Notes
-══════════════════════════════════════ */
+====================================== */
 const SP_SITE_HOSTNAME  = 'anymapack.sharepoint.com';
 const SP_SITE_PATH      = '/sites/anyma';
 const SP_LIST_ID        = '40e7123d-d54f-4a5c-8f1a-8a06af0542f4';
 const SP_CLIENT_LIST_ID = '6e8bca52-837c-4331-bc2e-c014a7ef06f4'; // Lista clienti lookup
 const GRAPH_BASE        = 'https://graph.microsoft.com/v1.0';
 var _spSiteId   = null;
-var _spClienti  = []; // [{id, name}] — cache elenco clienti
+var _spClienti  = []; // [{id, name}] - cache elenco clienti
 
-// ── Contratti
+// -- Contratti
 var _contrData        = [];   // cache AnymaContratti da SP
 var _contrListId      = null; // GUID lista AnymaContratti
 var _contrSelCliente  = null; // cliente selezionato nella vista
@@ -2524,7 +2524,7 @@ async function loadProgetti() {
     // Ottieni Bearer token Graph
     var tok = typeof anGetToken === 'function' ? await anGetToken() : null;
     if(!tok){
-      spSetStatus('err', 'Token non disponibile — rieffettua il login');
+      spSetStatus('err', 'Token non disponibile - rieffettua il login');
       showToast('Rieffettua il login per aggiornare il token.');
       document.getElementById('btn-sp-load').disabled = false;
       return;
@@ -2550,7 +2550,7 @@ async function loadProgetti() {
     var resp = await fetch(listUrl, {headers: headers});
     if(!resp.ok){
       if(resp.status === 401 || resp.status === 403){
-        spSetStatus('err', 'Accesso negato — rieffettua il login');
+        spSetStatus('err', 'Accesso negato - rieffettua il login');
         showToast('Sessione scaduta. Premi Esci e riaccedi.');
       } else {
         spSetStatus('err', 'Errore HTTP ' + resp.status);
@@ -2608,7 +2608,7 @@ async function loadProgetti() {
     renderProjView();
 
   } catch(e) {
-    spSetStatus('err', 'Errore di rete — controlla la connessione');
+    spSetStatus('err', 'Errore di rete - controlla la connessione');
     document.getElementById('btn-sp-load').disabled = false;
     console.error('SP loadProgetti:', e);
   }
@@ -2687,8 +2687,8 @@ function openProjModal(id) {
   document.getElementById('pm-title').textContent    = p.title;
   document.getElementById('pm-fase').textContent     = p.fase;
   document.getElementById('pm-progresso').innerHTML  = `<span class="pc-badge ${PROG_CLASS[p.progresso]||'pc-noniniziato'}">${p.progresso}</span>`;
-  document.getElementById('pm-startdate').textContent= p.startDate ? fmtDate(p.startDate) : '—';
-  document.getElementById('pm-duedate').textContent  = p.dueDate   ? fmtDate(p.dueDate)   : '—';
+  document.getElementById('pm-startdate').textContent= p.startDate ? fmtDate(p.startDate) : '-';
+  document.getElementById('pm-duedate').textContent  = p.dueDate   ? fmtDate(p.dueDate)   : '-';
 
   const notesBlock = document.getElementById('pm-notes-block');
   if (p.note) {
@@ -2714,7 +2714,7 @@ function closeProjForm(e) {
     document.getElementById('projFormOverlay').classList.add('hidden');
 }
 
-/* ══ FORM AGGIUNTA / MODIFICA PROGETTO ══ */
+/* == FORM AGGIUNTA / MODIFICA PROGETTO == */
 var _pfEditId = null; // null = nuovo, altrimenti id item da modificare
 
 function openProjForm(proj) {
@@ -2754,7 +2754,7 @@ async function saveProjForm() {
 
   var tok = await anGetToken();
   if(!tok) {
-    document.getElementById('pf-error').textContent = 'Token scaduto — rieffettua il login.';
+    document.getElementById('pf-error').textContent = 'Token scaduto - rieffettua il login.';
     document.getElementById('pf-error').style.display = '';
     btn.disabled = false; btn.textContent = 'Salva su SharePoint';
     return;
@@ -2783,11 +2783,11 @@ async function saveProjForm() {
 
   var url, method;
   if(_pfEditId) {
-    // PATCH — modifica
+    // PATCH - modifica
     url    = GRAPH_BASE + '/sites/' + siteId + '/lists/' + SP_LIST_ID + '/items/' + _pfEditId + '/fields';
     method = 'PATCH';
   } else {
-    // POST — nuovo item
+    // POST - nuovo item
     url    = GRAPH_BASE + '/sites/' + siteId + '/lists/' + SP_LIST_ID + '/items';
     method = 'POST';
     body   = { fields: body };
@@ -2829,7 +2829,7 @@ function editCurrentProj() {
   openProjForm(p);
 }
 
-/* ── Autocomplete clienti ── */
+/* -- Autocomplete clienti -- */
 function pfShowDropdown() {
   pfFilterClienti();
   document.getElementById('pf-client-dropdown').style.display = '';
@@ -2926,13 +2926,13 @@ async function saveProjForm() {
 
   var tok = await anGetToken();
   if(!tok) {
-    showFormErr('Token scaduto — rieffettua il login.');
+    showFormErr('Token scaduto - rieffettua il login.');
     btn.disabled = false;
     btn.textContent = 'Salva su SharePoint';
     return;
   }
 
-  // Corpo fields — usa ClientLookupId per il campo lookup
+  // Corpo fields - usa ClientLookupId per il campo lookup
   var fields = {
     ClientLookupId: parseInt(clientId),
     Description:    title,
@@ -2955,12 +2955,12 @@ async function saveProjForm() {
   try {
     var url, method, body;
     if(_pfEditId) {
-      // PATCH — modifica item esistente
+      // PATCH - modifica item esistente
       url    = GRAPH_BASE + '/sites/' + _spSiteId + '/lists/' + SP_LIST_ID + '/items/' + _pfEditId + '/fields';
       method = 'PATCH';
       body   = JSON.stringify(fields);
     } else {
-      // POST — nuovo item
+      // POST - nuovo item
       url    = GRAPH_BASE + '/sites/' + _spSiteId + '/lists/' + SP_LIST_ID + '/items';
       method = 'POST';
       body   = JSON.stringify({fields: fields});
@@ -2993,9 +2993,9 @@ async function saveProjForm() {
   }
 }
 
-/* ══════════════════════════════════════
+/* ======================================
    MULTI-VISTA PROGETTI
-══════════════════════════════════════ */
+====================================== */
 var _projCurrentView = 'kanban';
 var _projSortKey = 'client';
 var _projSortAsc = true;
@@ -3041,7 +3041,7 @@ function renderProjView() {
   }
 }
 
-// ── VISTA PER CLIENTE ──
+// -- VISTA PER CLIENTE --
 function renderProjCliente(items) {
   var byClient = {};
   items.forEach(p => {
@@ -3105,7 +3105,7 @@ function showCliDetail(items, name) {
   det.innerHTML = statsHtml + cardsHtml;
 }
 
-// ── VISTA GRAFICI ──
+// -- VISTA GRAFICI --
 function renderProjGrafici(items) {
   // 1. Bar chart: top 12 clienti per numero progetti
   var byClient = {};
@@ -3163,7 +3163,7 @@ function renderProjGrafici(items) {
   });
 }
 
-// ── VISTA LISTA ──
+// -- VISTA LISTA --
 function renderProjLista(items) {
   var sorted = [...items].sort((a,b) => {
     var va = a[_projSortKey]||'', vb = b[_projSortKey]||'';
@@ -3177,7 +3177,7 @@ function renderProjLista(items) {
       '<td style="color:var(--text2)">' + escHtml(p.title) + '</td>' +
       '<td><span style="background:' + faseColor + '22;color:' + faseColor + ';border:1px solid ' + faseColor + '44;border-radius:20px;font-size:9px;font-weight:700;padding:2px 8px">' + p.fase + '</span></td>' +
       '<td><span class="pc-badge ' + progCls + '">' + p.progresso + '</span></td>' +
-      '<td style="color:var(--text3);font-family:var(--mono);font-size:11px">' + (p.dueDate?fmtDate(p.dueDate):'—') + '</td>' +
+      '<td style="color:var(--text3);font-family:var(--mono);font-size:11px">' + (p.dueDate?fmtDate(p.dueDate):'-') + '</td>' +
     '</tr>';
   }).join('');
 }
@@ -3200,11 +3200,11 @@ function escHtml(s) {
 }
 
 
-/* ══════════════════════════════════════
-   PREFERENZE PERSISTENTI — localStorage
+/* ======================================
+   PREFERENZE PERSISTENTI - localStorage
    Salva/carica filtri, ordinamenti, viste
    per tutta la PWA alla chiusura/apertura
-══════════════════════════════════════ */
+====================================== */
 const PREFS_KEY = 'anyma_prefs';
 function savePrefs() {
   var prefs = {
@@ -3273,9 +3273,9 @@ function loadPrefs() {
   } catch(e){}
 }
 
-/* ══════════════════════════════════════
-   COLONNE ORDINI — DRAG & DROP
-══════════════════════════════════════ */
+/* ======================================
+   COLONNE ORDINI - DRAG & DROP
+====================================== */
 var _ordfDragIdx = null;
 
 function ordfDragStart(e, idx) {
@@ -3352,13 +3352,13 @@ function getSpOrdfId() {
   return localStorage.getItem('anyma_sp_ordf_id') || '';
 }
 
-/* ══════════════════════════════════════
-   ORDINI FORNITORI — SharePoint
+/* ======================================
+   ORDINI FORNITORI - SharePoint
    Campi: Title(Fornitore), DataOrdine, DataConsegna,
    N_x002e_Conferma(N.Conf), GG, Stato(choice),
    Nota2(Note ordine), Note2(Note cliente),
    ClienteRiferimento(lookup), ClienteRiferimentoLookupId
-══════════════════════════════════════ */
+====================================== */
 var _ordfData        = [];   // raw fields array
 var _ordfFiltered    = [];   // dopo filtri
 var _ordfCurrentView = 'tabella';
@@ -3395,14 +3395,14 @@ function ordfRowColor(gg, stato) {
   if(gg === null || gg === undefined || gg === '') return '';
   var g = parseInt(gg);
   if(isNaN(g)) return '';
-  if(g < -3)  return 'rgba(56,189,248,.06)';   // azzurro — >3 gg
-  if(g <= 0)  return 'rgba(62,207,142,.08)';   // verde — da -3 a oggi
-  if(g <= 3)  return 'rgba(245,166,35,.10)';   // giallo — 1-3 gg scaduto
-  return 'rgba(240,92,92,.12)';                // rosso — >3 gg scaduto
+  if(g < -3)  return 'rgba(56,189,248,.06)';   // azzurro - >3 gg
+  if(g <= 0)  return 'rgba(62,207,142,.08)';   // verde - da -3 a oggi
+  if(g <= 3)  return 'rgba(245,166,35,.10)';   // giallo - 1-3 gg scaduto
+  return 'rgba(240,92,92,.12)';                // rosso - >3 gg scaduto
 }
 function ordfGGLabel(gg, stato) {
   if(stato === 'Consegnato') return '<span style="color:var(--green);font-weight:600">✓</span>';
-  if(gg === null || gg === '' || gg === undefined) return '—';
+  if(gg === null || gg === '' || gg === undefined) return '-';
   var g = parseInt(gg);
   if(isNaN(g)) return gg;
   // g negativo = giorni mancanti alla consegna, g positivo = già scaduto
@@ -3616,13 +3616,13 @@ function renderOrdfTabella() {
     var cells = visCols.map(c => {
       var val = r[c.key];
       var cell = '';
-      if(c.type==='date') cell = val ? fmtDate(val) : '—';
+      if(c.type==='date') cell = val ? fmtDate(val) : '-';
       else if(c.type==='gg') cell = ordfGGLabel(r.gg, r.stato);
       else if(c.type==='stato') {
         var sc = ORDF_STATO_COLORS[val] || {bg:'rgba(148,152,168,.12)',color:'var(--text3)'};
-        cell = val ? '<span style="background:'+sc.bg+';color:'+sc.color+';border-radius:20px;font-size:9px;font-weight:700;padding:2px 8px;white-space:nowrap">'+escHtml(val)+'</span>' : '—';
+        cell = val ? '<span style="background:'+sc.bg+';color:'+sc.color+';border-radius:20px;font-size:9px;font-weight:700;padding:2px 8px;white-space:nowrap">'+escHtml(val)+'</span>' : '-';
       }
-      else cell = escHtml(String(val||'—'));
+      else cell = escHtml(String(val||'-'));
       return '<td style="padding:7px 12px;font-size:14px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+escHtml(String(val||''))+'">'+cell+'</td>';
     }).join('');
     return '<tr style="'+rowStyle+'border-bottom:1px solid var(--border);transition:filter .1s" ' +
@@ -3685,7 +3685,7 @@ function renderOrdfGrafici() {
     data:{labels:mesi.map(m=>{var p=m.split('-');return p[1]+'/'+p[0];}),datasets:[{data:mesi.map(m=>byM[m]),backgroundColor:'rgba(62,207,142,.7)',borderColor:'#2ecc71',borderWidth:1,borderRadius:4}]},options:barOpts});
 }
 
-/* ── Form aggiunta/modifica ordine ── */
+/* -- Form aggiunta/modifica ordine -- */
 function openOrdfForm(id) {
   _ordfEditId = id;
   var r = id ? _ordfData.find(x=>x.id===id) : null;
@@ -3821,10 +3821,10 @@ async function saveOrdfForm() {
   }
 }
 
-/* ══════════════════════════════════════
-   EMAIL ASSISTANT v2 — ANYMA SRL
+/* ======================================
+   EMAIL ASSISTANT v2 - ANYMA SRL
    Multilingua, Humanize, Traduzione
-══════════════════════════════════════ */
+====================================== */
 
 const EA_LANG_FLAGS = {it:'🇮🇹',en:'🇬🇧',fr:'🇫🇷',de:'🇩🇪',es:'🇪🇸'};
 const EA_LANG_NAMES = {it:'italiano',en:'inglese',fr:'francese',de:'tedesco',es:'spagnolo'};
@@ -3883,17 +3883,17 @@ function eaCtxToggle() {
 function eaUpdFirma() {
   const n = document.getElementById('ea-fn').value || 'Daniel Consolaro';
   const r = document.getElementById('ea-fr').value || 'Servizio Tecnico';
-  document.getElementById('ea-fp').innerHTML = n + '<br>' + r + ' — ANYMA SRL<br>service@anymapack.it';
+  document.getElementById('ea-fp').innerHTML = n + '<br>' + r + ' - ANYMA SRL<br>service@anymapack.it';
 }
 
 async function eaCallAPI(messages) {
   const nome  = document.getElementById('ea-fn').value || 'Daniel Consolaro';
   const ruolo = document.getElementById('ea-fr').value || 'Servizio Tecnico';
   const doH   = document.getElementById('ea-humanize').checked;
-  const firma = `${nome}\n${ruolo} — ANYMA SRL\nservice@anymapack.it`;
+  const firma = `${nome}\n${ruolo} - ANYMA SRL\nservice@anymapack.it`;
 
   const system = `Sei l'assistente email di ANYMA SRL, produttrice italiana di macchinari industriali per confezionamento e trasporto (flowpack, nastratrici, pressatrici, PLC Omron, inverter Siemens).
-Stile: professionale, diretto, competente. Niente formule vuote.${doH ? '\nIMPORTANTE — Humanize attivo: evita frasi tipicamente AI ("Sono lieto di", "Non esiti a contattarci", "Cordiali saluti alla sua azienda"). Scrivi come un tecnico esperto italiano.' : ''}
+Stile: professionale, diretto, competente. Niente formule vuote.${doH ? '\nIMPORTANTE - Humanize attivo: evita frasi tipicamente AI ("Sono lieto di", "Non esiti a contattarci", "Cordiali saluti alla sua azienda"). Scrivi come un tecnico esperto italiano.' : ''}
 Firma da usare sempre in chiusura:\n${firma}`;
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -3967,7 +3967,7 @@ async function eaGen() {
       document.getElementById('ea-out-trans').textContent = eaLastTrans;
       document.getElementById('ea-cpbtn-trans').style.display = 'flex';
     } else if (!transLang) {
-      document.getElementById('ea-out-trans').innerHTML = '<span class="ea-out-ph">—</span>';
+      document.getElementById('ea-out-trans').innerHTML = '<span class="ea-out-ph">-</span>';
     }
 
   } catch(e) {
@@ -4010,14 +4010,14 @@ function eaCopy(which) {
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 
-/* ══════════════════════════════════════
-   GESTIONE CONTRATTI — SharePoint AnymaContratti
+/* ======================================
+   GESTIONE CONTRATTI - SharePoint AnymaContratti
    Campi SP: Title(cliente), TipoContratto, Pacchetto,
    SaldoMinuti, SaldoOre, DataInizio, DataFine,
    NumContratto, Attivo, Note
    Tipi: Telefonica / Teleassistenza / Manutenzione
    Pacchetti: Spot / Base / Standard / Premium
-══════════════════════════════════════ */
+====================================== */
 const CONTR_TIPO_COLORS = {
   Telefonica:    '#f97316',
   Teleassistenza:'#06b6d4',
@@ -4042,7 +4042,7 @@ function contrApplySort() {
   renderContratti();
 }
 
-// ── Carica AnymaContratti da SP ──
+// -- Carica AnymaContratti da SP --
 async function loadContratti() {
   var rawId = getSpContrId();
   if(!rawId) {
@@ -4102,13 +4102,13 @@ async function loadContratti() {
   }
 }
 
-// ── Genera contratti per clienti mancanti ──
+// -- Genera contratti per clienti mancanti --
 async function generaContratti() {
   var rawId = getSpContrId();
   if(!rawId) { showToast('Configura GUID lista contratti in Impostazioni'); return; }
   var listId = decodeURIComponent(rawId).replace(/[{}]/g,'');
   var tok = await anGetToken();
-  if(!tok) { showToast('Token scaduto — rieffettua il login'); return; }
+  if(!tok) { showToast('Token scaduto - rieffettua il login'); return; }
   var headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
   if(!_spSiteId) {
     var sr = await fetch(GRAPH_BASE+'/sites/'+SP_SITE_HOSTNAME+':'+SP_SITE_PATH,{headers});
@@ -4157,7 +4157,7 @@ async function generaContratti() {
   await loadContratti();
 }
 
-// ── Render lista clienti ──
+// -- Render lista clienti --
 function renderContratti() {
   var q = (document.getElementById('contr-search')?.value||'').toLowerCase();
   // Raccogli clienti unici
@@ -4197,7 +4197,7 @@ function selectContrCliente(nome) {
   renderContrDettaglio(nome);
 }
 
-// ── Dettaglio contratti per cliente ──
+// -- Dettaglio contratti per cliente --
 function renderContrDettaglio(nome) {
   var contratti = _contrData.filter(function(c){return c.cliente===nome;});
   // Ordina per tipo
@@ -4224,21 +4224,21 @@ function renderContrDettaglio(nome) {
       '</div>' +
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:12px">' +
         '<div><div style="color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Saldo</div><div style="font-weight:700;font-size:16px;color:'+col+'">'+saldoStr+'</div></div>' +
-        '<div><div style="color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">N. Contratto</div><div style="font-weight:600">'+escHtml(c.numContratto||'—')+'</div></div>' +
-        '<div><div style="color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Data inizio</div><div>'+escHtml(c.dataInizio||'—')+'</div></div>' +
+        '<div><div style="color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">N. Contratto</div><div style="font-weight:600">'+escHtml(c.numContratto||'-')+'</div></div>' +
+        '<div><div style="color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Data inizio</div><div>'+escHtml(c.dataInizio||'-')+'</div></div>' +
       '</div>' +
       (c.note ? '<div style="font-size:11px;color:var(--text3);border-top:1px solid var(--border);padding-top:8px">'+escHtml(c.note)+'</div>' : '') +
     '</div>';
   }).join('');
 }
 
-// ── Form modifica contratto ──
+// -- Form modifica contratto --
 function openContrForm(spId) {
   var c = _contrData.find(function(x){return x._spId===spId;});
   if(!c) return;
   _contrEditId = spId;
   document.getElementById('cf-subtitle').textContent = 'Modifica contratto';
-  document.getElementById('cf-title-lbl').textContent = c.cliente+' — '+c.tipo;
+  document.getElementById('cf-title-lbl').textContent = c.cliente+' - '+c.tipo;
   document.getElementById('cf-pacchetto').value = c.pacchetto||'Spot';
   document.getElementById('cf-attivo').value = c.attivo ? 'true' : 'false';
   document.getElementById('cf-saldo-min').value = c.saldoMinuti||0;
@@ -4298,10 +4298,10 @@ async function saveContrForm() {
   }
 }
 
-// ── Resoconto monte ore/minuti ──
+// -- Resoconto monte ore/minuti --
 async function openResoconto(cliente, tipo) {
   document.getElementById('res-subtitle').textContent = cliente;
-  document.getElementById('res-title').textContent = tipo+' — Resoconto interventi';
+  document.getElementById('res-title').textContent = tipo+' - Resoconto interventi';
   document.getElementById('res-body').innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">Caricamento...</div>';
   document.getElementById('resocontoOverlay').classList.remove('hidden');
   try {
@@ -4349,12 +4349,12 @@ function renderResoconto(items, tipo) {
   var rows = items.map(function(i){
     var f=i.fields||{};
     return {
-      numRT:      f.NumRT||f.Title||'—',
-      data:       f.DataRT ? f.DataRT.split('T')[0] : '—',
+      numRT:      f.NumRT||f.Title||'-',
+      data:       f.DataRT ? f.DataRT.split('T')[0] : '-',
       minuti:     f.MinutiUsati||0,
       ore:        f.OreUsate||0,
-      numContr:   f.NumContratto||'—',
-      pacchetto:  f.Pacchetto||'—'
+      numContr:   f.NumContratto||'-',
+      pacchetto:  f.Pacchetto||'-'
     };
   });
   var isTel = tipo==='Telefonica';
@@ -4412,7 +4412,7 @@ function renderResoconto(items, tipo) {
     '<div id="res-table-wrap">'+buildTable()+'</div>';
 }
 
-// ── Impostazioni: render griglia saldi default ──
+// -- Impostazioni: render griglia saldi default --
 function renderContrDefaultsGrid() {
   var d = getContrDefaults();
   var tipi = CONTR_TIPI;
