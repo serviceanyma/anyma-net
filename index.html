@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v61';</script>
+<script>const APP_VERSION = 'v62';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4401,7 +4401,7 @@ async function openResoconto(cliente, tipo) {
     if(!rapListId) throw new Error('Configura il GUID lista AnymaRapportini in Impostazioni');
     var filter = encodeURIComponent("fields/Cliente eq '"+cliente+"'");
     var url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+rapListId+
-      '/items?expand=fields(select=Title,DataIntervento,Cliente,TipoServizio,MinutiUsati,OreLavoro,OreViaggio,Pacchetto,NumContratto,RefNome,Tecnici,SaldoPrima,SaldoDopo)&$filter='+filter+'&$top=500';
+      '/items?expand=fields(select=Title,DataIntervento,Cliente,TipoServizio,OreLavoro,MinutiUsati,Pacchetto,NumContratto,RefNome,Tecnici,SaldoPrima,SaldoDopo,GiornateJSON,SessioniJSON)&$filter='+filter+'&$top=500';
     var resp = await fetch(url,{headers});
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     var data = await resp.json();
@@ -4438,23 +4438,65 @@ function stampaResoconto() {
 
 function renderPdfPanel(items, cliente, tipo) {
   var isTel = tipo==='Telefonica';
-  var unitaLabel = isTel ? 'min' : 'h';
-  var rows = items.map(function(i){
-    var f=i.fields||{};
-    return {
-      numRT:      f.Title||'-',
-      data:       (f.DataIntervento||'').split('T')[0]||'-',
-      referente:  f.RefNome||f.Tecnici||'-',
-      minuti:     parseFloat(f.MinutiUsati)||0,
-      ore:        parseFloat(f.OreLavoro)||0,
-      saldoPrima: f.SaldoPrima!==undefined ? parseFloat(f.SaldoPrima) : null,
-      saldoDopo:  f.SaldoDopo!==undefined  ? parseFloat(f.SaldoDopo)  : null,
-    };
-  }).sort(function(a,b){return a.data.localeCompare(b.data);});
+  var isTeleass = tipo==='Teleassistenza';
+  var unitaLabel = (isTel || isTeleass) ? 'h' : 'h';
 
-  var totConsumo = isTel
-    ? rows.reduce(function(s,r){return s+r.minuti;},0)
-    : rows.reduce(function(s,r){return s+r.ore;},0);
+  // Espandi ogni item usando i JSON interni
+  var rows = [];
+  items.forEach(function(i) {
+    var f = i.fields||{};
+    var title = f.Title||'-';
+    var saldoPrima = f.SaldoPrima!==undefined ? parseFloat(f.SaldoPrima) : null;
+    var saldoDopo  = f.SaldoDopo!==undefined  ? parseFloat(f.SaldoDopo)  : null;
+
+    if(isTeleass && f.SessioniJSON) {
+      // Teleassistenza: una riga per sessione
+      var sessioni = [];
+      try { sessioni = JSON.parse(f.SessioniJSON)||[]; } catch(e){}
+      // Data dall'interno del GiornateJSON
+      var dataGiornata = '-';
+      try {
+        var gg = JSON.parse(f.GiornateJSON||'[]');
+        if(gg[0] && gg[0].data) dataGiornata = gg[0].data;
+      } catch(e){}
+      if(!sessioni.length) {
+        rows.push({numRT:title, data:dataGiornata, inizio:'-', fine:'-', durata:0, referente:f.RefNome||'-', saldoPrima:saldoPrima, saldoDopo:saldoDopo, _primaRiga:true, _spId:i.id});
+      } else {
+        sessioni.forEach(function(s, idx) {
+          rows.push({
+            numRT:    title,
+            data:     dataGiornata,
+            inizio:   s.inizio||'-',
+            fine:     s.fine||'-',
+            durata:   parseFloat(s.durata)||0,  // minuti
+            referente:s.referente||'-',
+            saldoPrima: idx===0 ? saldoPrima : null,
+            saldoDopo:  idx===sessioni.length-1 ? saldoDopo : null,
+            _primaRiga: idx===0,
+            _spId:    i.id
+          });
+        });
+      }
+    } else {
+      // On-site / Manutenzione / Telefonica: una riga per rapportino, usa GiornateJSON
+      var dataGiornata = (f.DataIntervento||'').split('T')[0]||'-';
+      try {
+        var gg2 = JSON.parse(f.GiornateJSON||'[]');
+        if(gg2[0] && gg2[0].data) dataGiornata = gg2[0].data;
+      } catch(e){}
+      var ore = parseFloat(f.OreLavoro)||0;
+      rows.push({numRT:title, data:dataGiornata, inizio:'-', fine:'-', durata: ore*60,
+        referente:f.RefNome||f.Tecnici||'-', saldoPrima:saldoPrima, saldoDopo:saldoDopo, _primaRiga:true, _spId:i.id});
+    }
+  });
+
+  // Ordina per data
+  rows.sort(function(a,b){return (a.data+a.inizio).localeCompare(b.data+b.inizio);});
+
+  // Totale consumato in ore
+  var totMinuti = rows.reduce(function(s,r){return s+(parseFloat(r.durata)||0);},0);
+  var totOre = totMinuti/60;
+
   var contr      = _contrData.find(function(c){return c.cliente===cliente && c.tipo===tipo;});
   var saldoAtt   = contr ? (isTel ? contr.saldoMinuti : contr.saldoOre) : null;
   var numContr   = contr ? (contr.numContratto||'-') : '-';
@@ -4464,38 +4506,18 @@ function renderPdfPanel(items, cliente, tipo) {
   var RED = '#8B1A1A';
   var FONT = 'Barlow,Arial,sans-serif';
 
-  /* ── Il foglio A4 ha proporzione 1:1.4142 (210x297mm)
-        Usiamo larghezza 100% del pannello, altezza = larghezza * 1.4142
-        Il contenuto è un flex-column che spinge i totali in fondo        */
-
-  var wrap = 'box-sizing:border-box;width:100%;height:100%;background:#d0d0d0;'
-           + 'padding:20px;overflow-y:auto;font-family:'+FONT+';display:flex;'
-           + 'justify-content:center;align-items:flex-start';
-
-  /* Il foglio: larghezza piena, altezza minima A4, flex-col per spingere totali in fondo */
-  var sheet = 'box-sizing:border-box;width:100%;min-height:calc(100% * 1.4142);'
-            + 'background:white;padding:20px 24px;font-family:'+FONT+';font-size:9px;'
-            + 'color:#222;line-height:1.4;position:relative;'
-            + 'box-shadow:0 4px 20px rgba(0,0,0,.35);'
-            + 'display:flex;flex-direction:column';
+  var wrap = 'box-sizing:border-box;width:100%;height:100%;background:#d0d0d0;padding:20px;overflow-y:auto;font-family:'+FONT+';display:flex;justify-content:center;align-items:flex-start';
+  var sheet = 'box-sizing:border-box;width:100%;min-height:calc(100% * 1.4142);background:white;padding:20px 24px;font-family:'+FONT+';font-size:9px;color:#222;line-height:1.4;position:relative;box-shadow:0 4px 20px rgba(0,0,0,.35);display:flex;flex-direction:column';
 
   var h = '<div id="pdf-a4-content" style="'+sheet+'">';
+  h += '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:90px;font-weight:900;color:rgba(139,26,26,.05);white-space:nowrap;pointer-events:none;letter-spacing:8px;z-index:0">ANYMA</div>';
 
-  /* filigrana */
-  h += '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) '
-     + 'rotate(-35deg);font-size:90px;font-weight:900;color:rgba(139,26,26,.05);'
-     + 'white-space:nowrap;pointer-events:none;letter-spacing:8px;z-index:0">ANYMA</div>';
-
-  /* ── HEADER ── */
-  h += '<table style="width:100%;border-collapse:collapse;'
-     + 'border-bottom:2.5px solid '+RED+';padding-bottom:7px;margin-bottom:11px"><tr>';
+  // Header
+  h += '<table style="width:100%;border-collapse:collapse;border-bottom:2.5px solid '+RED+';padding-bottom:7px;margin-bottom:11px"><tr>';
   h += '<td style="vertical-align:middle;padding-bottom:7px">';
-  h += logoSrc
-    ? '<img src="'+logoSrc+'" style="max-width:190px;height:auto">'
-    : '<span style="font-size:26px;font-weight:900;color:'+RED+';letter-spacing:1.5px">ANYMA</span>';
+  h += logoSrc ? '<img src="'+logoSrc+'" style="max-width:190px;height:auto">' : '<span style="font-size:26px;font-weight:900;color:'+RED+';letter-spacing:1.5px">ANYMA</span>';
   h += '</td>';
-  h += '<td style="vertical-align:top;text-align:right;font-size:8px;color:#444;'
-     + 'line-height:1.6;white-space:nowrap;padding-bottom:7px">';
+  h += '<td style="vertical-align:top;text-align:right;font-size:8px;color:#444;line-height:1.6;white-space:nowrap;padding-bottom:7px">';
   h += '<strong style="font-size:9px;color:#222;display:block">ANYMA SRL</strong>';
   h += 'Via Val di Sole 31 - 36010 - Zan\xe8 (VI) - Italy<br>';
   h += 'Tel. +39 0445 223889 &nbsp;|&nbsp; info@anymapack.it<br>';
@@ -4503,96 +4525,89 @@ function renderPdfPanel(items, cliente, tipo) {
   h += 'REA: VI-408350 &nbsp;|&nbsp; Cap. Soc. Euro 10.000';
   h += '</td></tr></table>';
 
-  /* ── INFO BAR: 4 celle in riga ── */
-  var LBL = 'display:block;font-size:7px;font-weight:700;color:'+RED
-          + ';text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px';
+  // Info bar
+  var LBL = 'display:block;font-size:7px;font-weight:700;color:'+RED+';text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px';
   var TD4 = 'padding:6px 11px;border-right:1px solid #ccc;vertical-align:top;font-size:8.5px';
   h += '<table style="width:100%;border-collapse:collapse;border:1px solid #ccc;margin-bottom:11px">';
   h += '<tr>';
-  h += '<td style="'+TD4+';width:22%"><span style="'+LBL+'">Cliente</span>'
-     + '<strong style="font-size:9px">'+escHtml(cliente)+'</strong></td>';
-  h += '<td style="'+TD4+';width:30%"><span style="'+LBL+'">Contratto</span>'
-     + escHtml(tipo)+' &bull; N&deg; '+escHtml(numContr)
-     + '<br><span style="color:#666;font-size:8px">Inizio: '+escHtml(dataInizio)+'</span></td>';
+  h += '<td style="'+TD4+';width:22%"><span style="'+LBL+'">Cliente</span><strong style="font-size:9px">'+escHtml(cliente)+'</strong></td>';
+  h += '<td style="'+TD4+';width:30%"><span style="'+LBL+'">Contratto</span>'+escHtml(tipo)+' &bull; N&deg; '+escHtml(numContr)+'<br><span style="color:#666;font-size:8px">Inizio: '+escHtml(dataInizio)+'</span></td>';
   h += '<td style="'+TD4+';width:22%"><span style="'+LBL+'">Estratto al</span>'+oggi+'</td>';
-  h += '<td style="padding:6px 11px;vertical-align:top;text-align:center;width:26%">'
-     + '<span style="'+LBL+'">Saldo residuo</span>'
-     + '<span style="font-size:14px;font-weight:900;color:'+RED+'">'
-     + (saldoAtt!==null ? saldoAtt+' '+unitaLabel : 'N/A')+'</span></td>';
+  h += '<td style="padding:6px 11px;vertical-align:top;text-align:center;width:26%"><span style="'+LBL+'">Saldo residuo</span>';
+  h += '<span style="font-size:14px;font-weight:900;color:'+RED+'">'+(saldoAtt!==null ? saldoAtt+' '+unitaLabel : 'N/A')+'</span></td>';
   h += '</tr></table>';
 
-  /* ── SEZIONE TITOLO ── */
-  h += '<div style="font-weight:700;font-size:9.5px;color:'+RED+';'
-     + 'border-bottom:1px solid '+RED+';padding-bottom:3px;margin-bottom:6px">'
-     + 'Dettaglio Interventi</div>';
+  // Titolo sezione
+  h += '<div style="font-weight:700;font-size:9.5px;color:'+RED+';border-bottom:1px solid '+RED+';padding-bottom:3px;margin-bottom:6px">Dettaglio Interventi</div>';
 
-  /* ── TABELLA INTERVENTI (flex:1 per occupare spazio disponibile) ── */
-  var TH = 'background:'+RED+';color:white;padding:5px 6px;border:1px solid #a83226;'
-         + 'font-weight:700;font-size:8px';
-  var TD = 'padding:4px 6px;border:1px solid #ccc;font-size:8.5px;vertical-align:middle';
-  var TDA= 'padding:4px 6px;border:1px solid #ccc;font-size:8.5px;vertical-align:middle;background:#f7f7f7';
-  var TF = 'padding:5px 6px;border:1px solid #ccc;background:#f0f0f0;'
-         + 'border-top:2px solid '+RED+';font-weight:700;font-size:8.5px';
+  // Tabella
+  var TH  = 'background:'+RED+';color:white;padding:5px 6px;border:1px solid #a83226;font-weight:700;font-size:8px';
+  var TD  = 'padding:4px 6px;border:1px solid #ccc;font-size:8.5px;vertical-align:middle';
+  var TDA = 'padding:4px 6px;border:1px solid #ccc;font-size:8.5px;vertical-align:middle;background:#f7f7f7';
+  var TF  = 'padding:5px 6px;border:1px solid #ccc;background:#f0f0f0;border-top:2px solid '+RED+';font-weight:700;font-size:8.5px';
 
-  h += '<div style="flex:1">';  /* spazio flessibile — spingerà i totali in basso */
+  h += '<div style="flex:1">';
   h += '<table style="width:100%;border-collapse:collapse"><thead><tr>';
   h += '<th style="'+TH+';text-align:left;width:12%">Data</th>';
-  h += '<th style="'+TH+';text-align:left;width:12%">N. RT</th>';
+  h += '<th style="'+TH+';text-align:left;width:16%">N. RT</th>';
+  if(isTeleass) {
+    h += '<th style="'+TH+';text-align:center;width:8%">Inizio</th>';
+    h += '<th style="'+TH+';text-align:center;width:8%">Fine</th>';
+  }
   h += '<th style="'+TH+';text-align:left">Referente</th>';
-  h += '<th style="'+TH+';text-align:center;width:14%">Durata ('+(isTel?'min':'h')+')</th>';
-  h += '<th style="'+TH+';text-align:center;width:14%">Saldo Prima</th>';
-  h += '<th style="'+TH+';text-align:center;width:14%">Saldo Dopo</th>';
+  h += '<th style="'+TH+';text-align:center;width:12%">Durata</th>';
+  h += '<th style="'+TH+';text-align:center;width:12%">Saldo Prima</th>';
+  h += '<th style="'+TH+';text-align:center;width:12%">Saldo Dopo</th>';
   h += '</tr></thead><tbody>';
 
   if(rows.length) {
-    rows.forEach(function(r,i){
-      var td = i%2===1 ? TDA : TD;
-      var cons = isTel ? r.minuti : r.ore;
-      var sp = r.saldoPrima!==null ? r.saldoPrima+' '+unitaLabel : '-';
-      var sd = r.saldoDopo!==null  ? r.saldoDopo+' '+unitaLabel  : '-';
+    rows.forEach(function(r, idx) {
+      var even = idx%2===1;
+      var td = even ? TDA : TD;
+      var durataOre = (r.durata/60);
+      var durataStr = Number.isInteger(durataOre) ? durataOre+'h' : durataOre.toFixed(1)+'h';
+      var sp = r.saldoPrima!==null ? r.saldoPrima+' '+unitaLabel : '';
+      var sd = r.saldoDopo!==null  ? r.saldoDopo+' '+unitaLabel  : '';
       h += '<tr>';
       h += '<td style="'+td+'">'+escHtml(r.data)+'</td>';
       h += '<td style="'+td+';font-weight:700;color:'+RED+'">'+escHtml(r.numRT)+'</td>';
+      if(isTeleass) {
+        h += '<td style="'+td+';text-align:center">'+escHtml(r.inizio)+'</td>';
+        h += '<td style="'+td+';text-align:center">'+escHtml(r.fine)+'</td>';
+      }
       h += '<td style="'+td+'">'+escHtml(r.referente)+'</td>';
-      h += '<td style="'+td+';text-align:center">'+cons+' '+unitaLabel+'</td>';
+      h += '<td style="'+td+';text-align:center">'+durataStr+'</td>';
       h += '<td style="'+td+';text-align:center">'+sp+'</td>';
       h += '<td style="'+td+';text-align:center">'+sd+'</td>';
       h += '</tr>';
     });
   } else {
-    h += '<tr><td colspan="6" style="padding:14px;text-align:center;color:#999;'
-       + 'border:1px solid #ccc;font-size:8.5px">Nessun intervento registrato</td></tr>';
+    var colspan = isTeleass ? 8 : 6;
+    h += '<tr><td colspan="'+colspan+'" style="padding:12px;text-align:center;color:#999;border:1px solid #ccc">Nessun intervento registrato</td></tr>';
   }
 
+  var totStr = Number.isInteger(totOre) ? totOre+'h' : totOre.toFixed(2)+'h';
+  var colspan2 = isTeleass ? 5 : 3;
+  var colspan3 = isTeleass ? 2 : 2;
   h += '</tbody><tfoot><tr>';
-  h += '<td colspan="3" style="'+TF+'">Totale consumato</td>';
-  h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+totConsumo.toFixed(isTel?0:2)+' '+unitaLabel+'</td>';
-  h += '<td colspan="2" style="'+TF+'"></td>';
+  h += '<td colspan="'+colspan2+'" style="'+TF+'">Totale consumato</td>';
+  h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+totStr+'</td>';
+  h += '<td colspan="'+colspan3+'" style="'+TF+'"></td>';
   h += '</tr></tfoot></table>';
-  h += '</div>';  /* fine flex:1 */
-
-  /* ── TOTALI A PIÈ DI PAGINA ── */
-  var BOX = 'flex:1;background:#fdf0f0;border:1px solid #d4a0a0;border-radius:5px;'
-          + 'padding:8px 10px;text-align:center';
-  var BL  = 'display:block;font-size:7px;color:'+RED+';text-transform:uppercase;'
-          + 'letter-spacing:.4px;font-weight:700;margin-bottom:4px';
-  var BV  = 'font-size:17px;font-weight:900;color:'+RED+';line-height:1';
-
-  h += '<div style="display:flex;gap:8px;margin-top:14px;padding-top:12px;'
-     + 'border-top:1px solid #e8d0d0">';
-  h += '<div style="'+BOX+'"><span style="'+BL+'">Interventi</span>'
-     + '<span style="'+BV+'">'+rows.length+'</span></div>';
-  h += '<div style="'+BOX+'"><span style="'+BL+'">Consumato</span>'
-     + '<span style="'+BV+'">'+totConsumo.toFixed(isTel?0:2)+' '+unitaLabel+'</span></div>';
-  if(saldoAtt!==null)
-    h += '<div style="'+BOX+'"><span style="'+BL+'">Saldo residuo</span>'
-       + '<span style="'+BV+'">'+saldoAtt+' '+unitaLabel+'</span></div>';
   h += '</div>';
 
-  h += '</div>';  /* fine sheet */
+  // Totali a piè pagina
+  var BOX = 'flex:1;background:#fdf0f0;border:1px solid #d4a0a0;border-radius:5px;padding:8px 10px;text-align:center';
+  var BL  = 'display:block;font-size:7px;color:'+RED+';text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-bottom:4px';
+  var BV  = 'font-size:17px;font-weight:900;color:'+RED+';line-height:1';
+  h += '<div style="display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid #e8d0d0">';
+  h += '<div style="'+BOX+'"><span style="'+BL+'">Interventi</span><span style="'+BV+'">'+items.length+'</span></div>';
+  h += '<div style="'+BOX+'"><span style="'+BL+'">Consumato</span><span style="'+BV+'">'+totStr+'</span></div>';
+  if(saldoAtt!==null) h += '<div style="'+BOX+'"><span style="'+BL+'">Saldo residuo</span><span style="'+BV+'">'+saldoAtt+' '+unitaLabel+'</span></div>';
+  h += '</div>';
+  h += '</div>';
 
   var wrapper = '<div style="'+wrap+'">'+h+'</div>';
-
   var prev = document.getElementById('contr-pdf-preview');
   if(prev) prev.innerHTML = wrapper;
   var btnS = document.getElementById('btn-stampa-pdf');
