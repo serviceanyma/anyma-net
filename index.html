@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v56';</script>
+<script>const APP_VERSION = 'v57';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1132,7 +1132,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 
       <!-- Split: lista clienti | card contratti | pannello PDF resoconto -->
       <div id="contr-split" style="display:none;flex:1;min-height:0;overflow:hidden">
-        <div style="display:grid;grid-template-columns:240px 1fr 0px;transition:grid-template-columns .3s ease;gap:0;height:100%;overflow:hidden" id="contr-grid">
+        <div style="display:grid;grid-template-columns:220px 1fr 0px;transition:grid-template-columns .3s ease;gap:0;height:100%;overflow:hidden" id="contr-grid">
           <!-- Col 1: lista clienti -->
           <div style="background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
             <div class="list-header"><span>Clienti</span><span id="contr-cli-count" style="color:var(--accent);font-size:10px"></span></div>
@@ -4382,7 +4382,7 @@ async function saveContrForm() {
 async function openResoconto(cliente, tipo) {
   var grid = document.getElementById('contr-grid');
   var panel = document.getElementById('contr-pdf-panel');
-  if(grid) grid.style.gridTemplateColumns = '240px 1fr 480px';
+  if(grid) grid.style.gridTemplateColumns = '220px 1fr 820px';
   if(panel) panel.style.opacity = '1';
   var sub = document.getElementById('pdf-panel-subtitle');
   var tit = document.getElementById('pdf-panel-title');
@@ -4418,7 +4418,7 @@ async function openResoconto(cliente, tipo) {
 function chiudiPdfPanel() {
   var grid = document.getElementById('contr-grid');
   var panel = document.getElementById('contr-pdf-panel');
-  if(grid) grid.style.gridTemplateColumns = '240px 1fr 0px';
+  if(grid) grid.style.gridTemplateColumns = '220px 1fr 0px';
   if(panel) panel.style.opacity = '0';
 }
 
@@ -4451,121 +4451,118 @@ function renderPdfPanel(items, cliente, tipo) {
     };
   }).sort(function(a,b){return a.data.localeCompare(b.data);});
 
-  var totConsumo = isTel ? rows.reduce(function(s,r){return s+r.minuti;},0) : rows.reduce(function(s,r){return s+r.ore;},0);
-  var contr = _contrData.find(function(c){return c.cliente===cliente && c.tipo===tipo;});
-  var saldoAttuale = contr ? (isTel ? contr.saldoMinuti : contr.saldoOre) : null;
-  var numContr  = contr ? (contr.numContratto||'-') : '-';
+  var totConsumo = isTel
+    ? rows.reduce(function(s,r){return s+r.minuti;},0)
+    : rows.reduce(function(s,r){return s+r.ore;},0);
+  var contr      = _contrData.find(function(c){return c.cliente===cliente && c.tipo===tipo;});
+  var saldoAtt   = contr ? (isTel ? contr.saldoMinuti : contr.saldoOre) : null;
+  var numContr   = contr ? (contr.numContratto||'-') : '-';
   var dataInizio = contr ? (contr.dataInizio||'-') : '-';
-  var oggi = new Date().toLocaleDateString('it-IT');
-  var logoSrc = typeof LOGO_RESOCONTO !== 'undefined' && LOGO_RESOCONTO ? LOGO_RESOCONTO : '';
+  var oggi       = new Date().toLocaleDateString('it-IT');
+  var logoSrc    = typeof LOGO_RESOCONTO!=='undefined' && LOGO_RESOCONTO ? LOGO_RESOCONTO : '';
 
-  /* ── Stili costanti ────────────────────────────────────────────── */
-  var S = {
-    page:    'width:750px;background:white;padding:14px 20px;margin:0 auto;font-family:Barlow,Arial,sans-serif;font-size:8px;color:#222;line-height:1.35;position:relative;box-shadow:0 4px 24px rgba(0,0,0,.3)',
-    hdr:     'display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:2px solid #8B1A1A;padding-bottom:6px;margin-bottom:8px',
-    logo:    'max-width:160px;height:auto;flex-shrink:0',
-    company: 'font-size:7px;color:#444;line-height:1.5;text-align:right;white-space:nowrap;flex-shrink:0',
-    // Info bar: tabella a riga unica
-    infoTbl: 'width:100%;border-collapse:collapse;border:1px solid #ccc;margin-bottom:8px;font-size:7px',
-    infoTd:  'padding:5px 9px;border-right:1px solid #ccc;vertical-align:top',
-    infoLbl: 'font-size:6px;font-weight:700;color:#8B1A1A;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:2px',
-    // Sezione
-    sec:     'font-weight:700;font-size:8px;color:#8B1A1A;border-bottom:1px solid #8B1A1A;padding-bottom:2px;margin:7px 0 4px',
-    // Tabella interventi
-    tbl:     'width:100%;border-collapse:collapse;font-size:7px',
-    th:      'background:#8B1A1A;color:white;padding:4px 5px;border:1px solid #a83226;font-weight:700;text-align:left',
-    thC:     'background:#8B1A1A;color:white;padding:4px 5px;border:1px solid #a83226;font-weight:700;text-align:center',
-    td:      'padding:3px 5px;border:1px solid #ccc;text-align:left;vertical-align:middle',
-    tdC:     'padding:3px 5px;border:1px solid #ccc;text-align:center;vertical-align:middle',
-    tdR:     'padding:3px 5px;border:1px solid #ccc;text-align:right;vertical-align:middle;font-weight:700',
-    tdFoot:  'padding:4px 5px;border:1px solid #ccc;background:#f0f0f0;border-top:2px solid #8B1A1A;font-weight:700',
-    tdFootR: 'padding:4px 5px;border:1px solid #ccc;background:#f0f0f0;border-top:2px solid #8B1A1A;font-weight:700;text-align:right;color:#8B1A1A',
-    tdAlt:   'padding:3px 5px;border:1px solid #ccc;text-align:left;vertical-align:middle;background:#f8f8f8',
-    tdAltC:  'padding:3px 5px;border:1px solid #ccc;text-align:center;vertical-align:middle;background:#f8f8f8',
-    tdAltR:  'padding:3px 5px;border:1px solid #ccc;text-align:right;vertical-align:middle;font-weight:700;background:#f8f8f8',
-    // Totali
-    totWrap: 'display:flex;gap:8px;margin-top:8px',
-    totBox:  'flex:1;background:#f9f0f0;border:1px solid #d4a0a0;border-radius:4px;padding:6px 8px;text-align:center',
-    totLbl:  'font-size:6px;color:#8B1A1A;text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-bottom:2px',
-    totVal:  'font-size:14px;font-weight:900;color:#8B1A1A;line-height:1.1',
-    wm:      'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:72px;font-weight:900;color:rgba(139,26,26,.06);white-space:nowrap;pointer-events:none;letter-spacing:6px;z-index:1;font-family:Barlow,Arial'
-  };
+  /* colori/font fissi */
+  var RED   = '#8B1A1A';
+  var FONT  = 'Barlow,Arial,sans-serif';
 
-  var h = '<div id="pdf-a4-content" style="'+S.page+'">';
-  h += '<div style="'+S.wm+'">ANYMA</div>';
+  /* ── wrapper sfondo grigio (occupa tutto il pannello) ── */
+  var w  = 'box-sizing:border-box;width:100%;height:100%;background:#d8d8d8;padding:16px;overflow-y:auto;font-family:'+FONT;
+  /* ── foglio bianco (larghezza piena meno 32px padding) ── */
+  var pg = 'box-sizing:border-box;width:100%;background:white;padding:18px 22px;font-family:'+FONT+';font-size:8px;color:#222;line-height:1.4;position:relative;box-shadow:0 3px 16px rgba(0,0,0,.28)';
 
-  /* Header */
-  h += '<div style="'+S.hdr+'">';
-  h += logoSrc
-    ? '<img style="'+S.logo+'" src="'+logoSrc+'">'
-    : '<div style="font-size:22px;font-weight:900;color:#8B1A1A;letter-spacing:1px;flex-shrink:0">ANYMA</div>';
-  h += '<div style="'+S.company+'"><strong style="font-size:8px;color:#222;display:block;margin-bottom:1px">ANYMA SRL</strong>';
+  var h = '<div id="pdf-a4-content" style="'+pg+'">';
+
+  /* filigrana */
+  h += '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:80px;font-weight:900;color:rgba(139,26,26,.05);white-space:nowrap;pointer-events:none;letter-spacing:8px;z-index:0">ANYMA</div>';
+
+  /* ── HEADER: logo sx | azienda dx ── */
+  h += '<table style="width:100%;border-collapse:collapse;border-bottom:2.5px solid '+RED+';padding-bottom:6px;margin-bottom:10px"><tr>';
+  h += '<td style="vertical-align:top;padding-bottom:6px">';
+  if(logoSrc) {
+    h += '<img src="'+logoSrc+'" style="max-width:180px;height:auto">';
+  } else {
+    h += '<span style="font-size:24px;font-weight:900;color:'+RED+';letter-spacing:1.5px">ANYMA</span>';
+  }
+  h += '</td>';
+  h += '<td style="vertical-align:top;text-align:right;font-size:7px;color:#444;line-height:1.6;white-space:nowrap;padding-bottom:6px">';
+  h += '<strong style="font-size:8px;color:#222;display:block">ANYMA SRL</strong>';
   h += 'Via Val di Sole 31 - 36010 - Zan\xe8 (VI) - Italy<br>';
-  h += 'Tel. +39 0445 223889 - info@anymapack.it<br>';
-  h += 'P.IVA IT04494860242 - C.F. &amp; R.I. Vicenza 04494860242<br>';
-  h += 'REA: VI - 408350 - Cap. Soc. Euro 10.000</div>';
-  h += '</div>';
+  h += 'Tel. +39 0445 223889 &nbsp;|&nbsp; info@anymapack.it<br>';
+  h += 'P.IVA IT04494860242 &nbsp;|&nbsp; C.F. &amp; R.I. Vicenza 04494860242<br>';
+  h += 'REA: VI-408350 &nbsp;|&nbsp; Cap. Soc. Euro 10.000';
+  h += '</td></tr></table>';
 
-  /* Info bar — 4 celle in riga unica */
-  h += '<table style="'+S.infoTbl+'"><tr>';
-  h += '<td style="'+S.infoTd+';width:22%"><span style="'+S.infoLbl+'">Cliente</span><strong>'+escHtml(cliente)+'</strong></td>';
-  h += '<td style="'+S.infoTd+';width:28%"><span style="'+S.infoLbl+'">Tipo contratto</span>'+escHtml(tipo)+' &bull; N\xb0 '+escHtml(numContr)+'</td>';
-  h += '<td style="'+S.infoTd+';width:22%"><span style="'+S.infoLbl+'">Inizio &nbsp;/&nbsp; Estratto al</span>'+escHtml(dataInizio)+' / '+oggi+'</td>';
-  h += '<td style="padding:5px 9px;vertical-align:top;text-align:center;width:28%">';
-  h += '<span style="'+S.infoLbl+'">Saldo residuo</span>';
-  h += '<span style="font-size:12px;font-weight:900;color:#8B1A1A">'+(saldoAttuale!==null ? saldoAttuale+' '+unitaLabel : 'N/A')+'</span></td>';
+  /* ── INFO BAR: 4 celle in riga ── */
+  var cellBase = 'padding:5px 10px;border-right:1px solid #ccc;vertical-align:top;font-size:7.5px';
+  var lbl      = 'display:block;font-size:6px;font-weight:700;color:'+RED+';text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px';
+  h += '<table style="width:100%;border-collapse:collapse;border:1px solid #ccc;margin-bottom:10px">';
+  h += '<tr>';
+  h += '<td style="'+cellBase+';width:22%"><span style="'+lbl+'">Cliente</span><strong style="font-size:8px">'+escHtml(cliente)+'</strong></td>';
+  h += '<td style="'+cellBase+';width:30%"><span style="'+lbl+'">Contratto</span>'+escHtml(tipo)+' &bull; N&deg; '+escHtml(numContr)+'<br><span style="color:#666">Inizio: '+escHtml(dataInizio)+'</span></td>';
+  h += '<td style="'+cellBase+';width:22%"><span style="'+lbl+'">Estratto al</span>'+oggi+'</td>';
+  h += '<td style="padding:5px 10px;vertical-align:top;text-align:center;width:26%;border-right:none"><span style="'+lbl+'">Saldo residuo</span>';
+  h += '<span style="font-size:13px;font-weight:900;color:'+RED+'">'+(saldoAtt!==null ? saldoAtt+' '+unitaLabel : 'N/A')+'</span></td>';
   h += '</tr></table>';
 
-  /* Tabella interventi */
-  h += '<div style="'+S.sec+'">Dettaglio Interventi</div>';
-  h += '<table style="'+S.tbl+'"><thead><tr>';
-  h += '<th style="'+S.th+';width:13%">Data</th>';
-  h += '<th style="'+S.th+';width:13%">N. RT</th>';
-  h += '<th style="'+S.th+'">Referente</th>';
-  h += '<th style="'+S.thC+';width:14%">Durata ('+(isTel?'min':'h')+')</th>';
-  h += '<th style="'+S.thC+';width:14%">Saldo Prima</th>';
-  h += '<th style="'+S.thC+';width:14%">Saldo Dopo</th>';
+  /* ── TITOLO SEZIONE ── */
+  h += '<div style="font-weight:700;font-size:8.5px;color:'+RED+';border-bottom:1px solid '+RED+';padding-bottom:2px;margin:0 0 5px">Dettaglio Interventi</div>';
+
+  /* ── TABELLA INTERVENTI ── */
+  var TH = 'background:'+RED+';color:white;padding:4px 6px;border:1px solid #a83226;font-weight:700;font-size:7px';
+  var TD = 'padding:3px 6px;border:1px solid #ccc;font-size:7.5px;vertical-align:middle';
+  var TDA= 'padding:3px 6px;border:1px solid #ccc;font-size:7.5px;vertical-align:middle;background:#f7f7f7';
+
+  h += '<table style="width:100%;border-collapse:collapse"><thead><tr>';
+  h += '<th style="'+TH+';text-align:left;width:12%">Data</th>';
+  h += '<th style="'+TH+';text-align:left;width:12%">N. RT</th>';
+  h += '<th style="'+TH+';text-align:left">Referente</th>';
+  h += '<th style="'+TH+';text-align:center;width:13%">Durata ('+(isTel?'min':'h')+')</th>';
+  h += '<th style="'+TH+';text-align:center;width:13%">Saldo Prima</th>';
+  h += '<th style="'+TH+';text-align:center;width:13%">Saldo Dopo</th>';
   h += '</tr></thead><tbody>';
 
   if(rows.length) {
-    rows.forEach(function(r, idx){
-      var even = idx%2===1;
-      var td  = even ? S.tdAlt  : S.td;
-      var tdC = even ? S.tdAltC : S.tdC;
-      var tdR = even ? S.tdAltR : S.tdR;
+    rows.forEach(function(r,i){
+      var td = i%2===1 ? TDA : TD;
       var cons = isTel ? r.minuti : r.ore;
       var sp = r.saldoPrima!==null ? r.saldoPrima+' '+unitaLabel : '-';
       var sd = r.saldoDopo!==null  ? r.saldoDopo+' '+unitaLabel  : '-';
       h += '<tr>';
       h += '<td style="'+td+'">'+escHtml(r.data)+'</td>';
-      h += '<td style="'+td+';font-weight:700;color:#8B1A1A">'+escHtml(r.numRT)+'</td>';
+      h += '<td style="'+td+';font-weight:700;color:'+RED+'">'+escHtml(r.numRT)+'</td>';
       h += '<td style="'+td+'">'+escHtml(r.referente)+'</td>';
-      h += '<td style="'+tdC+'">'+cons+' '+unitaLabel+'</td>';
-      h += '<td style="'+tdC+'">'+sp+'</td>';
-      h += '<td style="'+tdC+'">'+sd+'</td>';
+      h += '<td style="'+td+';text-align:center">'+cons+' '+unitaLabel+'</td>';
+      h += '<td style="'+td+';text-align:center">'+sp+'</td>';
+      h += '<td style="'+td+';text-align:center">'+sd+'</td>';
       h += '</tr>';
     });
   } else {
-    h += '<tr><td colspan="6" style="padding:12px;text-align:center;color:#888;border:1px solid #ccc">Nessun intervento registrato</td></tr>';
+    h += '<tr><td colspan="6" style="padding:12px;text-align:center;color:#999;border:1px solid #ccc;font-size:7.5px">Nessun intervento registrato</td></tr>';
   }
 
+  /* footer tabella */
+  var TF = 'padding:4px 6px;border:1px solid #ccc;background:#f0f0f0;border-top:2px solid '+RED+';font-weight:700;font-size:7.5px';
   h += '</tbody><tfoot><tr>';
-  h += '<td colspan="3" style="'+S.tdFoot+'">Totale consumato</td>';
-  h += '<td style="'+S.tdFootR+'">'+totConsumo.toFixed(isTel?0:2)+' '+unitaLabel+'</td>';
-  h += '<td colspan="2" style="'+S.tdFoot+'"></td>';
+  h += '<td colspan="3" style="'+TF+'">Totale consumato</td>';
+  h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+totConsumo.toFixed(isTel?0:2)+' '+unitaLabel+'</td>';
+  h += '<td colspan="2" style="'+TF+'"></td>';
   h += '</tr></tfoot></table>';
 
-  /* Totali */
-  h += '<div style="'+S.totWrap+'">';
-  h += '<div style="'+S.totBox+'"><div style="'+S.totLbl+'">Interventi</div><div style="'+S.totVal+'">'+rows.length+'</div></div>';
-  h += '<div style="'+S.totBox+'"><div style="'+S.totLbl+'">Consumato</div><div style="'+S.totVal+'">'+totConsumo.toFixed(isTel?0:2)+' '+unitaLabel+'</div></div>';
-  if(saldoAttuale!==null)
-    h += '<div style="'+S.totBox+'"><div style="'+S.totLbl+'">Saldo residuo</div><div style="'+S.totVal+'">'+saldoAttuale+' '+unitaLabel+'</div></div>';
+  /* ── TOTALI ── */
+  var BOX = 'flex:1;background:#fdf0f0;border:1px solid #d4a0a0;border-radius:5px;padding:7px 10px;text-align:center';
+  var BL  = 'display:block;font-size:6px;color:'+RED+';text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-bottom:3px';
+  var BV  = 'font-size:16px;font-weight:900;color:'+RED+';line-height:1';
+  h += '<div style="display:flex;gap:8px;margin-top:10px">';
+  h += '<div style="'+BOX+'"><span style="'+BL+'">Interventi</span><span style="'+BV+'">'+rows.length+'</span></div>';
+  h += '<div style="'+BOX+'"><span style="'+BL+'">Consumato</span><span style="'+BV+'">'+totConsumo.toFixed(isTel?0:2)+' '+unitaLabel+'</span></div>';
+  if(saldoAtt!==null)
+    h += '<div style="'+BOX+'"><span style="'+BL+'">Saldo residuo</span><span style="'+BV+'">'+saldoAtt+' '+unitaLabel+'</span></div>';
   h += '</div>';
-  h += '</div>'; // fine pdf-a4-content
 
-  /* Wrapper sfondo grigio */
-  var wrapper = '<div style="background:#e0e0e0;padding:20px;min-height:100%;box-sizing:border-box">'+h+'</div>';
+  h += '</div>'; /* fine pdf-a4-content */
+
+  /* wrapper */
+  var wrapper = '<div style="'+w+'">'+h+'</div>';
 
   var prev = document.getElementById('contr-pdf-preview');
   if(prev) prev.innerHTML = wrapper;
