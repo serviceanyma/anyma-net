@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v49';</script>
+<script>const APP_VERSION = 'v48';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4322,20 +4322,14 @@ function openContrForm(spId) {
     var hasS = pac!=='Spot'&&pac!=='Premium';
     document.getElementById('cf-min-wrap').style.display = tipo==='Telefonica'&&hasS?'':'none';
     document.getElementById('cf-ore-wrap').style.display = tipo!=='Telefonica'&&hasS?'':'none';
-    if(pac==='Spot') {
-      // Spot = nessun saldo prepagato, azzera
-      document.getElementById('cf-saldo-min').value = 0;
-      document.getElementById('cf-saldo-ore').value = 0;
-    } else {
-      // Carica automaticamente il saldo default per tipo+pacchetto
-      var defs = getContrDefaults();
-      var def = (defs[tipo]&&defs[tipo][pac]) || null;
-      if(def && tipo==='Telefonica' && def.saldoMinuti!==undefined){
-        document.getElementById('cf-saldo-min').value = def.saldoMinuti;
-      }
-      if(def && tipo!=='Telefonica' && def.saldoOre!==undefined){
-        document.getElementById('cf-saldo-ore').value = def.saldoOre;
-      }
+    // Carica automaticamente il saldo default per tipo+pacchetto
+    var defs = getContrDefaults();
+    var def = (defs[tipo]&&defs[tipo][pac]) || null;
+    if(def && tipo==='Telefonica' && def.saldoMinuti!==undefined){
+      document.getElementById('cf-saldo-min').value = def.saldoMinuti;
+    }
+    if(def && tipo!=='Telefonica' && def.saldoOre!==undefined){
+      document.getElementById('cf-saldo-ore').value = def.saldoOre;
     }
   };
 }
@@ -4353,18 +4347,13 @@ async function saveContrForm() {
   // Saldo: usa il valore del campo (già aggiornato dall'onchange o modificato manualmente)
   var sMin   = parseInt(document.getElementById('cf-saldo-min').value)||0;
   var sOre   = parseFloat(document.getElementById('cf-saldo-ore').value)||0;
-  // Se pacchetto è cambiato rispetto all'originale, aggiorna saldo
+  // Se pacchetto è cambiato rispetto all'originale, forza il saldo dal default
   var tipo   = _contrEditTipo || '';
   if (pac !== _contrEditPacOrig) {
-    if (pac === 'Spot') {
-      // Spot = nessun saldo prepagato
-      sMin = 0; sOre = 0;
-    } else {
-      var defs = getContrDefaults();
-      var def = (defs[tipo]&&defs[tipo][pac]) || null;
-      if (def && tipo==='Telefonica' && def.saldoMinuti!==undefined) sMin = def.saldoMinuti;
-      if (def && tipo!=='Telefonica' && def.saldoOre!==undefined) sOre = def.saldoOre;
-    }
+    var defs = getContrDefaults();
+    var def = (defs[tipo]&&defs[tipo][pac]) || null;
+    if (def && tipo==='Telefonica' && def.saldoMinuti!==undefined) sMin = def.saldoMinuti;
+    if (def && tipo!=='Telefonica' && def.saldoOre!==undefined) sOre = def.saldoOre;
   }
   var fields = {Pacchetto:pac, Attivo:attivo, SaldoMinuti:sMin, SaldoOre:sOre,
     NumContratto:num, Note:note};
@@ -4569,3 +4558,4 @@ function renderPdfPanel(items, cliente, tipo) {
     '.pdf-tot-label{font-size:7pt;color:#8B1A1A;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px}' +
     '.pdf-tot-val{font-size:16pt;font-weight:800;color:#8B1A1A}' +
     '.pdf-wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:60px;font-weight:900;color:rgba(139,26,26,.05);white-space:nowrap;pointer-events:none;letter-spacing:6px;z-index:1}' +
+    '</style>' +
