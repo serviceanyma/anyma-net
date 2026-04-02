@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v39';</script>
+<script>const APP_VERSION = 'v40';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -739,31 +739,40 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
             oninput="saveSpSetting('sp_ordf_id',this.value,this)">
           <div id="settings-sp-ordf-id-status" style="font-size:11px;margin-top:4px;color:var(--text3)">Non salvato</div>
         </div>
+      </div>
 
-        <!-- AnymaContratti -->
-        <div class="settings-card" style="flex-direction:column;align-items:flex-start">
-          <div class="settings-card-info" style="flex:1;min-width:0;width:100%">
-            <div class="settings-card-title">SharePoint - Lista AnymaContratti (GUID)</div>
-            <div class="settings-card-path">ID lista Contratti da SharePoint</div>
-            <input type="text" id="settings-sp-contr-id"
-              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-              style="width:100%;margin-top:7px;font-size:11px;padding:5px 8px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);outline:none;box-sizing:border-box"
-              oninput="saveSpSetting('sp_contr_id',this.value,this)">
-            <div id="settings-sp-contr-id-status" style="font-size:11px;margin-top:4px;color:var(--text3)">Non salvato</div>
+      <!-- Card Lista AnymaContratti -->
+      <div class="settings-card">
+        <div class="settings-card-icon" style="background:rgba(155,89,182,.15);flex-shrink:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#9b59b6" stroke-width="1.5" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <div class="settings-card-info" style="flex:1;min-width:0">
+          <div class="settings-card-title">SharePoint - Lista AnymaContratti (GUID)</div>
+          <div class="settings-card-path">ID lista Contratti da SharePoint</div>
+          <input type="text" id="settings-sp-contr-id"
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            style="width:100%;margin-top:7px;font-size:11px;padding:5px 8px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);outline:none;box-sizing:border-box"
+            oninput="saveSpSetting('sp_contr_id',this.value,this)">
+          <div id="settings-sp-contr-id-status" style="font-size:11px;margin-top:4px;color:var(--text3)">Non salvato</div>
+        </div>
+      </div>
+
+      <!-- Card Saldi default contratti -->
+      <div class="settings-card" style="flex-direction:column;align-items:flex-start;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px;width:100%">
+          <div class="settings-card-icon" style="background:rgba(230,126,34,.15);flex-shrink:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#e67e22" stroke-width="1.5" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          </div>
+          <div>
+            <div class="settings-card-title" style="font-size:13px;font-weight:600">Saldi default contratti</div>
+            <div style="font-size:11px;color:var(--text3)">Utilizzati alla creazione automatica. Spot non ha saldo.</div>
           </div>
         </div>
-
-        <!-- Saldi default contratti -->
-        <div class="settings-card" style="flex-direction:column;align-items:flex-start;gap:10px">
-          <div class="settings-card-title" style="font-size:13px;font-weight:600">Saldi default contratti</div>
-          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Utilizzati alla creazione automatica contratti. Spot non ha saldo.</div>
-          <div id="contr-defaults-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:100%"></div>
-          <button class="btn btn-sm" onclick="saveContrDefaultsUI()" style="margin-top:4px">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><path d="M13 2L6 9l-3-3"/></svg>
-            Salva saldi default
-          </button>
-        </div>
-
+        <div id="contr-defaults-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:100%"></div>
+        <button class="btn btn-sm" onclick="saveContrDefaultsUI()" style="margin-top:2px">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><path d="M13 2L6 9l-3-3"/></svg>
+          Salva saldi default
+        </button>
       </div>
     </div>
     <div class="settings-note">
