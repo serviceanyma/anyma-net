@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v33';</script>
+<script>const APP_VERSION = 'v34';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -614,6 +614,14 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
   </div>
 
   <div class="nav-sep"></div>
+  <div class="nav-section-label">Gestione Contratti</div>
+  <div class="nav-item" id="nav-contratti" onclick="showView('contratti')">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="14" height="12" rx="1"/><path d="M4 5h8M4 8h6M4 11h4"/></svg>
+    Contratti SP
+    <span class="badge-count" id="cnt-contratti">—</span>
+  </div>
+
+  <div class="nav-sep"></div>
   <div class="nav-sep"></div>
   <div class="nav-item" id="nav-email" onclick="showView('email')">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1"/><path d="M1 5l7 5 7-5"/></svg>
@@ -730,6 +738,31 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
             oninput="saveSpSetting('sp_ordf_id',this.value,this)">
           <div id="settings-sp-ordf-id-status" style="font-size:11px;margin-top:4px;color:var(--text3)">Non salvato</div>
         </div>
+
+        <!-- AnymaContratti -->
+        <div class="settings-card" style="flex-direction:column;align-items:flex-start">
+          <div class="settings-card-info" style="flex:1;min-width:0;width:100%">
+            <div class="settings-card-title">SharePoint — Lista AnymaContratti (GUID)</div>
+            <div class="settings-card-path">ID lista Contratti da SharePoint</div>
+            <input type="text" id="settings-sp-contr-id"
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              style="width:100%;margin-top:7px;font-size:11px;padding:5px 8px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);outline:none;box-sizing:border-box"
+              oninput="saveSpSetting('sp_contr_id',this.value,this)">
+            <div id="settings-sp-contr-id-status" style="font-size:11px;margin-top:4px;color:var(--text3)">Non salvato</div>
+          </div>
+        </div>
+
+        <!-- Saldi default contratti -->
+        <div class="settings-card" style="flex-direction:column;align-items:flex-start;gap:10px">
+          <div class="settings-card-title" style="font-size:13px;font-weight:600">Saldi default contratti</div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Utilizzati alla creazione automatica contratti. Spot non ha saldo.</div>
+          <div id="contr-defaults-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;width:100%"></div>
+          <button class="btn btn-sm" onclick="saveContrDefaultsUI()" style="margin-top:4px">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><path d="M13 2L6 9l-3-3"/></svg>
+            Salva saldi default
+          </button>
+        </div>
+
       </div>
     </div>
     <div class="settings-note">
@@ -1038,6 +1071,141 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
     </div>
   </div>
 
+
+  <!-- VIEW: GESTIONE CONTRATTI -->
+  <div id="view-contratti" class="content-view">
+    <div class="proj-view" id="contr-inner" style="gap:0">
+
+      <!-- Toolbar -->
+      <div class="proj-top">
+        <div class="sp-status"><div class="sp-dot" id="contr-dot"></div><span id="contr-status-txt">Non connesso</span></div>
+        <button class="btn btn-sm" id="btn-contr-load" onclick="loadContratti()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5M13.5 2.5v3.5h-3.5"/></svg>
+          Carica da SharePoint
+        </button>
+        <button class="btn btn-sm btn-primary" id="btn-contr-gen" onclick="generaContratti()" style="display:none">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>
+          Genera contratti
+        </button>
+        <span class="tag-count" id="contr-count" style="display:none"></span>
+        <input type="text" class="filter-input" id="contr-search" placeholder="Cerca cliente..." oninput="renderContratti()" style="display:none;max-width:200px">
+        <select class="sel" id="contr-sort-sel" onchange="contrApplySort()" style="display:none;font-size:11px">
+          <option value="cliente_asc">Cliente A→Z</option>
+          <option value="cliente_desc">Cliente Z→A</option>
+          <option value="tipo_asc">Tipo A→Z</option>
+          <option value="saldo_desc">Saldo ↓</option>
+        </select>
+      </div>
+
+      <!-- Split: lista clienti | dettaglio contratti -->
+      <div id="contr-split" style="display:none;flex:1;min-height:0;overflow:hidden;display:none">
+        <div style="display:grid;grid-template-columns:260px 1fr;gap:0;height:100%;overflow:hidden">
+          <!-- Col 1: lista clienti -->
+          <div style="background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
+            <div class="list-header"><span>Clienti</span><span id="contr-cli-count" style="color:var(--accent);font-size:10px"></span></div>
+            <div class="list-scroll" id="contr-cli-list"></div>
+          </div>
+          <!-- Col 2: dettaglio contratti cliente -->
+          <div style="display:flex;flex-direction:column;overflow:hidden;padding:14px;gap:10px;overflow-y:auto">
+            <div id="contr-detail-empty" class="detail-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="16" rx="2"/><path d="M6 7h12M6 11h8M6 15h6"/></svg>
+              Seleziona un cliente
+            </div>
+            <div id="contr-detail" style="display:none;flex-direction:column;gap:10px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prompt iniziale -->
+      <div class="sp-login-prompt" id="contr-prompt">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="3" width="20" height="16" rx="2"/><path d="M6 7h12M6 11h8M6 15h6"/></svg>
+        <p>Premi <strong style="color:var(--text)">Carica da SharePoint</strong> per caricare i contratti.<br>
+        Configura il GUID della lista in <span style="color:var(--accent);cursor:pointer" onclick="showView('impostazioni')">Impostazioni</span>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE MODIFICA CONTRATTO -->
+  <div class="proj-modal-overlay hidden" id="contrFormOverlay" onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="proj-modal" style="max-width:480px" onclick="event.stopPropagation()">
+      <div class="pm-hdr">
+        <div>
+          <div class="pm-client" id="cf-subtitle">Modifica contratto</div>
+          <div class="pm-title" id="cf-title-lbl"></div>
+        </div>
+        <button class="pm-close" onclick="document.getElementById('contrFormOverlay').classList.add('hidden')">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+        </button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:11px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Pacchetto</label>
+            <select id="cf-pacchetto" class="sel" style="width:100%">
+              <option>Spot</option><option>Base</option><option>Standard</option><option>Premium</option>
+            </select>
+          </div>
+          <div>
+            <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Attivo</label>
+            <select id="cf-attivo" class="sel" style="width:100%">
+              <option value="true">Sì</option><option value="false">No</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="cf-saldo-wrap">
+          <div id="cf-min-wrap">
+            <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Saldo Minuti</label>
+            <input id="cf-saldo-min" type="number" class="filter-input" style="width:100%" min="0" placeholder="0">
+          </div>
+          <div id="cf-ore-wrap">
+            <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Saldo Ore</label>
+            <input id="cf-saldo-ore" type="number" class="filter-input" style="width:100%" min="0" step="0.5" placeholder="0">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">N. Contratto</label>
+            <input id="cf-num" class="filter-input" style="width:100%" placeholder="Es. CONTR-2026-001">
+          </div>
+          <div>
+            <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Data Inizio</label>
+            <input id="cf-data-inizio" type="date" class="filter-input" style="width:100%">
+          </div>
+        </div>
+        <div>
+          <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Note</label>
+          <input id="cf-note" class="filter-input" style="width:100%" placeholder="Note contratto">
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+          <button class="btn" onclick="document.getElementById('contrFormOverlay').classList.add('hidden')">Annulla</button>
+          <button class="btn btn-primary" id="cf-save-btn" onclick="saveContrForm()">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M13 2L6 9l-3-3"/></svg>
+            Salva
+          </button>
+        </div>
+        <div id="cf-error" style="font-size:11px;color:var(--red);display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE RESOCONTO -->
+  <div class="proj-modal-overlay hidden" id="resocontoOverlay" onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="proj-modal" style="max-width:660px;max-height:80vh;display:flex;flex-direction:column" onclick="event.stopPropagation()">
+      <div class="pm-hdr">
+        <div>
+          <div class="pm-client" id="res-subtitle"></div>
+          <div class="pm-title" id="res-title"></div>
+        </div>
+        <button class="pm-close" onclick="document.getElementById('resocontoOverlay').classList.add('hidden')">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+        </button>
+      </div>
+      <div style="flex:1;overflow-y:auto">
+        <div id="res-body" style="font-size:13px"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODALE FORM ORDINE -->
   <div class="proj-modal-overlay hidden" id="ordfFormOverlay" onclick="if(event.target===this)this.classList.add('hidden')">
     <div class="proj-modal" style="max-width:520px" onclick="event.stopPropagation()">
@@ -1200,7 +1368,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         <!-- Firma -->
         <div class="ea-card">
           <span class="ea-label">Firma</span>
-          <div class="ea-firma-prev" id="ea-fp">Daniel Consolaro<br>Servizio Tecnico — ANYMA SRL<br>service@anymapack.it</div>
+          <div class="ea-firma-prev" id="ea-fp">Daniel Consolaro<br>Servizio Tecnico — ANYMA SRL<br><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5e2d3b2c28373d3b1e3f3027333f2e3f3d3570372a">[email&#160;protected]</a></div>
           <div class="ea-inp-row">
             <input class="ea-inp" id="ea-fn" value="Daniel Consolaro" placeholder="Nome" oninput="eaUpdFirma()">
             <input class="ea-inp" id="ea-fr" value="Servizio Tecnico" placeholder="Ruolo" oninput="eaUpdFirma()">
@@ -1403,7 +1571,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 
 <div class="toast" id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 /* == ANYMA-NET Auth == */
 function anLoadCfg(){return{clientId:localStorage.getItem('an_cid')||'',tenantId:localStorage.getItem('an_tid')||''}}
@@ -1499,6 +1667,7 @@ async function anAfterLoginInit(){
   if(typeof emInit==='function') emInit();
   loadSpSettings();
   loadPrefs();
+  renderContrDefaultsGrid();
   // Auto-carica le sezioni SharePoint se i GUID sono configurati
   spAutoLoad();
 }
@@ -1512,6 +1681,12 @@ function spAutoLoad() {
       var el = document.getElementById('cnt-progetti');
       if(el) el.textContent = '⟳';
       loadProgetti().catch(function(){});
+    }
+    var contrId = getSpContrId();
+    if(contrId) {
+      var elC = document.getElementById('cnt-contratti');
+      if(elC) elC.textContent = '⟳';
+      loadContratti().catch(function(){});
     }
     if(ordfId) {
       var el2 = document.getElementById('cnt-ordini-sp');
@@ -1856,6 +2031,12 @@ function showView(view) {
     const el=document.getElementById('view-progetti');
     el.style.display='flex'; el.classList.add('visible');
     if(state.progetti && state.progetti.length) renderProjView();
+    return;
+  }
+  if (view==='contratti') {
+    const el=document.getElementById('view-contratti');
+    el.style.display='flex'; el.classList.add('visible');
+    if(_contrData && _contrData.length) renderContratti();
     return;
   }
   if (view==='ordini-sp') {
@@ -2290,6 +2471,25 @@ const SP_CLIENT_LIST_ID = '6e8bca52-837c-4331-bc2e-c014a7ef06f4'; // Lista clien
 const GRAPH_BASE        = 'https://graph.microsoft.com/v1.0';
 var _spSiteId   = null;
 var _spClienti  = []; // [{id, name}] — cache elenco clienti
+
+// ── Contratti
+var _contrData        = [];   // cache AnymaContratti da SP
+var _contrListId      = null; // GUID lista AnymaContratti
+var _contrSelCliente  = null; // cliente selezionato nella vista
+var _contrSortKey     = 'cliente';
+var _contrSortAsc     = true;
+var _contrCliSearch   = '';
+
+// Saldi default per tipo+pacchetto (localStorage: anyma_contratti_default)
+function getContrDefaults() {
+  try { return JSON.parse(localStorage.getItem('anyma_contratti_default')||'{}'); } catch(e){return{};}
+}
+function saveContrDefaults(d) { localStorage.setItem('anyma_contratti_default', JSON.stringify(d)); }
+function getContrDefault(tipo, pac) {
+  var d = getContrDefaults();
+  return (d[tipo]&&d[tipo][pac]) || {saldoMinuti:0, saldoOre:0, pacchetto:'Spot'};
+}
+function getSpContrId() { return localStorage.getItem('anyma_sp_contr_id')||''; }
 
 const FASI = ['Preventivo','Materiale','Intervento','Sviluppo','Spedizione','Pagamento'];
 
@@ -3018,6 +3218,7 @@ function savePrefs() {
     ordfSortAsc:  _ordfSortAsc,
     ordfView:     _ordfCurrentView,
     ordfColOrder: ORDF_COLS.map(c=>c.key),
+    contrSort:    _contrSortKey+'_'+(_contrSortAsc?'asc':'desc'),
     ordfColVis:   ORDF_COLS.reduce((a,c)=>{a[c.key]=c.visible;return a;},{}),
     // Progetti
     projView:     _projCurrentView,
@@ -3129,6 +3330,7 @@ function loadSpSettings() {
     {id:'settings-sp-base',    key:'sp_base'},
     {id:'settings-sp-proj-id', key:'sp_proj_id'},
     {id:'settings-sp-ordf-id', key:'sp_ordf_id'},
+    {id:'settings-sp-contr-id', key:'sp_contr_id'},
   ];
   fields.forEach(function(f) {
     var el = document.getElementById(f.id);
@@ -3807,11 +4009,454 @@ function eaCopy(which) {
 
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
-function showLoading(msg='Caricamento...'){document.getElementById('loadingMsg').textContent=msg;document.getElementById('loadingOverlay').classList.remove('hidden');}
-function hideLoading(){document.getElementById('loadingOverlay').classList.add('hidden');}
 
-// Mostra versione nel logo
-(function(){ var el=document.getElementById('app-version-lbl'); if(el && typeof APP_VERSION!=='undefined') el.textContent=APP_VERSION; })();
-</script>
-</body>
-</html>
+/* ══════════════════════════════════════
+   GESTIONE CONTRATTI — SharePoint AnymaContratti
+   Campi SP: Title(cliente), TipoContratto, Pacchetto,
+   SaldoMinuti, SaldoOre, DataInizio, DataFine,
+   NumContratto, Attivo, Note
+   Tipi: Telefonica / Teleassistenza / Manutenzione
+   Pacchetti: Spot / Base / Standard / Premium
+══════════════════════════════════════ */
+const CONTR_TIPO_COLORS = {
+  Telefonica:    '#f97316',
+  Teleassistenza:'#06b6d4',
+  Manutenzione:  '#2ecc71'
+};
+const CONTR_TIPI = ['Telefonica','Teleassistenza','Manutenzione'];
+const CONTR_PACS = ['Spot','Base','Standard','Premium'];
+var _contrEditId = null; // ID SP item in modifica
+
+function contrSetStatus(st, msg) {
+  var dot = document.getElementById('contr-dot');
+  var txt = document.getElementById('contr-status-txt');
+  if(dot) dot.className = 'sp-dot'+(st==='ok'?' ok':st==='err'?' err':st==='loading'?' loading':'');
+  if(txt) txt.textContent = msg;
+}
+
+function contrApplySort() {
+  var val = document.getElementById('contr-sort-sel').value;
+  var parts = val.split('_');
+  _contrSortAsc = parts.pop() === 'asc';
+  _contrSortKey = parts.join('_');
+  renderContratti();
+}
+
+// ── Carica AnymaContratti da SP ──
+async function loadContratti() {
+  var rawId = getSpContrId();
+  if(!rawId) {
+    contrSetStatus('err', 'Configura il GUID lista in Impostazioni');
+    showToast('Vai in Impostazioni → GUID Lista AnymaContratti');
+    return;
+  }
+  var listId = decodeURIComponent(rawId).replace(/[{}]/g,'');
+  contrSetStatus('loading','Caricamento contratti...');
+  document.getElementById('btn-contr-load').disabled = true;
+  try {
+    var tok = await anGetToken();
+    if(!tok) { contrSetStatus('err','Token scaduto'); document.getElementById('btn-contr-load').disabled=false; return; }
+    var headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
+    if(!_spSiteId) {
+      var sr = await fetch(GRAPH_BASE+'/sites/'+SP_SITE_HOSTNAME+':'+SP_SITE_PATH,{headers});
+      if(!sr.ok) throw new Error('Site '+sr.status);
+      _spSiteId = (await sr.json()).id;
+    }
+    _contrListId = listId;
+    var url = GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+listId+
+      '/items?expand=fields(select=Title,TipoContratto,Pacchetto,SaldoMinuti,SaldoOre,DataInizio,DataFine,NumContratto,Attivo,Note)&$top=500';
+    var resp = await fetch(url,{headers});
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    var data = await resp.json();
+    _contrData = (data.value||[]).map(function(i){
+      var f = i.fields||{};
+      return {
+        _spId:       i.id,
+        cliente:     f.Title||'',
+        tipo:        f.TipoContratto||'Telefonica',
+        pacchetto:   f.Pacchetto||'Spot',
+        saldoMinuti: parseInt(f.SaldoMinuti||0),
+        saldoOre:    parseFloat(f.SaldoOre||0),
+        dataInizio:  f.DataInizio ? f.DataInizio.split('T')[0] : '',
+        dataFine:    f.DataFine   ? f.DataFine.split('T')[0]   : '',
+        numContratto:f.NumContratto||'',
+        attivo:      f.Attivo!==false && f.Attivo!=='false',
+        note:        f.Note||''
+      };
+    });
+    document.getElementById('cnt-contratti').textContent = _contrData.length;
+    contrSetStatus('ok', _contrData.length+' contratti · '+new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}));
+    document.getElementById('btn-contr-load').disabled = false;
+    document.getElementById('btn-contr-load').textContent = '↻ Aggiorna';
+    document.getElementById('btn-contr-gen').style.display = '';
+    document.getElementById('contr-count').style.display = '';
+    document.getElementById('contr-search').style.display = '';
+    document.getElementById('contr-sort-sel').style.display = '';
+    document.getElementById('contr-prompt').style.display = 'none';
+    var split = document.getElementById('contr-split');
+    split.style.cssText = 'display:flex;flex:1;min-height:0;overflow:hidden';
+    renderContratti();
+  } catch(e) {
+    contrSetStatus('err','Errore: '+e.message);
+    document.getElementById('btn-contr-load').disabled = false;
+  }
+}
+
+// ── Genera contratti per clienti mancanti ──
+async function generaContratti() {
+  var rawId = getSpContrId();
+  if(!rawId) { showToast('Configura GUID lista contratti in Impostazioni'); return; }
+  var listId = decodeURIComponent(rawId).replace(/[{}]/g,'');
+  var tok = await anGetToken();
+  if(!tok) { showToast('Token scaduto — rieffettua il login'); return; }
+  var headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
+  if(!_spSiteId) {
+    var sr = await fetch(GRAPH_BASE+'/sites/'+SP_SITE_HOSTNAME+':'+SP_SITE_PATH,{headers});
+    _spSiteId = (await sr.json()).id;
+  }
+  // Carica lista clienti
+  var cliResp = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_CLIENT_LIST_ID+
+    '/items?expand=fields(select=Title)&$top=500',{headers});
+  if(!cliResp.ok) { showToast('Errore caricamento clienti'); return; }
+  var cliData = await cliResp.json();
+  var nomiClienti = (cliData.value||[]).map(function(i){return (i.fields||{}).Title||'';}).filter(Boolean);
+  if(!nomiClienti.length) { showToast('Nessun cliente trovato'); return; }
+  // Set esistenti
+  var esistentiSet = new Set(_contrData.map(function(c){return c.cliente+'|'+c.tipo;}));
+  var defaults = getContrDefaults();
+  var creati = 0, saltati = 0;
+  showToast('⏳ Creazione contratti...');
+  for(var n=0; n<nomiClienti.length; n++) {
+    var nome = nomiClienti[n];
+    for(var t=0; t<CONTR_TIPI.length; t++) {
+      var tipo = CONTR_TIPI[t];
+      var key = nome+'|'+tipo;
+      if(esistentiSet.has(key)){saltati++;continue;}
+      var def = (defaults[tipo]&&defaults[tipo]) || {};
+      var defPac = def.pacchetto||'Spot';
+      var fields = {
+        Title: nome,
+        TipoContratto: tipo,
+        Pacchetto: defPac,
+        SaldoMinuti: (defPac!=='Spot'&&defPac!=='Premium') ? (def.saldoMinuti||0) : 0,
+        SaldoOre:    (defPac!=='Spot'&&defPac!=='Premium') ? (def.saldoOre||0)    : 0,
+        Attivo: true,
+        Note: 'Creato automaticamente'
+      };
+      try {
+        await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+listId+'/items',{
+          method:'POST',
+          headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'},
+          body:JSON.stringify({fields})
+        });
+        creati++;
+      } catch(e){}
+    }
+  }
+  showToast('✓ '+creati+' contratti creati, '+saltati+' già esistenti');
+  await loadContratti();
+}
+
+// ── Render lista clienti ──
+function renderContratti() {
+  var q = (document.getElementById('contr-search')?.value||'').toLowerCase();
+  // Raccogli clienti unici
+  var clientiMap = {};
+  _contrData.forEach(function(c){
+    if(!clientiMap[c.cliente]) clientiMap[c.cliente] = [];
+    clientiMap[c.cliente].push(c);
+  });
+  var clienti = Object.keys(clientiMap).filter(function(n){
+    return !q || n.toLowerCase().includes(q);
+  });
+  // Ordina
+  clienti.sort(function(a,b){
+    if(_contrSortKey==='cliente') return _contrSortAsc ? a.localeCompare(b) : b.localeCompare(a);
+    return _contrSortAsc ? a.localeCompare(b) : b.localeCompare(a);
+  });
+  document.getElementById('contr-count').textContent = clienti.length+' clienti';
+  document.getElementById('contr-cli-count').textContent = clienti.length+' clienti';
+  document.getElementById('contr-cli-list').innerHTML = clienti.length ? clienti.map(function(nome){
+    var contratti = clientiMap[nome];
+    var attivi = contratti.filter(function(c){return c.attivo;}).length;
+    var isSelected = _contrSelCliente === nome;
+    return '<div class="row-item '+(isSelected?'active':'')+'" onclick="selectContrCliente(\''+escHtml(nome)+'\')">' +
+      '<div class="row-avatar">'+initials(nome)+'</div>' +
+      '<div class="row-info"><div class="row-name">'+escHtml(nome)+'</div>' +
+      '<div class="row-meta">'+attivi+'/'+contratti.length+' contratti attivi</div></div>' +
+      '</div>';
+  }).join('') : '<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px">Nessun cliente</div>';
+  if(_contrSelCliente) renderContrDettaglio(_contrSelCliente);
+}
+
+function selectContrCliente(nome) {
+  _contrSelCliente = nome;
+  renderContratti();
+  document.getElementById('contr-detail-empty').style.display = 'none';
+  document.getElementById('contr-detail').style.display = 'flex';
+  renderContrDettaglio(nome);
+}
+
+// ── Dettaglio contratti per cliente ──
+function renderContrDettaglio(nome) {
+  var contratti = _contrData.filter(function(c){return c.cliente===nome;});
+  // Ordina per tipo
+  var tipoOrder = {Telefonica:0,Teleassistenza:1,Manutenzione:2};
+  contratti.sort(function(a,b){return (tipoOrder[a.tipo]||9)-(tipoOrder[b.tipo]||9);});
+  var det = document.getElementById('contr-detail');
+  det.innerHTML = contratti.map(function(c){
+    var col = CONTR_TIPO_COLORS[c.tipo]||'var(--text)';
+    var saldoStr = '';
+    if(c.tipo==='Telefonica') saldoStr = c.pacchetto!=='Spot'&&c.pacchetto!=='Premium' ? c.saldoMinuti+' min' : 'N/A';
+    else saldoStr = c.pacchetto!=='Spot'&&c.pacchetto!=='Premium' ? c.saldoOre+' h' : 'N/A';
+    return '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between">' +
+        '<div style="display:flex;align-items:center;gap:8px">' +
+          '<span style="width:10px;height:10px;border-radius:50%;background:'+col+';display:inline-block;flex-shrink:0"></span>' +
+          '<span style="font-weight:700;font-size:14px;color:'+col+'">'+c.tipo+'</span>' +
+          '<span style="font-size:11px;background:rgba(255,255,255,.06);padding:2px 8px;border-radius:20px;color:var(--text2)">'+c.pacchetto+'</span>' +
+          (c.attivo ? '<span style="font-size:10px;color:var(--green);font-weight:700">● ATTIVO</span>' : '<span style="font-size:10px;color:var(--text3);font-weight:700">● INATTIVO</span>') +
+        '</div>' +
+        '<div style="display:flex;gap:6px">' +
+          '<button class="btn btn-sm" style="padding:4px 9px;font-size:11px" onclick="openContrForm(\''+c._spId+'\')">✎ Modifica</button>' +
+          '<button class="btn btn-sm" style="padding:4px 9px;font-size:11px;background:rgba(56,189,248,.1);color:#38bdf8" onclick="openResoconto(\''+escHtml(nome)+'\',\''+c.tipo+'\')">📋 Resoconto</button>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:12px">' +
+        '<div><div style="color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Saldo</div><div style="font-weight:700;font-size:16px;color:'+col+'">'+saldoStr+'</div></div>' +
+        '<div><div style="color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">N. Contratto</div><div style="font-weight:600">'+escHtml(c.numContratto||'—')+'</div></div>' +
+        '<div><div style="color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Data inizio</div><div>'+escHtml(c.dataInizio||'—')+'</div></div>' +
+      '</div>' +
+      (c.note ? '<div style="font-size:11px;color:var(--text3);border-top:1px solid var(--border);padding-top:8px">'+escHtml(c.note)+'</div>' : '') +
+    '</div>';
+  }).join('');
+}
+
+// ── Form modifica contratto ──
+function openContrForm(spId) {
+  var c = _contrData.find(function(x){return x._spId===spId;});
+  if(!c) return;
+  _contrEditId = spId;
+  document.getElementById('cf-subtitle').textContent = 'Modifica contratto';
+  document.getElementById('cf-title-lbl').textContent = c.cliente+' — '+c.tipo;
+  document.getElementById('cf-pacchetto').value = c.pacchetto||'Spot';
+  document.getElementById('cf-attivo').value = c.attivo ? 'true' : 'false';
+  document.getElementById('cf-saldo-min').value = c.saldoMinuti||0;
+  document.getElementById('cf-saldo-ore').value = c.saldoOre||0;
+  document.getElementById('cf-num').value = c.numContratto||'';
+  document.getElementById('cf-data-inizio').value = c.dataInizio||'';
+  document.getElementById('cf-note').value = c.note||'';
+  // Mostra/nascondi campi saldo in base al tipo
+  var isPac = c.pacchetto!=='Spot'&&c.pacchetto!=='Premium';
+  document.getElementById('cf-min-wrap').style.display = c.tipo==='Telefonica'&&isPac ? '' : 'none';
+  document.getElementById('cf-ore-wrap').style.display = c.tipo!=='Telefonica'&&isPac ? '' : 'none';
+  document.getElementById('cf-error').style.display = 'none';
+  var btn = document.getElementById('cf-save-btn');
+  btn.disabled=false; btn.textContent='Salva';
+  document.getElementById('contrFormOverlay').classList.remove('hidden');
+  // Aggiorna visibilità saldo al cambio pacchetto
+  document.getElementById('cf-pacchetto').onchange = function(){
+    var pac = this.value;
+    var tipo = (c||{}).tipo||'Telefonica';
+    var hasS = pac!=='Spot'&&pac!=='Premium';
+    document.getElementById('cf-min-wrap').style.display = tipo==='Telefonica'&&hasS?'':'none';
+    document.getElementById('cf-ore-wrap').style.display = tipo!=='Telefonica'&&hasS?'':'none';
+  };
+}
+
+async function saveContrForm() {
+  var listId = _contrListId;
+  if(!listId||!_contrEditId) return;
+  var btn = document.getElementById('cf-save-btn');
+  btn.disabled=true; btn.textContent='Salvo...';
+  var pac    = document.getElementById('cf-pacchetto').value;
+  var attivo = document.getElementById('cf-attivo').value === 'true';
+  var sMin   = parseInt(document.getElementById('cf-saldo-min').value)||0;
+  var sOre   = parseFloat(document.getElementById('cf-saldo-ore').value)||0;
+  var num    = document.getElementById('cf-num').value.trim();
+  var dI     = document.getElementById('cf-data-inizio').value;
+  var note   = document.getElementById('cf-note').value.trim();
+  var fields = {Pacchetto:pac, Attivo:attivo, SaldoMinuti:sMin, SaldoOre:sOre,
+    NumContratto:num, Note:note};
+  if(dI) fields.DataInizio = dI+'T00:00:00Z';
+  try {
+    var tok = await anGetToken();
+    var resp = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+listId+'/items/'+_contrEditId+'/fields',{
+      method:'PATCH',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify(fields)
+    });
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    document.getElementById('contrFormOverlay').classList.add('hidden');
+    showToast('✓ Contratto aggiornato');
+    await loadContratti();
+    if(_contrSelCliente) renderContrDettaglio(_contrSelCliente);
+  } catch(e) {
+    document.getElementById('cf-error').textContent='Errore: '+e.message;
+    document.getElementById('cf-error').style.display='';
+    btn.disabled=false; btn.textContent='Salva';
+  }
+}
+
+// ── Resoconto monte ore/minuti ──
+async function openResoconto(cliente, tipo) {
+  document.getElementById('res-subtitle').textContent = cliente;
+  document.getElementById('res-title').textContent = tipo+' — Resoconto interventi';
+  document.getElementById('res-body').innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">Caricamento...</div>';
+  document.getElementById('resocontoOverlay').classList.remove('hidden');
+  try {
+    var tok = await anGetToken();
+    if(!tok) throw new Error('Token scaduto');
+    var headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
+    if(!_spSiteId) {
+      var sr = await fetch(GRAPH_BASE+'/sites/'+SP_SITE_HOSTNAME+':'+SP_SITE_PATH,{headers});
+      _spSiteId=(await sr.json()).id;
+    }
+    // Cerca lista AnymaRapportini
+    var rapListId = getSpProjId ? null : null; // usa il GUID Rapportini se disponibile
+    // Trova lista AnymaRapportini
+    var listsResp = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+"/lists?$filter=displayName eq 'AnymaRapportini'",{headers});
+    var listsData = await listsResp.json();
+    var rapList = (listsData.value||[])[0];
+    if(!rapList) throw new Error('Lista AnymaRapportini non trovata');
+    // Filtra per cliente + tipo
+    var filter = encodeURIComponent("fields/Cliente eq '"+cliente+"'");
+    var url = GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+rapList.id+
+      '/items?expand=fields(select=NumRT,DataRT,Cliente,TipoServizio,MinutiUsati,OreUsate,Pacchetto,NumContratto)&$filter='+filter+'&$top=500';
+    var resp = await fetch(url,{headers});
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    var data = await resp.json();
+    // Filtra per tipo contratto
+    var items = (data.value||[]).filter(function(i){
+      var f = i.fields||{};
+      return (f.TipoServizio||'').toLowerCase().includes(tipo.toLowerCase().split('ass')[0]);
+    });
+    renderResoconto(items, tipo);
+  } catch(e) {
+    document.getElementById('res-body').innerHTML = '<div style="padding:20px;color:var(--red)">Errore: '+escHtml(e.message)+'</div>';
+  }
+}
+
+function renderResoconto(items, tipo) {
+  var _resSortKey = 'data'; var _resSortAsc = false;
+  function doSort(arr, key, asc) {
+    return [...arr].sort(function(a,b){
+      var va=a[key]||'', vb=b[key]||'';
+      if(key==='minuti'||key==='ore') { va=parseFloat(va)||0; vb=parseFloat(vb)||0; return asc?va-vb:vb-va; }
+      return asc?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va));
+    });
+  }
+  var rows = items.map(function(i){
+    var f=i.fields||{};
+    return {
+      numRT:      f.NumRT||f.Title||'—',
+      data:       f.DataRT ? f.DataRT.split('T')[0] : '—',
+      minuti:     f.MinutiUsati||0,
+      ore:        f.OreUsate||0,
+      numContr:   f.NumContratto||'—',
+      pacchetto:  f.Pacchetto||'—'
+    };
+  });
+  var isTel = tipo==='Telefonica';
+  var totMin = rows.reduce(function(s,r){return s+(parseFloat(r.minuti)||0);},0);
+  var totOre = rows.reduce(function(s,r){return s+(parseFloat(r.ore)||0);},0);
+  var contr = _contrData.find(function(c){return c.cliente===document.getElementById('res-subtitle').textContent && c.tipo===tipo;});
+  var saldoCorrente = contr ? (isTel ? contr.saldoMinuti : contr.saldoOre) : null;
+  var unitaLabel = isTel ? 'min' : 'h';
+  var totLabel = isTel ? totMin+' min' : totOre.toFixed(2)+' h';
+
+  var thStyle = 'padding:7px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer';
+  var cols = [
+    {key:'numContr', label:'N. Contratto'},
+    {key:'numRT',    label:'N. RT'},
+    {key:'data',     label:'Data'},
+    {key:isTel?'minuti':'ore', label:isTel?'Minuti':'Ore'}
+  ];
+
+  function buildTable() {
+    var sorted = doSort(rows, _resSortKey, _resSortAsc);
+    return '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>' +
+      cols.map(function(c){return '<th style="'+thStyle+'" onclick="resSort(\''+c.key+'\')">'+c.label+(_resSortKey===c.key?(_resSortAsc?' ↑':' ↓'):'')+'</th>';}).join('') +
+      '</tr></thead><tbody>' +
+      (sorted.length ? sorted.map(function(r){
+        return '<tr style="border-bottom:1px solid var(--border)">' +
+          '<td style="padding:7px 12px">'+escHtml(r.numContr)+'</td>' +
+          '<td style="padding:7px 12px;font-weight:600;color:var(--accent)">'+escHtml(r.numRT)+'</td>' +
+          '<td style="padding:7px 12px">'+escHtml(r.data)+'</td>' +
+          '<td style="padding:7px 12px;font-weight:700">'+escHtml(String(isTel?r.minuti:r.ore))+' '+unitaLabel+'</td>' +
+        '</tr>';
+      }).join('') : '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text3)">Nessun intervento trovato</td></tr>') +
+      '</tbody></table>';
+  }
+
+  window.resSort = function(key) {
+    if(_resSortKey===key) _resSortAsc=!_resSortAsc; else {_resSortKey=key;_resSortAsc=true;}
+    document.getElementById('res-table-wrap').innerHTML = buildTable();
+  };
+
+  document.getElementById('res-body').innerHTML =
+    '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">' +
+      '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:120px">' +
+        '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Totale usato</div>' +
+        '<div style="font-size:22px;font-weight:700;color:var(--accent)">'+totLabel+'</div>' +
+      '</div>' +
+      (saldoCorrente!==null ? '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:120px">' +
+        '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Saldo corrente</div>' +
+        '<div style="font-size:22px;font-weight:700;color:var(--green)">'+saldoCorrente+' '+unitaLabel+'</div>' +
+      '</div>' : '') +
+      '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:120px">' +
+        '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">N. interventi</div>' +
+        '<div style="font-size:22px;font-weight:700">'+rows.length+'</div>' +
+      '</div>' +
+    '</div>' +
+    '<div id="res-table-wrap">'+buildTable()+'</div>';
+}
+
+// ── Impostazioni: render griglia saldi default ──
+function renderContrDefaultsGrid() {
+  var d = getContrDefaults();
+  var tipi = CONTR_TIPI;
+  var pacs = ['Base','Standard']; // Spot e Premium non hanno saldo configurabile
+  var html = '';
+  tipi.forEach(function(tipo){
+    pacs.forEach(function(pac){
+      var val = (d[tipo]&&d[tipo][pac])||{saldoMinuti:0,saldoOre:0,pacchetto:pac};
+      var isTel = tipo==='Telefonica';
+      var colore = CONTR_TIPO_COLORS[tipo]||'var(--text)';
+      var fieldId = 'cdef_'+tipo+'_'+pac;
+      html += '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px">' +
+        '<div style="font-size:10px;font-weight:700;color:'+colore+';text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">'+tipo+'</div>' +
+        '<div style="font-size:10px;color:var(--text3);margin-bottom:6px">'+pac+'</div>' +
+        '<label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px">'+(isTel?'Minuti':'Ore')+'</label>' +
+        '<input type="number" id="'+fieldId+'" style="width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px;padding:5px 8px;outline:none;box-sizing:border-box" min="0" step="'+(isTel?1:0.5)+'" value="'+(isTel?(val.saldoMinuti||0):(val.saldoOre||0))+'">' +
+        '<label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;margin-top:6px">Pacchetto default</label>' +
+        '<select id="'+fieldId+'_pac" style="width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;outline:none">' +
+          CONTR_PACS.filter(function(p){return p!=='Spot'&&p!=='Premium';}).map(function(p){return '<option'+(p===pac?' selected':'')+'>'+p+'</option>';}).join('') +
+        '</select>' +
+      '</div>';
+    });
+  });
+  var el = document.getElementById('contr-defaults-grid');
+  if(el) el.innerHTML = html;
+}
+
+function saveContrDefaultsUI() {
+  var d = getContrDefaults();
+  CONTR_TIPI.forEach(function(tipo){
+    if(!d[tipo]) d[tipo]={};
+    ['Base','Standard'].forEach(function(pac){
+      var id = 'cdef_'+tipo+'_'+pac;
+      var inp = document.getElementById(id);
+      var pac2 = document.getElementById(id+'_pac');
+      if(!d[tipo][pac]) d[tipo][pac]={};
+      d[tipo][pac].pacchetto = pac2 ? pac2.value : pac;
+      if(tipo==='Telefonica') d[tipo][pac].saldoMinuti = inp ? parseInt(inp.value)||0 : 0;
+      else d[tipo][pac].saldoOre = inp ? parseFloat(inp.value)||0 : 0;
+    });
+  });
+  saveContrDefaults(d);
+  showToast('✓ Saldi default salvati');
+}
+
+function showLoading(msg='Caricamento...'){document.getElementById('loadingMsg').textContent=msg;document.getElementById('loadingOverlay').classList.remove('hidden');}
+function hideLoading(){document.getElementById('loading
