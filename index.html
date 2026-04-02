@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v60';</script>
+<script>const APP_VERSION = 'v61';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4401,7 +4401,7 @@ async function openResoconto(cliente, tipo) {
     if(!rapListId) throw new Error('Configura il GUID lista AnymaRapportini in Impostazioni');
     var filter = encodeURIComponent("fields/Cliente eq '"+cliente+"'");
     var url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+rapListId+
-      '/items?expand=fields(select=NumRT,DataRT,Cliente,TipoServizio,MinutiUsati,OreUsate,Pacchetto,NumContratto,RefNome,OreLavoro,SaldoPrima,SaldoDopo,DataIntervento)&$filter='+filter+'&$top=500';
+      '/items?expand=fields(select=Title,DataIntervento,Cliente,TipoServizio,MinutiUsati,OreLavoro,OreViaggio,Pacchetto,NumContratto,RefNome,Tecnici,SaldoPrima,SaldoDopo)&$filter='+filter+'&$top=500';
     var resp = await fetch(url,{headers});
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     var data = await resp.json();
@@ -4442,11 +4442,11 @@ function renderPdfPanel(items, cliente, tipo) {
   var rows = items.map(function(i){
     var f=i.fields||{};
     return {
-      numRT:      f.NumRT||f.Title||'-',
-      data:       (f.DataIntervento||f.DataRT||'').split('T')[0]||'-',
-      referente:  f.RefNome||'-',
+      numRT:      f.Title||'-',
+      data:       (f.DataIntervento||'').split('T')[0]||'-',
+      referente:  f.RefNome||f.Tecnici||'-',
       minuti:     parseFloat(f.MinutiUsati)||0,
-      ore:        parseFloat(f.OreUsate)||parseFloat(f.OreLavoro)||0,
+      ore:        parseFloat(f.OreLavoro)||0,
       saldoPrima: f.SaldoPrima!==undefined ? parseFloat(f.SaldoPrima) : null,
       saldoDopo:  f.SaldoDopo!==undefined  ? parseFloat(f.SaldoDopo)  : null,
     };
