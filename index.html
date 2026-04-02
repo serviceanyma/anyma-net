@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v43';</script>
+<script>const APP_VERSION = 'v44';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -757,6 +757,22 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
             style="width:100%;margin-top:7px;font-size:11px;padding:5px 8px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);outline:none;box-sizing:border-box"
             oninput="saveSpSetting('sp_contr_id',this.value,this)">
           <div id="settings-sp-contr-id-status" style="font-size:11px;margin-top:4px;color:var(--text3)">Non salvato</div>
+        </div>
+      </div>
+
+      <!-- Card Lista AnymaRapportini -->
+      <div class="settings-card">
+        <div class="settings-card-icon" style="background:rgba(52,152,219,.15);flex-shrink:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#3498db" stroke-width="1.5" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="8" y1="9" x2="10" y2="9"/></svg>
+        </div>
+        <div class="settings-card-info" style="flex:1;min-width:0">
+          <div class="settings-card-title">SharePoint - Lista AnymaRapportini (GUID)</div>
+          <div class="settings-card-path">ID lista Rapportini da SharePoint (/sites/SERVICE)</div>
+          <input type="text" id="settings-sp-rapp-id"
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            style="width:100%;margin-top:7px;font-size:11px;padding:5px 8px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);outline:none;box-sizing:border-box"
+            oninput="saveSpSetting('sp_rapp_id',this.value,this)">
+          <div id="settings-sp-rapp-id-status" style="font-size:11px;margin-top:4px;color:var(--text3)">Non salvato</div>
         </div>
       </div>
 
@@ -2509,6 +2525,7 @@ function getContrDefault(tipo, pac) {
   return (d[tipo]&&d[tipo][pac]) || {saldoMinuti:0, saldoOre:0, pacchetto:'Spot'};
 }
 function getSpContrId() { return localStorage.getItem('anyma_sp_contr_id')||''; }
+function getSpRappId()  { return decodeURIComponent(localStorage.getItem('anyma_sp_rapp_id')||'').replace(/[{}]/g,''); }
 
 const FASI = ['Preventivo','Materiale','Intervento','Sviluppo','Spedizione','Pagamento'];
 
@@ -3350,6 +3367,7 @@ function loadSpSettings() {
     {id:'settings-sp-proj-id', key:'sp_proj_id'},
     {id:'settings-sp-ordf-id', key:'sp_ordf_id'},
     {id:'settings-sp-contr-id', key:'sp_contr_id'},
+    {id:'settings-sp-rapp-id', key:'sp_rapp_id'},
   ];
   fields.forEach(function(f) {
     var el = document.getElementById(f.id);
@@ -4323,20 +4341,12 @@ async function openResoconto(cliente, tipo) {
     var tok = await anGetToken();
     if(!tok) throw new Error('Token scaduto');
     var headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
-    if(!_spSiteId) {
-      var sr = await fetch(GRAPH_BASE+'/sites/'+SP_SITE_HOSTNAME+':'+SP_SITE_PATH,{headers});
-      _spSiteId=(await sr.json()).id;
-    }
-    // Cerca lista AnymaRapportini
-    var rapListId = getSpProjId ? null : null; // usa il GUID Rapportini se disponibile
-    // Trova lista AnymaRapportini
-    var listsResp = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+"/lists?$filter=displayName eq 'AnymaRapportini'",{headers});
-    var listsData = await listsResp.json();
-    var rapList = (listsData.value||[])[0];
-    if(!rapList) throw new Error('Lista AnymaRapportini non trovata');
+    // AnymaRapportini è su /sites/SERVICE - usa siteId fisso e GUID da impostazioni
+    var rapListId = getSpRappId();
+    if(!rapListId) throw new Error('Configura il GUID lista AnymaRapportini in Impostazioni');
     // Filtra per cliente + tipo
     var filter = encodeURIComponent("fields/Cliente eq '"+cliente+"'");
-    var url = GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+rapList.id+
+    var url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+rapListId+
       '/items?expand=fields(select=NumRT,DataRT,Cliente,TipoServizio,MinutiUsati,OreUsate,Pacchetto,NumContratto)&$filter='+filter+'&$top=500';
     var resp = await fetch(url,{headers});
     if(!resp.ok) throw new Error('HTTP '+resp.status);
@@ -4477,6 +4487,8 @@ function saveContrDefaultsUI() {
 
 function showLoading(msg='Caricamento...'){document.getElementById('loadingMsg').textContent=msg;document.getElementById('loadingOverlay').classList.remove('hidden');}
 function hideLoading(){document.getElementById('loadingOverlay').classList.add('hidden');}
+
+// Mostra versione nel logoOverlay').classList.add('hidden');}
 
 // Mostra versione nel logo
 (function(){ var el=document.getElementById('app-version-lbl'); if(el && typeof APP_VERSION!=='undefined') el.textContent=APP_VERSION; })();
