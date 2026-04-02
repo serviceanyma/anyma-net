@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v44';</script>
+<script>const APP_VERSION = 'v45';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4062,7 +4062,9 @@ const CONTR_TIPO_COLORS = {
 };
 const CONTR_TIPI = ['Telefonica','Teleassistenza','Manutenzione'];
 const CONTR_PACS = ['Spot','Base','Standard','Premium'];
-var _contrEditId = null; // ID SP item in modifica
+var _contrEditId      = null; // ID SP item in modifica
+var _contrEditTipo    = '';   // tipo contratto in modifica (per default saldo)
+var _contrEditPacOrig = '';   // pacchetto originale (per capire se è cambiato)
 
 function contrSetStatus(st, msg) {
   var dot = document.getElementById('contr-dot');
@@ -4269,7 +4271,9 @@ function renderContrDettaglio(nome) {
 function openContrForm(spId) {
   var c = _contrData.find(function(x){return x._spId===spId;});
   if(!c) return;
-  _contrEditId = spId;
+  _contrEditId      = spId;
+  _contrEditTipo    = c.tipo||'';
+  _contrEditPacOrig = c.pacchetto||'Spot';
   document.getElementById('cf-subtitle').textContent = 'Modifica contratto';
   document.getElementById('cf-title-lbl').textContent = c.cliente+' - '+c.tipo;
   document.getElementById('cf-pacchetto').value = c.pacchetto||'Spot';
@@ -4287,13 +4291,22 @@ function openContrForm(spId) {
   var btn = document.getElementById('cf-save-btn');
   btn.disabled=false; btn.textContent='Salva';
   document.getElementById('contrFormOverlay').classList.remove('hidden');
-  // Aggiorna visibilità saldo al cambio pacchetto
+  // Aggiorna visibilità saldo e carica default al cambio pacchetto
   document.getElementById('cf-pacchetto').onchange = function(){
     var pac = this.value;
     var tipo = (c||{}).tipo||'Telefonica';
     var hasS = pac!=='Spot'&&pac!=='Premium';
     document.getElementById('cf-min-wrap').style.display = tipo==='Telefonica'&&hasS?'':'none';
     document.getElementById('cf-ore-wrap').style.display = tipo!=='Telefonica'&&hasS?'':'none';
+    // Carica automaticamente il saldo default per tipo+pacchetto
+    var defs = getContrDefaults();
+    var def = (defs[tipo]&&defs[tipo][pac]) || null;
+    if(def && tipo==='Telefonica' && def.saldoMinuti!==undefined){
+      document.getElementById('cf-saldo-min').value = def.saldoMinuti;
+    }
+    if(def && tipo!=='Telefonica' && def.saldoOre!==undefined){
+      document.getElementById('cf-saldo-ore').value = def.saldoOre;
+    }
   };
 }
 
@@ -4304,11 +4317,20 @@ async function saveContrForm() {
   btn.disabled=true; btn.textContent='Salvo...';
   var pac    = document.getElementById('cf-pacchetto').value;
   var attivo = document.getElementById('cf-attivo').value === 'true';
-  var sMin   = parseInt(document.getElementById('cf-saldo-min').value)||0;
-  var sOre   = parseFloat(document.getElementById('cf-saldo-ore').value)||0;
   var num    = document.getElementById('cf-num').value.trim();
   var dI     = document.getElementById('cf-data-inizio').value;
   var note   = document.getElementById('cf-note').value.trim();
+  // Saldo: usa il valore del campo (già aggiornato dall'onchange o modificato manualmente)
+  var sMin   = parseInt(document.getElementById('cf-saldo-min').value)||0;
+  var sOre   = parseFloat(document.getElementById('cf-saldo-ore').value)||0;
+  // Se pacchetto è cambiato rispetto all'originale, forza il saldo dal default
+  var tipo   = _contrEditTipo || '';
+  if (pac !== _contrEditPacOrig) {
+    var defs = getContrDefaults();
+    var def = (defs[tipo]&&defs[tipo][pac]) || null;
+    if (def && tipo==='Telefonica' && def.saldoMinuti!==undefined) sMin = def.saldoMinuti;
+    if (def && tipo!=='Telefonica' && def.saldoOre!==undefined) sOre = def.saldoOre;
+  }
   var fields = {Pacchetto:pac, Attivo:attivo, SaldoMinuti:sMin, SaldoOre:sOre,
     NumContratto:num, Note:note};
   if(dI) fields.DataInizio = dI+'T00:00:00Z';
@@ -4471,24 +4493,7 @@ function saveContrDefaultsUI() {
   var d = getContrDefaults();
   CONTR_TIPI.forEach(function(tipo){
     if(!d[tipo]) d[tipo]={};
-    ['Base','Standard'].forEach(function(pac){
-      var id = 'cdef_'+tipo+'_'+pac;
-      var inp = document.getElementById(id);
-      var pac2 = document.getElementById(id+'_pac');
-      if(!d[tipo][pac]) d[tipo][pac]={};
-      d[tipo][pac].pacchetto = pac2 ? pac2.value : pac;
-      if(tipo==='Telefonica') d[tipo][pac].saldoMinuti = inp ? parseInt(inp.value)||0 : 0;
-      else d[tipo][pac].saldoOre = inp ? parseFloat(inp.value)||0 : 0;
-    });
-  });
-  saveContrDefaults(d);
-  showToast('✓ Saldi default salvati');
-}
-
-function showLoading(msg='Caricamento...'){document.getElementById('loadingMsg').textContent=msg;document.getElementById('loadingOverlay').classList.remove('hidden');}
-function hideLoading(){document.getElementById('loadingOverlay').classList.add('hidden');}
-
-// Mostra versione nel logoOverlay').classList.add('hidden');}
+    ['Base','Standard'].forEach(function(pac){Overlay').classList.add('hidden');}
 
 // Mostra versione nel logo
 (function(){ var el=document.getElementById('app-version-lbl'); if(el && typeof APP_VERSION!=='undefined') el.textContent=APP_VERSION; })();
