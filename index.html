@@ -1,11 +1,12 @@
 
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v42';</script>
+<script>const APP_VERSION = 'v43';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -2485,6 +2486,8 @@ const SP_SITE_PATH      = '/sites/anyma';
 const SP_LIST_ID        = '40e7123d-d54f-4a5c-8f1a-8a06af0542f4';
 const SP_CLIENT_LIST_ID = '6e8bca52-837c-4331-bc2e-c014a7ef06f4'; // Lista clienti lookup
 const GRAPH_BASE        = 'https://graph.microsoft.com/v1.0';
+// Sito SERVICE (AnymaContratti e AnymaRapportini sono su /sites/SERVICE)
+const SP_SERVICE_SITE_ID = 'anymapack.sharepoint.com,97c507fa-86cb-42c2-9f40-31b7d683a78f,dd5af785-ca46-4f9a-9997-2866a1b25ab7';
 var _spSiteId   = null;
 var _spClienti  = []; // [{id, name}] - cache elenco clienti
 
@@ -4073,13 +4076,9 @@ async function loadContratti() {
     var tok = await anGetToken();
     if(!tok) { contrSetStatus('err','Token scaduto'); document.getElementById('btn-contr-load').disabled=false; return; }
     var headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
-    if(!_spSiteId) {
-      var sr = await fetch(GRAPH_BASE+'/sites/'+SP_SITE_HOSTNAME+':'+SP_SITE_PATH,{headers});
-      if(!sr.ok) throw new Error('Site '+sr.status);
-      _spSiteId = (await sr.json()).id;
-    }
+    // AnymaContratti è su /sites/SERVICE - usa siteId fisso
     _contrListId = listId;
-    var url = GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+listId+
+    var url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+
       '/items?expand=fields(select=Title,TipoContratto,Pacchetto,SaldoMinuti,SaldoOre,DataInizio,DataFine,NumContratto,Attivo,Note)&$top=500';
     var resp = await fetch(url,{headers});
     if(!resp.ok) throw new Error('HTTP '+resp.status);
@@ -4297,7 +4296,7 @@ async function saveContrForm() {
   if(dI) fields.DataInizio = dI+'T00:00:00Z';
   try {
     var tok = await anGetToken();
-    var resp = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+listId+'/items/'+_contrEditId+'/fields',{
+    var resp = await fetch(GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+'/items/'+_contrEditId+'/fields',{
       method:'PATCH',
       headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'},
       body:JSON.stringify(fields)
