@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v45';</script>
+<script>const APP_VERSION = 'v46';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4362,7 +4362,7 @@ async function openResoconto(cliente, tipo) {
   try {
     var tok = await anGetToken();
     if(!tok) throw new Error('Token scaduto');
-    var headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
+    var headers = {'Authorization':'Bearer '+tok,'Accept':'application/json','Prefer':'HonorNonIndexedQueriesWarningMayFailRandomly'};
     // AnymaRapportini è su /sites/SERVICE - usa siteId fisso e GUID da impostazioni
     var rapListId = getSpRappId();
     if(!rapListId) throw new Error('Configura il GUID lista AnymaRapportini in Impostazioni');
@@ -4493,7 +4493,12 @@ function saveContrDefaultsUI() {
   var d = getContrDefaults();
   CONTR_TIPI.forEach(function(tipo){
     if(!d[tipo]) d[tipo]={};
-    ['Base','Standard'].forEach(function(pac){Overlay').classList.add('hidden');}
+    ['Base','Standard'].forEach(function(pac){
+      var id = 'cdef_'+tipo+'_'+pac;
+      var inp = document.getElementById(id);
+      var pac2 = document.getElementById(id+'_pac');
+      if(!d[tipo][pac]) d[tipo][pac]={};
+      d[tipo][pac].pacchetto = pac2 ? pac2.value : pac;Overlay').classList.add('hidden');}
 
 // Mostra versione nel logo
 (function(){ var el=document.getElementById('app-version-lbl'); if(el && typeof APP_VERSION!=='undefined') el.textContent=APP_VERSION; })();
