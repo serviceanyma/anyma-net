@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v55';</script>
+<script>const APP_VERSION = 'v56';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4448,54 +4448,124 @@ function renderPdfPanel(items, cliente, tipo) {
       ore:        parseFloat(f.OreUsate)||parseFloat(f.OreLavoro)||0,
       saldoPrima: f.SaldoPrima!==undefined ? parseFloat(f.SaldoPrima) : null,
       saldoDopo:  f.SaldoDopo!==undefined  ? parseFloat(f.SaldoDopo)  : null,
-      numContr:   f.NumContratto||'-',
     };
   }).sort(function(a,b){return a.data.localeCompare(b.data);});
 
   var totConsumo = isTel ? rows.reduce(function(s,r){return s+r.minuti;},0) : rows.reduce(function(s,r){return s+r.ore;},0);
   var contr = _contrData.find(function(c){return c.cliente===cliente && c.tipo===tipo;});
   var saldoAttuale = contr ? (isTel ? contr.saldoMinuti : contr.saldoOre) : null;
-  var numContr = contr ? contr.numContratto||'-' : '-';
-  var dataInizio = contr ? contr.dataInizio||'-' : '-';
+  var numContr  = contr ? (contr.numContratto||'-') : '-';
+  var dataInizio = contr ? (contr.dataInizio||'-') : '-';
   var oggi = new Date().toLocaleDateString('it-IT');
   var logoSrc = typeof LOGO_RESOCONTO !== 'undefined' && LOGO_RESOCONTO ? LOGO_RESOCONTO : '';
 
-  var h = '<div id="pdf-a4-content" class="pdf-page">';
-  h += '<div class="pdf-wm">ANYMA</div>';
-  h += '<div class="pdf-hdr">';
-  h += (logoSrc ? '<img class="pdf-logo-img" src="'+logoSrc+'">' : '<div style="font-size:20pt;font-weight:900;color:#8B1A1A;letter-spacing:2px">ANYMA</div>');
-  h += '<div class="pdf-company"><strong>ANYMA SRL</strong>Via Val di Sole 31 - 36010 - Zanè (VI) - Italy<br>Tel. +39 0445 223889 - info@anymapack.it<br>P.IVA IT04494860242 - C.F. & R.I. Vicenza 04494860242<br>REA: VI - 408350 - Cap. Soc. Euro 10.000</div>';
+  /* ── Stili costanti ────────────────────────────────────────────── */
+  var S = {
+    page:    'width:750px;background:white;padding:14px 20px;margin:0 auto;font-family:Barlow,Arial,sans-serif;font-size:8px;color:#222;line-height:1.35;position:relative;box-shadow:0 4px 24px rgba(0,0,0,.3)',
+    hdr:     'display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:2px solid #8B1A1A;padding-bottom:6px;margin-bottom:8px',
+    logo:    'max-width:160px;height:auto;flex-shrink:0',
+    company: 'font-size:7px;color:#444;line-height:1.5;text-align:right;white-space:nowrap;flex-shrink:0',
+    // Info bar: tabella a riga unica
+    infoTbl: 'width:100%;border-collapse:collapse;border:1px solid #ccc;margin-bottom:8px;font-size:7px',
+    infoTd:  'padding:5px 9px;border-right:1px solid #ccc;vertical-align:top',
+    infoLbl: 'font-size:6px;font-weight:700;color:#8B1A1A;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:2px',
+    // Sezione
+    sec:     'font-weight:700;font-size:8px;color:#8B1A1A;border-bottom:1px solid #8B1A1A;padding-bottom:2px;margin:7px 0 4px',
+    // Tabella interventi
+    tbl:     'width:100%;border-collapse:collapse;font-size:7px',
+    th:      'background:#8B1A1A;color:white;padding:4px 5px;border:1px solid #a83226;font-weight:700;text-align:left',
+    thC:     'background:#8B1A1A;color:white;padding:4px 5px;border:1px solid #a83226;font-weight:700;text-align:center',
+    td:      'padding:3px 5px;border:1px solid #ccc;text-align:left;vertical-align:middle',
+    tdC:     'padding:3px 5px;border:1px solid #ccc;text-align:center;vertical-align:middle',
+    tdR:     'padding:3px 5px;border:1px solid #ccc;text-align:right;vertical-align:middle;font-weight:700',
+    tdFoot:  'padding:4px 5px;border:1px solid #ccc;background:#f0f0f0;border-top:2px solid #8B1A1A;font-weight:700',
+    tdFootR: 'padding:4px 5px;border:1px solid #ccc;background:#f0f0f0;border-top:2px solid #8B1A1A;font-weight:700;text-align:right;color:#8B1A1A',
+    tdAlt:   'padding:3px 5px;border:1px solid #ccc;text-align:left;vertical-align:middle;background:#f8f8f8',
+    tdAltC:  'padding:3px 5px;border:1px solid #ccc;text-align:center;vertical-align:middle;background:#f8f8f8',
+    tdAltR:  'padding:3px 5px;border:1px solid #ccc;text-align:right;vertical-align:middle;font-weight:700;background:#f8f8f8',
+    // Totali
+    totWrap: 'display:flex;gap:8px;margin-top:8px',
+    totBox:  'flex:1;background:#f9f0f0;border:1px solid #d4a0a0;border-radius:4px;padding:6px 8px;text-align:center',
+    totLbl:  'font-size:6px;color:#8B1A1A;text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-bottom:2px',
+    totVal:  'font-size:14px;font-weight:900;color:#8B1A1A;line-height:1.1',
+    wm:      'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:72px;font-weight:900;color:rgba(139,26,26,.06);white-space:nowrap;pointer-events:none;letter-spacing:6px;z-index:1;font-family:Barlow,Arial'
+  };
+
+  var h = '<div id="pdf-a4-content" style="'+S.page+'">';
+  h += '<div style="'+S.wm+'">ANYMA</div>';
+
+  /* Header */
+  h += '<div style="'+S.hdr+'">';
+  h += logoSrc
+    ? '<img style="'+S.logo+'" src="'+logoSrc+'">'
+    : '<div style="font-size:22px;font-weight:900;color:#8B1A1A;letter-spacing:1px;flex-shrink:0">ANYMA</div>';
+  h += '<div style="'+S.company+'"><strong style="font-size:8px;color:#222;display:block;margin-bottom:1px">ANYMA SRL</strong>';
+  h += 'Via Val di Sole 31 - 36010 - Zan\xe8 (VI) - Italy<br>';
+  h += 'Tel. +39 0445 223889 - info@anymapack.it<br>';
+  h += 'P.IVA IT04494860242 - C.F. &amp; R.I. Vicenza 04494860242<br>';
+  h += 'REA: VI - 408350 - Cap. Soc. Euro 10.000</div>';
   h += '</div>';
-  h += '<div class="pdf-boxes">';
-  h += '<div class="pdf-box"><strong style="color:#8B1A1A;display:block;margin-bottom:4px">Cliente</strong>'+escHtml(cliente)+'</div>';
-  h += '<div class="pdf-box"><strong style="color:#8B1A1A;display:block;margin-bottom:4px">Contratto</strong>Tipo: '+escHtml(tipo)+'<br>N°: '+escHtml(numContr)+'<br>Inizio: '+escHtml(dataInizio)+'</div>';
-  h += '<div class="pdf-box"><strong style="color:#8B1A1A;display:block;margin-bottom:4px">Estratto al</strong>'+oggi+'<br>Saldo: <strong style="color:#8B1A1A">'+(saldoAttuale!==null?saldoAttuale+' '+unitaLabel:'N/A')+'</strong></div>';
-  h += '</div>';
-  h += '<div class="pdf-sec">Dettaglio Interventi</div>';
-  h += '<table class="pdf-tbl"><thead><tr>';
-  h += '<th class="thl">Data</th><th class="thl">N. RT</th><th class="thl">Referente</th>';
-  h += '<th>Durata ('+(isTel?'min':'h')+')</th>';
-  h += '<th>Saldo Prima</th><th>Saldo Dopo</th>';
+
+  /* Info bar — 4 celle in riga unica */
+  h += '<table style="'+S.infoTbl+'"><tr>';
+  h += '<td style="'+S.infoTd+';width:22%"><span style="'+S.infoLbl+'">Cliente</span><strong>'+escHtml(cliente)+'</strong></td>';
+  h += '<td style="'+S.infoTd+';width:28%"><span style="'+S.infoLbl+'">Tipo contratto</span>'+escHtml(tipo)+' &bull; N\xb0 '+escHtml(numContr)+'</td>';
+  h += '<td style="'+S.infoTd+';width:22%"><span style="'+S.infoLbl+'">Inizio &nbsp;/&nbsp; Estratto al</span>'+escHtml(dataInizio)+' / '+oggi+'</td>';
+  h += '<td style="padding:5px 9px;vertical-align:top;text-align:center;width:28%">';
+  h += '<span style="'+S.infoLbl+'">Saldo residuo</span>';
+  h += '<span style="font-size:12px;font-weight:900;color:#8B1A1A">'+(saldoAttuale!==null ? saldoAttuale+' '+unitaLabel : 'N/A')+'</span></td>';
+  h += '</tr></table>';
+
+  /* Tabella interventi */
+  h += '<div style="'+S.sec+'">Dettaglio Interventi</div>';
+  h += '<table style="'+S.tbl+'"><thead><tr>';
+  h += '<th style="'+S.th+';width:13%">Data</th>';
+  h += '<th style="'+S.th+';width:13%">N. RT</th>';
+  h += '<th style="'+S.th+'">Referente</th>';
+  h += '<th style="'+S.thC+';width:14%">Durata ('+(isTel?'min':'h')+')</th>';
+  h += '<th style="'+S.thC+';width:14%">Saldo Prima</th>';
+  h += '<th style="'+S.thC+';width:14%">Saldo Dopo</th>';
   h += '</tr></thead><tbody>';
+
   if(rows.length) {
-    rows.forEach(function(r){
+    rows.forEach(function(r, idx){
+      var even = idx%2===1;
+      var td  = even ? S.tdAlt  : S.td;
+      var tdC = even ? S.tdAltC : S.tdC;
+      var tdR = even ? S.tdAltR : S.tdR;
       var cons = isTel ? r.minuti : r.ore;
       var sp = r.saldoPrima!==null ? r.saldoPrima+' '+unitaLabel : '-';
       var sd = r.saldoDopo!==null  ? r.saldoDopo+' '+unitaLabel  : '-';
-      h += '<tr><td class="tdl">'+escHtml(r.data)+'</td><td class="tdl" style="font-weight:700;color:#8B1A1A">'+escHtml(r.numRT)+'</td><td class="tdl">'+escHtml(r.referente)+'</td><td>'+cons+' '+unitaLabel+'</td><td>'+sp+'</td><td>'+sd+'</td></tr>';
+      h += '<tr>';
+      h += '<td style="'+td+'">'+escHtml(r.data)+'</td>';
+      h += '<td style="'+td+';font-weight:700;color:#8B1A1A">'+escHtml(r.numRT)+'</td>';
+      h += '<td style="'+td+'">'+escHtml(r.referente)+'</td>';
+      h += '<td style="'+tdC+'">'+cons+' '+unitaLabel+'</td>';
+      h += '<td style="'+tdC+'">'+sp+'</td>';
+      h += '<td style="'+tdC+'">'+sd+'</td>';
+      h += '</tr>';
     });
   } else {
-    h += '<tr><td colspan="6" style="text-align:center;padding:14px;color:#888">Nessun intervento registrato</td></tr>';
+    h += '<tr><td colspan="6" style="padding:12px;text-align:center;color:#888;border:1px solid #ccc">Nessun intervento registrato</td></tr>';
   }
-  h += '</tbody><tfoot><tr><td colspan="3" style="font-weight:800">Totale consumato</td>';
-  h += '<td class="num" style="font-weight:800;color:#8B1A1A">'+totConsumo.toFixed(isTel?0:2)+' '+unitaLabel+'</td><td colspan="2"></td></tr></tfoot></table>';
-  h += '<div class="pdf-tot">';
-  h += '<div class="pdf-tot-box"><div class="pdf-tot-label">Interventi</div><div class="pdf-tot-val">'+rows.length+'</div></div>';
-  h += '<div class="pdf-tot-box"><div class="pdf-tot-label">Consumato</div><div class="pdf-tot-val">'+totConsumo.toFixed(isTel?0:2)+' '+unitaLabel+'</div></div>';
-  if(saldoAttuale!==null) h += '<div class="pdf-tot-box"><div class="pdf-tot-label">Saldo residuo</div><div class="pdf-tot-val">'+saldoAttuale+' '+unitaLabel+'</div></div>';
-  h += '</div></div>';
 
-  var wrapper = '<div style="background:#e8e8e8;padding:16px 20px;min-height:100%"><style>.pdf-page{width:750px;background:white;padding:16px 20px;margin:0 auto;font-family:Barlow,Arial,Helvetica,sans-serif;font-size:7.5pt;color:#222;line-height:1.35;position:relative;box-shadow:0 4px 24px rgba(0,0,0,.25);border-radius:2px}.pdf-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:2px solid #8B1A1A;padding-bottom:6px;margin-bottom:8px}.pdf-logo-img{max-width:160px;height:auto;flex-shrink:0}.pdf-company{font-size:6.5pt;color:#444;line-height:1.45;text-align:right;white-space:nowrap;flex-shrink:0}.pdf-company strong{font-size:7.5pt;color:#222;display:block}.pdf-infobar{display:flex;gap:0;margin-bottom:8px;border:1px solid #ccc;border-radius:4px;overflow:hidden;font-size:7pt}.pdf-infobar-cell{flex:1;padding:5px 10px;border-right:1px solid #ccc;line-height:1.5}.pdf-infobar-cell:last-child{border-right:none}.pdf-infobar-label{font-size:6pt;font-weight:700;color:#8B1A1A;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:2px}.pdf-sec{font-weight:700;font-size:8pt;color:#8B1A1A;border-bottom:1px solid #8B1A1A;padding-bottom:3px;margin:8px 0 4px}.pdf-tbl{width:100%;border-collapse:collapse;font-size:7pt;margin-top:0}.pdf-tbl th{background:#8B1A1A;color:white;padding:4px 5px;text-align:center;border:1px solid #a83226;font-size:6.5pt;font-weight:700}.pdf-tbl th.thl{text-align:left}.pdf-tbl td{padding:3px 5px;border:1px solid #bbb;text-align:center;vertical-align:middle;font-size:7pt}.pdf-tbl td.tdl{text-align:left}.pdf-tbl td.num{text-align:right;font-weight:700}.pdf-tbl tr:nth-child(even) td{background:#f8f8f8}.pdf-tbl tfoot td{font-weight:bold;background:#f0f0f0;border-top:2px solid #8B1A1A;font-size:7pt}.pdf-tot{display:flex;gap:8px;margin-top:8px}.pdf-tot-box{flex:1;background:#f9f0f0;border:1px solid #d4a0a0;border-radius:4px;padding:6px 8px;text-align:center}.pdf-tot-label{font-size:6pt;color:#8B1A1A;text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-bottom:2px}.pdf-tot-val{font-size:13pt;font-weight:900;color:#8B1A1A}.pdf-wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:72px;font-weight:900;color:rgba(139,26,26,.06);white-space:nowrap;pointer-events:none;letter-spacing:6px;z-index:1}</style>'+h+'</div>';;
+  h += '</tbody><tfoot><tr>';
+  h += '<td colspan="3" style="'+S.tdFoot+'">Totale consumato</td>';
+  h += '<td style="'+S.tdFootR+'">'+totConsumo.toFixed(isTel?0:2)+' '+unitaLabel+'</td>';
+  h += '<td colspan="2" style="'+S.tdFoot+'"></td>';
+  h += '</tr></tfoot></table>';
+
+  /* Totali */
+  h += '<div style="'+S.totWrap+'">';
+  h += '<div style="'+S.totBox+'"><div style="'+S.totLbl+'">Interventi</div><div style="'+S.totVal+'">'+rows.length+'</div></div>';
+  h += '<div style="'+S.totBox+'"><div style="'+S.totLbl+'">Consumato</div><div style="'+S.totVal+'">'+totConsumo.toFixed(isTel?0:2)+' '+unitaLabel+'</div></div>';
+  if(saldoAttuale!==null)
+    h += '<div style="'+S.totBox+'"><div style="'+S.totLbl+'">Saldo residuo</div><div style="'+S.totVal+'">'+saldoAttuale+' '+unitaLabel+'</div></div>';
+  h += '</div>';
+  h += '</div>'; // fine pdf-a4-content
+
+  /* Wrapper sfondo grigio */
+  var wrapper = '<div style="background:#e0e0e0;padding:20px;min-height:100%;box-sizing:border-box">'+h+'</div>';
 
   var prev = document.getElementById('contr-pdf-preview');
   if(prev) prev.innerHTML = wrapper;
