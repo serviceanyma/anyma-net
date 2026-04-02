@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v62';</script>
+<script>const APP_VERSION = 'v64';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4437,65 +4437,90 @@ function stampaResoconto() {
 }
 
 function renderPdfPanel(items, cliente, tipo) {
-  var isTel = tipo==='Telefonica';
+  var isTel     = tipo==='Telefonica';
   var isTeleass = tipo==='Teleassistenza';
-  var unitaLabel = (isTel || isTeleass) ? 'h' : 'h';
+  var unitaLabel = 'h';
 
-  // Espandi ogni item usando i JSON interni
+  /* ── Costruzione righe ───────────────────────────────────────────
+     Teleassistenza: una riga per SESSIONE, data = GiornateJSON[0].data
+     On-site/Manutenzione/Telefonica: una riga per GIORNATA dal GiornateJSON
+     Le sessioni non hanno data propria → la ereditano dalla giornata del RT
+  ─────────────────────────────────────────────────────────────────── */
   var rows = [];
-  items.forEach(function(i) {
-    var f = i.fields||{};
-    var title = f.Title||'-';
+
+  items.forEach(function(item) {
+    var f = item.fields||{};
+    var title      = f.Title||'-';
     var saldoPrima = f.SaldoPrima!==undefined ? parseFloat(f.SaldoPrima) : null;
     var saldoDopo  = f.SaldoDopo!==undefined  ? parseFloat(f.SaldoDopo)  : null;
 
-    if(isTeleass && f.SessioniJSON) {
-      // Teleassistenza: una riga per sessione
+    // Parse GiornateJSON (array di giornate, ognuna con data e oreLav)
+    var giornate = [];
+    try { giornate = JSON.parse(f.GiornateJSON||'[]')||[]; } catch(e){}
+    // La data "principale" è la prima giornata inserita nel rapportino
+    var dataPrincipale = giornate.length ? (giornate[0].data||'-') : (f.DataIntervento||'').split('T')[0]||'-';
+
+    if(isTeleass) {
+      // Teleassistenza: espandi per SESSIONE, data = GiornateJSON[0].data
       var sessioni = [];
-      try { sessioni = JSON.parse(f.SessioniJSON)||[]; } catch(e){}
-      // Data dall'interno del GiornateJSON
-      var dataGiornata = '-';
-      try {
-        var gg = JSON.parse(f.GiornateJSON||'[]');
-        if(gg[0] && gg[0].data) dataGiornata = gg[0].data;
-      } catch(e){}
+      try { sessioni = JSON.parse(f.SessioniJSON||'[]')||[]; } catch(e){}
       if(!sessioni.length) {
-        rows.push({numRT:title, data:dataGiornata, inizio:'-', fine:'-', durata:0, referente:f.RefNome||'-', saldoPrima:saldoPrima, saldoDopo:saldoDopo, _primaRiga:true, _spId:i.id});
+        rows.push({numRT:title, data:dataPrincipale, inizio:'', fine:'', durataMin:0,
+          referente:f.RefNome||'-', saldoPrima:saldoPrima, saldoDopo:saldoDopo});
       } else {
         sessioni.forEach(function(s, idx) {
           rows.push({
-            numRT:    title,
-            data:     dataGiornata,
-            inizio:   s.inizio||'-',
-            fine:     s.fine||'-',
-            durata:   parseFloat(s.durata)||0,  // minuti
-            referente:s.referente||'-',
+            numRT:     title,
+            data:      dataPrincipale,   // data reale dell'intervento
+            inizio:    s.inizio||'',
+            fine:      s.fine||'',
+            durataMin: parseFloat(s.durata)||0,
+            referente: s.referente||'-',
             saldoPrima: idx===0 ? saldoPrima : null,
             saldoDopo:  idx===sessioni.length-1 ? saldoDopo : null,
-            _primaRiga: idx===0,
-            _spId:    i.id
           });
         });
       }
     } else {
-      // On-site / Manutenzione / Telefonica: una riga per rapportino, usa GiornateJSON
-      var dataGiornata = (f.DataIntervento||'').split('T')[0]||'-';
-      try {
-        var gg2 = JSON.parse(f.GiornateJSON||'[]');
-        if(gg2[0] && gg2[0].data) dataGiornata = gg2[0].data;
-      } catch(e){}
-      var ore = parseFloat(f.OreLavoro)||0;
-      rows.push({numRT:title, data:dataGiornata, inizio:'-', fine:'-', durata: ore*60,
-        referente:f.RefNome||f.Tecnici||'-', saldoPrima:saldoPrima, saldoDopo:saldoDopo, _primaRiga:true, _spId:i.id});
+      // On-site / Manutenzione: una riga per GIORNATA
+      if(!giornate.length) {
+        rows.push({numRT:title, data:dataPrincipale, inizio:'', fine:'', durataMin:0,
+          referente:f.RefNome||f.Tecnici||'-', saldoPrima:saldoPrima, saldoDopo:saldoDopo});
+      } else {
+        giornate.forEach(function(g, idx) {
+          rows.push({
+            numRT:     title,
+            data:      g.data||dataPrincipale,
+            inizio:    g.lavDa||'',
+            fine:      g.lavA||'',
+            durataMin: (parseFloat(g.oreLav)||0)*60,
+            referente: f.RefNome||f.Tecnici||'-',
+            saldoPrima: idx===0 ? saldoPrima : null,
+            saldoDopo:  idx===giornate.length-1 ? saldoDopo : null,
+          });
+        });
+      }
     }
   });
 
-  // Ordina per data
-  rows.sort(function(a,b){return (a.data+a.inizio).localeCompare(b.data+b.inizio);});
+  // Ordina: data DESC poi orario inizio DESC (più recente in cima)
+  rows.sort(function(a,b){
+    var ka = a.data + (a.inizio||'99:99');
+    var kb = b.data + (b.inizio||'99:99');
+    return kb.localeCompare(ka);
+  });
 
-  // Totale consumato in ore
-  var totMinuti = rows.reduce(function(s,r){return s+(parseFloat(r.durata)||0);},0);
-  var totOre = totMinuti/60;
+  // Totale in ore
+  var totMinuti = rows.reduce(function(s,r){return s+(r.durataMin||0);},0);
+  var totOre    = totMinuti/60;
+  function fmtOre(o){
+    if(o===0) return '0h';
+    var ore = Math.floor(o);
+    var min = Math.round((o-ore)*60);
+    if(min===0) return ore+'h';
+    if(ore===0) return min+'min';
+    return ore+'h '+min+'min';
+  }
 
   var contr      = _contrData.find(function(c){return c.cliente===cliente && c.tipo===tipo;});
   var saldoAtt   = contr ? (isTel ? contr.saldoMinuti : contr.saldoOre) : null;
@@ -4503,10 +4528,10 @@ function renderPdfPanel(items, cliente, tipo) {
   var dataInizio = contr ? (contr.dataInizio||'-') : '-';
   var oggi       = new Date().toLocaleDateString('it-IT');
   var logoSrc    = typeof LOGO_RESOCONTO!=='undefined' && LOGO_RESOCONTO ? LOGO_RESOCONTO : '';
-  var RED = '#8B1A1A';
+  var RED  = '#8B1A1A';
   var FONT = 'Barlow,Arial,sans-serif';
 
-  var wrap = 'box-sizing:border-box;width:100%;height:100%;background:#d0d0d0;padding:20px;overflow-y:auto;font-family:'+FONT+';display:flex;justify-content:center;align-items:flex-start';
+  var wrap  = 'box-sizing:border-box;width:100%;height:100%;background:#d0d0d0;padding:20px;overflow-y:auto;font-family:'+FONT+';display:flex;justify-content:center;align-items:flex-start';
   var sheet = 'box-sizing:border-box;width:100%;min-height:calc(100% * 1.4142);background:white;padding:20px 24px;font-family:'+FONT+';font-size:9px;color:#222;line-height:1.4;position:relative;box-shadow:0 4px 20px rgba(0,0,0,.35);display:flex;flex-direction:column';
 
   var h = '<div id="pdf-a4-content" style="'+sheet+'">';
@@ -4516,8 +4541,7 @@ function renderPdfPanel(items, cliente, tipo) {
   h += '<table style="width:100%;border-collapse:collapse;border-bottom:2.5px solid '+RED+';padding-bottom:7px;margin-bottom:11px"><tr>';
   h += '<td style="vertical-align:middle;padding-bottom:7px">';
   h += logoSrc ? '<img src="'+logoSrc+'" style="max-width:190px;height:auto">' : '<span style="font-size:26px;font-weight:900;color:'+RED+';letter-spacing:1.5px">ANYMA</span>';
-  h += '</td>';
-  h += '<td style="vertical-align:top;text-align:right;font-size:8px;color:#444;line-height:1.6;white-space:nowrap;padding-bottom:7px">';
+  h += '</td><td style="vertical-align:top;text-align:right;font-size:8px;color:#444;line-height:1.6;white-space:nowrap;padding-bottom:7px">';
   h += '<strong style="font-size:9px;color:#222;display:block">ANYMA SRL</strong>';
   h += 'Via Val di Sole 31 - 36010 - Zan\xe8 (VI) - Italy<br>';
   h += 'Tel. +39 0445 223889 &nbsp;|&nbsp; info@anymapack.it<br>';
@@ -4528,8 +4552,7 @@ function renderPdfPanel(items, cliente, tipo) {
   // Info bar
   var LBL = 'display:block;font-size:7px;font-weight:700;color:'+RED+';text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px';
   var TD4 = 'padding:6px 11px;border-right:1px solid #ccc;vertical-align:top;font-size:8.5px';
-  h += '<table style="width:100%;border-collapse:collapse;border:1px solid #ccc;margin-bottom:11px">';
-  h += '<tr>';
+  h += '<table style="width:100%;border-collapse:collapse;border:1px solid #ccc;margin-bottom:11px"><tr>';
   h += '<td style="'+TD4+';width:22%"><span style="'+LBL+'">Cliente</span><strong style="font-size:9px">'+escHtml(cliente)+'</strong></td>';
   h += '<td style="'+TD4+';width:30%"><span style="'+LBL+'">Contratto</span>'+escHtml(tipo)+' &bull; N&deg; '+escHtml(numContr)+'<br><span style="color:#666;font-size:8px">Inizio: '+escHtml(dataInizio)+'</span></td>';
   h += '<td style="'+TD4+';width:22%"><span style="'+LBL+'">Estratto al</span>'+oggi+'</td>';
@@ -4537,7 +4560,7 @@ function renderPdfPanel(items, cliente, tipo) {
   h += '<span style="font-size:14px;font-weight:900;color:'+RED+'">'+(saldoAtt!==null ? saldoAtt+' '+unitaLabel : 'N/A')+'</span></td>';
   h += '</tr></table>';
 
-  // Titolo sezione
+  // Titolo
   h += '<div style="font-weight:700;font-size:9.5px;color:'+RED+';border-bottom:1px solid '+RED+';padding-bottom:3px;margin-bottom:6px">Dettaglio Interventi</div>';
 
   // Tabella
@@ -4545,67 +4568,67 @@ function renderPdfPanel(items, cliente, tipo) {
   var TD  = 'padding:4px 6px;border:1px solid #ccc;font-size:8.5px;vertical-align:middle';
   var TDA = 'padding:4px 6px;border:1px solid #ccc;font-size:8.5px;vertical-align:middle;background:#f7f7f7';
   var TF  = 'padding:5px 6px;border:1px solid #ccc;background:#f0f0f0;border-top:2px solid '+RED+';font-weight:700;font-size:8.5px';
+  var colspan = isTeleass ? 8 : 7;
 
-  h += '<div style="flex:1">';
-  h += '<table style="width:100%;border-collapse:collapse"><thead><tr>';
+  h += '<div style="flex:1"><table style="width:100%;border-collapse:collapse"><thead><tr>';
   h += '<th style="'+TH+';text-align:left;width:12%">Data</th>';
-  h += '<th style="'+TH+';text-align:left;width:16%">N. RT</th>';
-  if(isTeleass) {
-    h += '<th style="'+TH+';text-align:center;width:8%">Inizio</th>';
-    h += '<th style="'+TH+';text-align:center;width:8%">Fine</th>';
-  }
+  h += '<th style="'+TH+';text-align:left;width:15%">N. RT</th>';
+  h += '<th style="'+TH+';text-align:center;width:8%">Inizio</th>';
+  h += '<th style="'+TH+';text-align:center;width:8%">Fine</th>';
   h += '<th style="'+TH+';text-align:left">Referente</th>';
-  h += '<th style="'+TH+';text-align:center;width:12%">Durata</th>';
-  h += '<th style="'+TH+';text-align:center;width:12%">Saldo Prima</th>';
-  h += '<th style="'+TH+';text-align:center;width:12%">Saldo Dopo</th>';
+  h += '<th style="'+TH+';text-align:center;width:10%">Durata</th>';
+  h += '<th style="'+TH+';text-align:center;width:11%">Saldo Prima</th>';
+  h += '<th style="'+TH+';text-align:center;width:11%">Saldo Dopo</th>';
   h += '</tr></thead><tbody>';
 
+  var prevMese = null;
+  var zebraIdx = 0;
+
   if(rows.length) {
-    rows.forEach(function(r, idx) {
-      var even = idx%2===1;
-      var td = even ? TDA : TD;
-      var durataOre = (r.durata/60);
-      var durataStr = Number.isInteger(durataOre) ? durataOre+'h' : durataOre.toFixed(1)+'h';
+    rows.forEach(function(r) {
+      var mese = r.data ? r.data.substring(0,7) : '';
+      // Separatore cambio mese (riga rossa sottile)
+      if(prevMese!==null && mese!==prevMese) {
+        h += '<tr><td colspan="8" style="background:'+RED+';padding:2px;border:none"></td></tr>';
+        zebraIdx = 0;
+      }
+      prevMese = mese;
+
+      var td = zebraIdx%2===0 ? TD : TDA;
+      zebraIdx++;
+      var durStr = fmtOre(r.durataMin/60);
       var sp = r.saldoPrima!==null ? r.saldoPrima+' '+unitaLabel : '';
       var sd = r.saldoDopo!==null  ? r.saldoDopo+' '+unitaLabel  : '';
       h += '<tr>';
       h += '<td style="'+td+'">'+escHtml(r.data)+'</td>';
       h += '<td style="'+td+';font-weight:700;color:'+RED+'">'+escHtml(r.numRT)+'</td>';
-      if(isTeleass) {
-        h += '<td style="'+td+';text-align:center">'+escHtml(r.inizio)+'</td>';
-        h += '<td style="'+td+';text-align:center">'+escHtml(r.fine)+'</td>';
-      }
+      h += '<td style="'+td+';text-align:center">'+escHtml(r.inizio||'-')+'</td>';
+      h += '<td style="'+td+';text-align:center">'+escHtml(r.fine||'-')+'</td>';
       h += '<td style="'+td+'">'+escHtml(r.referente)+'</td>';
-      h += '<td style="'+td+';text-align:center">'+durataStr+'</td>';
+      h += '<td style="'+td+';text-align:center">'+durStr+'</td>';
       h += '<td style="'+td+';text-align:center">'+sp+'</td>';
       h += '<td style="'+td+';text-align:center">'+sd+'</td>';
       h += '</tr>';
     });
   } else {
-    var colspan = isTeleass ? 8 : 6;
-    h += '<tr><td colspan="'+colspan+'" style="padding:12px;text-align:center;color:#999;border:1px solid #ccc">Nessun intervento registrato</td></tr>';
+    h += '<tr><td colspan="8" style="padding:12px;text-align:center;color:#999;border:1px solid #ccc">Nessun intervento registrato</td></tr>';
   }
 
-  var totStr = Number.isInteger(totOre) ? totOre+'h' : totOre.toFixed(2)+'h';
-  var colspan2 = isTeleass ? 5 : 3;
-  var colspan3 = isTeleass ? 2 : 2;
   h += '</tbody><tfoot><tr>';
-  h += '<td colspan="'+colspan2+'" style="'+TF+'">Totale consumato</td>';
-  h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+totStr+'</td>';
-  h += '<td colspan="'+colspan3+'" style="'+TF+'"></td>';
-  h += '</tr></tfoot></table>';
-  h += '</div>';
+  h += '<td colspan="5" style="'+TF+'">Totale consumato</td>';
+  h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+fmtOre(totOre)+'</td>';
+  h += '<td colspan="2" style="'+TF+'"></td>';
+  h += '</tr></tfoot></table></div>';
 
-  // Totali a piè pagina
+  // Totali
   var BOX = 'flex:1;background:#fdf0f0;border:1px solid #d4a0a0;border-radius:5px;padding:8px 10px;text-align:center';
   var BL  = 'display:block;font-size:7px;color:'+RED+';text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-bottom:4px';
   var BV  = 'font-size:17px;font-weight:900;color:'+RED+';line-height:1';
   h += '<div style="display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid #e8d0d0">';
   h += '<div style="'+BOX+'"><span style="'+BL+'">Interventi</span><span style="'+BV+'">'+items.length+'</span></div>';
-  h += '<div style="'+BOX+'"><span style="'+BL+'">Consumato</span><span style="'+BV+'">'+totStr+'</span></div>';
+  h += '<div style="'+BOX+'"><span style="'+BL+'">Consumato</span><span style="'+BV+'">'+fmtOre(totOre)+'</span></div>';
   if(saldoAtt!==null) h += '<div style="'+BOX+'"><span style="'+BL+'">Saldo residuo</span><span style="'+BV+'">'+saldoAtt+' '+unitaLabel+'</span></div>';
-  h += '</div>';
-  h += '</div>';
+  h += '</div></div>';
 
   var wrapper = '<div style="'+wrap+'">'+h+'</div>';
   var prev = document.getElementById('contr-pdf-preview');
