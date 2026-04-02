@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v46';</script>
+<script>const APP_VERSION = 'v47';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4498,7 +4498,17 @@ function saveContrDefaultsUI() {
       var inp = document.getElementById(id);
       var pac2 = document.getElementById(id+'_pac');
       if(!d[tipo][pac]) d[tipo][pac]={};
-      d[tipo][pac].pacchetto = pac2 ? pac2.value : pac;Overlay').classList.add('hidden');}
+      d[tipo][pac].pacchetto = pac2 ? pac2.value : pac;
+      if(tipo==='Telefonica') d[tipo][pac].saldoMinuti = inp ? parseInt(inp.value)||0 : 0;
+      else d[tipo][pac].saldoOre = inp ? parseFloat(inp.value)||0 : 0;
+    });
+  });
+  saveContrDefaults(d);
+  showToast('✓ Saldi default salvati');
+}
+
+function showLoading(msg='Caricamento...'){document.getElementById('loadingMsg').textContent=msg;document.getElementById('loadingOverlay').classList.remove('hidden');}
+function hideLoading(){document.getElementById('loadingOverlay').classList.add('hidden');}
 
 // Mostra versione nel logo
 (function(){ var el=document.getElementById('app-version-lbl'); if(el && typeof APP_VERSION!=='undefined') el.textContent=APP_VERSION; })();
