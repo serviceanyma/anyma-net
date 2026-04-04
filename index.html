@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v84';</script>
+<script>const APP_VERSION = 'v85';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4540,6 +4540,14 @@ function stampaResoconto() {
 }
 
 function renderPdfPanel(items, cliente, tipo) {
+  try { return _renderPdfPanelInner(items, cliente, tipo); }
+  catch(e) {
+    console.error('[renderPdfPanel] ERRORE:', e.message, e.stack);
+    var prev = document.getElementById('contr-pdf-preview');
+    if(prev) prev.innerHTML = '<div style="padding:40px;text-align:center;color:var(--red)">Errore: '+escHtml(e.message)+'<br><pre style="font-size:9px;text-align:left;margin-top:8px;color:#aaa">'+escHtml(e.stack||'')+'</pre></div>';
+  }
+}
+function _renderPdfPanelInner(items, cliente, tipo) {
   var isTel     = tipo==='Telefonica';
   var isTeleass = tipo==='Teleassistenza';
   var unitaLabel = isTel ? 'min' : 'h';
@@ -4939,7 +4947,7 @@ function renderPdfPanel(items, cliente, tipo) {
   if(prev) prev.innerHTML = wrapper;
   var btnS = document.getElementById('btn-stampa-pdf');
   if(btnS) btnS.style.display = '';
-}
+} // fine _renderPdfPanelInner
 
 function renderResoconto(items, tipo) {
   var _resSortKey = 'data'; var _resSortAsc = false;
