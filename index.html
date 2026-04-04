@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v86';</script>
+<script>const APP_VERSION = 'v87';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4582,6 +4582,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   function calcolaFasceSessione(inizio, fine, dataStr, pacchetto) {
     if(!inizio || !fine) return [];
     var p = (pacchetto||'').toUpperCase();
+    if(p.indexOf('SPOT')>=0) return []; // Spot: a consuntivo, nessun coefficiente
     var isPrem = p.indexOf('PREMIUM')>=0;
     try {
       var d = dataStr ? new Date(dataStr) : new Date();
@@ -4706,7 +4707,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
           var fasceSessione;
           if(s.fasceSovrapposte && Array.isArray(s.fasceSovrapposte)) {
             fasceSessione = s.fasceSovrapposte;
-          } else if(s.coefficiente !== undefined) {
+          } else if(s.coefficiente !== undefined && packRT.toUpperCase().indexOf('SPOT')<0) {
             fasceSessione = [{label:'', coeff:parseFloat(s.coefficiente), display:'×'+s.coefficiente, minuti:parseFloat(s.durata)||0, flat:false}];
           } else {
             fasceSessione = calcolaFasceSessione(s.inizio||'', s.fine||'', dataFallback, packRT);
