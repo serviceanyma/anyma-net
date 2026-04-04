@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v78';</script>
+<script>const APP_VERSION = 'v79';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4732,23 +4732,16 @@ function renderPdfPanel(items, cliente, tipo) {
   h += '</tr></thead><tbody>';
 
   var totCols = 8; // Data, N.RT, Pacchetto, Inizio, Fine, Referente, Durata, TotAddebitati
-  var prevRT = null, prevMese = null, zebraIdx = 0;
+  var prevRT = null, zebraIdx = 0;
 
   if(rows.length) {
     rows.forEach(function(r) {
-      var meseCorrente = r.data ? r.data.substring(0,7) : '';
-      if(prevRT !== null) {
-        if(meseCorrente !== prevMese) {
-          // cambio mese: riga rossa spessa (come prima)
-          h += '<tr><td colspan="'+totCols+'" style="background:'+RED+';padding:2px;border:none"></td></tr>';
-          zebraIdx++;
-        } else if(r.numRT !== prevRT) {
-          // cambio RT stesso mese: riga rossa fine
-          h += '<tr><td colspan="'+totCols+'" style="background:'+RED+';padding:0;height:1px;border:none"></td></tr>';
-        }
+      if(prevRT !== null && r.numRT !== prevRT) {
+        // cambio RT: riga rossa fine + alterna zebra
+        h += '<tr><td colspan="'+totCols+'" style="background:'+RED+';padding:0;height:1px;border:none"></td></tr>';
+        zebraIdx++;
       }
       prevRT = r.numRT;
-      prevMese = meseCorrente;
       var td = zebraIdx%2===0 ? TD : TDA;
       var durStr = fmtVal(r.durataMin);
       // Tot. Addebitati: valore arrotondamento letto da SP
