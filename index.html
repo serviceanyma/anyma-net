@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v85';</script>
+<script>const APP_VERSION = 'v86';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4548,6 +4548,24 @@ function renderPdfPanel(items, cliente, tipo) {
   }
 }
 function _renderPdfPanelInner(items, cliente, tipo) {
+  // Dizionario i18n — dichiarato per primo perché usato in tutta la funzione
+  var _lang = (typeof _resocontoLingua !== 'undefined') ? _resocontoLingua : 'ita';
+  var i18n = {
+    ita: { data:'Data', nrt:'N. RT', pacchetto:'Pacchetto', inizio:'Inizio', fine:'Fine',
+           referente:'Referente', durata:'Durata', coeff:'Coeff.', totAdd:'Tot. Addebitati',
+           totCons:'Totale consumato', nessunoInt:'Nessun intervento registrato',
+           sovrFasce:'Sovrapposizione fasce orarie', estrattoAl:'Estratto al',
+           saldoRes:'Saldo residuo', contratto:'Contratto', cliente:'Cliente', inizio2:'Inizio',
+           interventi:'Interventi', consumato:'Consumato' },
+    eng: { data:'Date', nrt:'RT No.', pacchetto:'Package', inizio:'Start', fine:'End',
+           referente:'Technician', durata:'Duration', coeff:'Coeff.', totAdd:'Charged',
+           totCons:'Total consumed', nessunoInt:'No interventions recorded',
+           sovrFasce:'Overlapping time bands', estrattoAl:'Extracted on',
+           saldoRes:'Remaining balance', contratto:'Contract', cliente:'Client', inizio2:'Start',
+           interventi:'Interventions', consumato:'Consumed' }
+  };
+  var L = i18n[_lang] || i18n.ita;
+
   var isTel     = tipo==='Telefonica';
   var isTeleass = tipo==='Teleassistenza';
   var unitaLabel = isTel ? 'min' : 'h';
@@ -4801,24 +4819,6 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   // Titolo
   var titoloSez = _lang==='eng' ? 'Intervention Details' : 'Dettaglio Interventi';
   h += '<div style="font-weight:700;font-size:9.5px;color:'+RED+';border-bottom:1px solid '+RED+';padding-bottom:3px;margin-bottom:6px">'+titoloSez+'</div>';
-
-  // Dizionario i18n
-  var _lang = (typeof _resocontoLingua !== 'undefined') ? _resocontoLingua : 'ita';
-  var i18n = {
-    ita: { data:'Data', nrt:'N. RT', pacchetto:'Pacchetto', inizio:'Inizio', fine:'Fine',
-           referente:'Referente', durata:'Durata', coeff:'Coeff.', totAdd:'Tot. Addebitati',
-           totCons:'Totale consumato', nessunoInt:'Nessun intervento registrato',
-           sovrFasce:'Sovrapposizione fasce orarie', estrattoAl:'Estratto al',
-           saldoRes:'Saldo residuo', contratto:'Contratto', cliente:'Cliente', inizio2:'Inizio',
-           interventi:'Interventi', consumato:'Consumato' },
-    eng: { data:'Date', nrt:'RT No.', pacchetto:'Package', inizio:'Start', fine:'End',
-           referente:'Technician', durata:'Duration', coeff:'Coeff.', totAdd:'Charged',
-           totCons:'Total consumed', nessunoInt:'No interventions recorded',
-           sovrFasce:'Overlapping time bands', estrattoAl:'Extracted on',
-           saldoRes:'Remaining balance', contratto:'Contract', cliente:'Client', inizio2:'Start',
-           interventi:'Interventions', consumato:'Consumed' }
-  };
-  var L = i18n[_lang] || i18n.ita;
 
   // Tabella — Teleassistenza ha colonna extra Coeff. (dopo Durata)
   var TH   = 'background:'+RED+';color:white;padding:5px 6px;border:1px solid #a83226;font-weight:700;font-size:8px';
