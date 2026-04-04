@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v70';</script>
+<script>const APP_VERSION = 'v75';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1185,8 +1185,10 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
                 <div style="display:flex;flex-direction:column;gap:3px">
                   <label style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Ordine</label>
                   <select id="pdf-filtro-ordine" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)">
-                    <option value="desc">Più recente prima</option>
-                    <option value="asc">Più vecchio prima</option>
+                    <option value="desc">Data ↓ (più recente)</option>
+                    <option value="asc">Data ↑ (più vecchio)</option>
+                    <option value="rt_asc">N. RT  A → Z</option>
+                    <option value="rt_desc">N. RT  Z → A</option>
                   </select>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:3px;justify-content:flex-end;padding-top:14px">
@@ -4556,27 +4558,36 @@ function renderPdfPanel(items, cliente, tipo) {
     if(isTel) {
       /* TELEFONICA: ChiamateJSON
          Struttura: [{inizio, fine, referente, durata (min), arrotondamento}]
-         Data = DataIntervento SP (campo ufficiale del rapportino)  */
+         Data = DataIntervento SP (campo ufficiale del rapportino)
+         Arrotondamento per pacchetto: SPOT/BASE->5 min succ. | STANDARD->1 min succ. | PREMIUM->N/A
+         Fascia oraria SPOT: ordinario lun-ven 08:00-17:00 (x1) | fuori orario (x2)
+      */
       var chiamate = [];
       try { chiamate = JSON.parse(f.ChiamateJSON||'[]')||[]; } catch(e){}
+
       if(!chiamate.length) {
         rows.push({numRT:title, data:dataFallback, inizio:'', fine:'',
-          durataMin:0, arrot:0, referente:'-',
+          durataMin:0, minArrotondati:null,
+          referente:'-', pacchetto:f.Pacchetto||'-',
           saldoPrima:saldoPrima, saldoDopo:saldoDopo});
       } else {
         chiamate.forEach(function(c, idx) {
-          // Data = DataIntervento SP (data ufficiale dell'intervento)
           var dataC = dataFallback;
+          var pack = f.Pacchetto||'-';
+          // minArrotondati letto direttamente da SP (campo arrotondamento della chiamata)
+          var minArrot = (c.arrotondamento !== undefined && c.arrotondamento !== null && c.arrotondamento !== '')
+            ? parseFloat(c.arrotondamento) : null;
           rows.push({
-            numRT:     title,
-            data:      dataC,
-            inizio:    c.inizio||'',
-            fine:      c.fine||'',
-            durataMin: parseFloat(c.durata)||0,
-            arrot:     parseFloat(c.arrotondamento)||0,
-            referente: c.referente||'-',
-            saldoPrima: idx===0 ? saldoPrima : null,
-            saldoDopo:  idx===chiamate.length-1 ? saldoDopo : null,
+            numRT:          title,
+            data:           dataC,
+            inizio:         c.inizio||'',
+            fine:           c.fine||'',
+            durataMin:      parseFloat(c.durata)||0,
+            minArrotondati: minArrot,
+            referente:      c.referente||'-',
+            pacchetto:      pack,
+            saldoPrima:     idx===0 ? saldoPrima : null,
+            saldoDopo:      idx===chiamate.length-1 ? saldoDopo : null,
           });
         });
       }
@@ -4589,7 +4600,7 @@ function renderPdfPanel(items, cliente, tipo) {
       try { sessioni = JSON.parse(f.SessioniJSON||'[]')||[]; } catch(e){}
       if(!sessioni.length) {
         rows.push({numRT:title, data:dataFallback, inizio:'', fine:'',
-          durataMin:0, arrot:null, referente:'-',
+          durataMin:0, arrot:null, referente:'-', pacchetto:f.Pacchetto||'-',
           saldoPrima:saldoPrima, saldoDopo:saldoDopo});
       } else {
         sessioni.forEach(function(s, idx) {
@@ -4603,6 +4614,7 @@ function renderPdfPanel(items, cliente, tipo) {
             durataMin: parseFloat(s.durata)||0,
             arrot:     null,
             referente: s.referente||'-',
+            pacchetto: f.Pacchetto||'-',
             saldoPrima: idx===0 ? saldoPrima : null,
             saldoDopo:  idx===sessioni.length-1 ? saldoDopo : null,
           });
@@ -4614,7 +4626,7 @@ function renderPdfPanel(items, cliente, tipo) {
          Ogni giornata ha la propria data in g.data  */
       if(!giornate.length) {
         rows.push({numRT:title, data:dataFallback, inizio:'', fine:'',
-          durataMin:0, arrot:null, referente:f.RefNome||f.Tecnici||'-',
+          durataMin:0, arrot:null, referente:f.RefNome||f.Tecnici||'-', pacchetto:f.Pacchetto||'-',
           saldoPrima:saldoPrima, saldoDopo:saldoDopo});
       } else {
         giornate.forEach(function(g, idx) {
@@ -4626,6 +4638,7 @@ function renderPdfPanel(items, cliente, tipo) {
             durataMin: (parseFloat(g.oreLav)||0)*60,
             arrot:     null,
             referente: f.RefNome||f.Tecnici||'-',
+            pacchetto: f.Pacchetto||'-',
             saldoPrima: idx===0 ? saldoPrima : null,
             saldoDopo:  idx===giornate.length-1 ? saldoDopo : null,
           });
@@ -4637,6 +4650,8 @@ function renderPdfPanel(items, cliente, tipo) {
   // Ordina in base all'impostazione (default desc = più recente prima)
   var _ord = (typeof _resocontoOrdine !== 'undefined') ? _resocontoOrdine : 'desc';
   rows.sort(function(a,b){
+    if(_ord === 'rt_asc') return (a.numRT||'').localeCompare(b.numRT||'');
+    if(_ord === 'rt_desc') return (b.numRT||'').localeCompare(a.numRT||'');
     var ka = a.data + (a.inizio||'99:99');
     var kb = b.data + (b.inizio||'99:99');
     return _ord === 'asc' ? ka.localeCompare(kb) : kb.localeCompare(ka);
@@ -4705,46 +4720,57 @@ function renderPdfPanel(items, cliente, tipo) {
   h += '<div style="flex:1"><table style="width:100%;border-collapse:collapse"><thead><tr>';
   h += '<th style="'+TH+';text-align:left;width:12%">Data</th>';
   h += '<th style="'+TH+';text-align:left;width:14%">N. RT</th>';
+  h += '<th style="'+TH+';text-align:center;width:9%">Pacchetto</th>';
   h += '<th style="'+TH+';text-align:center;width:8%">Inizio</th>';
   h += '<th style="'+TH+';text-align:center;width:8%">Fine</th>';
   h += '<th style="'+TH+';text-align:left">Referente</th>';
   h += '<th style="'+TH+';text-align:center;width:11%">Durata ('+unitaLabel+')</th>';
-  h += '<th style="'+TH+';text-align:center;width:10%">Arrot. (min)</th>';
+  h += '<th style="'+TH+';text-align:center;width:10%">Tot. Addebitati</th>';
   h += '</tr></thead><tbody>';
 
-  var totCols = 7; // Data, N.RT, Inizio, Fine, Referente, Durata, Arrotondamento
-  var prevMese = null, zebraIdx = 0;
+  var totCols = 8; // Data, N.RT, Pacchetto, Inizio, Fine, Referente, Durata, TotAddebitati
+  var prevRT = null, zebraIdx = 0;
 
   if(rows.length) {
     rows.forEach(function(r) {
-      var mese = r.data ? r.data.substring(0,7) : '';
-      if(prevMese!==null && mese!==prevMese) {
+      if(prevRT !== null && r.numRT !== prevRT) {
         h += '<tr><td colspan="'+totCols+'" style="background:'+RED+';padding:2px;border:none"></td></tr>';
-        zebraIdx = 0;
+        zebraIdx++;
       }
-      prevMese = mese;
+      prevRT = r.numRT;
       var td = zebraIdx%2===0 ? TD : TDA;
-      zebraIdx++;
       var durStr = fmtVal(r.durataMin);
-      var arrotStr = (r.arrot != null && r.arrot !== 0) ? r.arrot+'min' : '-';
+      // Tot. Addebitati: valore arrotondamento letto da SP
+      var minArrotStr;
+      if(r.minArrotondati === null || r.minArrotondati === undefined) {
+        minArrotStr = '-';
+      } else {
+        minArrotStr = r.minArrotondati+' min';
+      }
       h += '<tr>';
       h += '<td style="'+td+'">'+escHtml(r.data)+'</td>';
       h += '<td style="'+td+';font-weight:700;color:'+RED+'">'+escHtml(r.numRT)+'</td>';
+      h += '<td style="'+td+';text-align:center;font-size:8px">'+escHtml(r.pacchetto||'-')+'</td>';
       h += '<td style="'+td+';text-align:center">'+escHtml(r.inizio||'-')+'</td>';
       h += '<td style="'+td+';text-align:center">'+escHtml(r.fine||'-')+'</td>';
       h += '<td style="'+td+'">'+escHtml(r.referente)+'</td>';
       h += '<td style="'+td+';text-align:center">'+durStr+'</td>';
-      h += '<td style="'+td+';text-align:center">'+arrotStr+'</td>';
+      h += '<td style="'+td+';text-align:center">'+minArrotStr+'</td>';
       h += '</tr>';
     });
   } else {
     h += '<tr><td colspan="'+totCols+'" style="padding:12px;text-align:center;color:#999;border:1px solid #ccc">Nessun intervento registrato</td></tr>';
   }
 
+  // Totale minuti addebitati (somma arrotondati, escluso PREMIUM)
+  var totMinArrot = rows.reduce(function(s,r){return s+(r.minArrotondati!==null&&r.minArrotondati!==undefined ? r.minArrotondati : 0);},0);
+  var hasPremium = rows.some(function(r){return r.minArrotondati===null;});
+  var totArrotStr = (totMinArrot > 0 ? totMinArrot+' min' : '') + (hasPremium ? (totMinArrot>0?' + ':'')+'incl.' : '');
+
   h += '</tbody><tfoot><tr>';
-  h += '<td colspan="5" style="'+TF+'">Totale consumato</td>';
+  h += '<td colspan="6" style="'+TF+'">Totale consumato</td>';
   h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+fmtVal(totMin)+'</td>';
-  h += '<td style="'+TF+'"></td>';
+  h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+totArrotStr+'</td>';
   h += '</tr></tfoot></table></div>';
 
   // Totali
