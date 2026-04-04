@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v79';</script>
+<script>const APP_VERSION = 'v81';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4597,29 +4597,113 @@ function renderPdfPanel(items, cliente, tipo) {
 
     } else if(isTeleass) {
       /* TELEASSISTENZA: SessioniJSON
-         Struttura: [{inizio, fine, referente, durata (min)}]
-         Data = DataIntervento SP (campo ufficiale del rapportino)  */
-      var sessioni = [];
-      try { sessioni = JSON.parse(f.SessioniJSON||'[]')||[]; } catch(e){}
+         Struttura wrapper: { pacchetto, oreUsate, sessioni: [{inizio, fine, referente, durata, coefficiente?, fasceSovrapposte?}] }
+         - coefficiente: valore numerico (es. 1.5) oppure array se sovrapposizione fasce
+         - Tot. Addebitati in ore da SessioniJSON.oreUsate (root wrapper)
+         Coefficienti da contratto (Art.3):
+           ×1,00 ordinaria   Lun-Ven 08:00-17:00
+           ×1,50 straord.    17:00-22:00 / 06:00-08:00 + Sab/Dom/Fest
+           ×1,75 notturna    Lun-Ven 22:00-06:00
+           ×2,00 nott.str.   22:00-06:00 Sab/Dom/Fest
+         Per PREMIUM: ×1,00 e ×1,50 → flat; solo ×1,75 e ×2,00 scalano
+      */
+      var sessioniWrapper = {};
+      try { sessioniWrapper = JSON.parse(f.SessioniJSON||'{}'); } catch(e){}
+      var sessioni   = sessioniWrapper.sessioni || [];
+      var packRT     = sessioniWrapper.pacchetto || f.Pacchetto || '-';
+      var oreUsateRT = (sessioniWrapper.oreUsate !== undefined && sessioniWrapper.oreUsate !== null)
+        ? parseFloat(sessioniWrapper.oreUsate) : null;
+
+      /* Calcola fascia/e orarie per una sessione dato inizio/fine e data
+         Restituisce array di fasce: [{label, coeff, isPremiumFlat}]
+         Se la sessione attraversa più fasce → array con più elementi (sovrapposizione) */
+      function calcolaFasceSessione(inizio, fine, dataStr, pacchetto) {
+        if(!inizio || !fine) return [];
+        var p = (pacchetto||'').toUpperCase();
+        var isPrem = p.indexOf('PREMIUM')>=0;
+        try {
+          // Parsa data per giorno settimana
+          var d = dataStr ? new Date(dataStr) : new Date();
+          var dow = d.getDay(); // 0=dom,6=sab
+          var isFeriale = (dow>=1 && dow<=5);
+          var isFestivo = (dow===0 || dow===6);
+
+          function toMin(t) {
+            var p=t.split(':'); return parseInt(p[0])*60+(parseInt(p[1])||0);
+          }
+          var mInizio = toMin(inizio);
+          var mFine   = toMin(fine);
+          if(mFine <= mInizio) mFine += 1440; // attraversa mezzanotte
+
+          // Definizione fasce (in minuti dalla mezzanotte)
+          // Ordinaria: lun-ven 08:00-17:00 → 480-1020
+          // Straordinaria: 06:00-08:00 (360-480) + 17:00-22:00 (1020-1320) + sab/dom tutto
+          // Notturna: 22:00-06:00 (1320-1800 o 0-360)
+          var fasce = [];
+          if(isFeriale) {
+            fasce = [
+              {label:'Notturna',   coeff:1.75, da:0,    a:360,  isPremFlat:false},
+              {label:'Straord.',   coeff:1.50, da:360,  a:480,  isPremFlat:true},
+              {label:'Ordinaria',  coeff:1.00, da:480,  a:1020, isPremFlat:true},
+              {label:'Straord.',   coeff:1.50, da:1020, a:1320, isPremFlat:true},
+              {label:'Notturna',   coeff:1.75, da:1320, a:1800, isPremFlat:false},
+            ];
+          } else {
+            fasce = [
+              {label:'Nott.Str.',  coeff:2.00, da:0,    a:360,  isPremFlat:false},
+              {label:'Straord.',   coeff:1.50, da:360,  a:1800, isPremFlat:true},
+              {label:'Nott.Str.',  coeff:2.00, da:1320, a:1800, isPremFlat:false},
+            ];
+          }
+
+          var fasceToccate = [];
+          fasce.forEach(function(f) {
+            var sovrInizio = Math.max(mInizio, f.da);
+            var sovrFine   = Math.min(mFine,   f.a);
+            if(sovrFine > sovrInizio) {
+              var flat = isPrem && f.isPremFlat;
+              fasceToccate.push({
+                label:      f.label,
+                coeff:      f.coeff,
+                flat:       flat,
+                display:    flat ? f.label+' flat' : '×'+f.coeff.toFixed(2).replace('.00','').replace(/\.?0+$/,''),
+                minuti:     sovrFine - sovrInizio
+              });
+            }
+          });
+          return fasceToccate;
+        } catch(e) { return []; }
+      }
+
       if(!sessioni.length) {
         rows.push({numRT:title, data:dataFallback, inizio:'', fine:'',
-          durataMin:0, arrot:null, referente:'-', pacchetto:f.Pacchetto||'-',
+          durataMin:0, oreAddebitateRT:oreUsateRT, fasceSessione:[],
+          referente:'-', pacchetto:packRT,
           saldoPrima:saldoPrima, saldoDopo:saldoDopo});
       } else {
         sessioni.forEach(function(s, idx) {
-          // Data = DataIntervento SP (data ufficiale dell'intervento)
-          var dataS = dataFallback;
+          // Se il JSON già contiene coefficiente/fasceSovrapposte, usa quelli; altrimenti calcola
+          var fasceSessione;
+          if(s.fasceSovrapposte && Array.isArray(s.fasceSovrapposte)) {
+            fasceSessione = s.fasceSovrapposte;
+          } else if(s.coefficiente !== undefined) {
+            fasceSessione = [{label:'', coeff:s.coefficiente, display:'×'+s.coefficiente, minuti:parseFloat(s.durata)||0}];
+          } else {
+            fasceSessione = calcolaFasceSessione(s.inizio||'', s.fine||'', dataFallback, packRT);
+          }
           rows.push({
-            numRT:     title,
-            data:      dataS,
-            inizio:    s.inizio||'',
-            fine:      s.fine||'',
-            durataMin: parseFloat(s.durata)||0,
-            arrot:     null,
-            referente: s.referente||'-',
-            pacchetto: f.Pacchetto||'-',
-            saldoPrima: idx===0 ? saldoPrima : null,
-            saldoDopo:  idx===sessioni.length-1 ? saldoDopo : null,
+            numRT:           title,
+            data:            dataFallback,
+            inizio:          s.inizio||'',
+            fine:            s.fine||'',
+            durataMin:       parseFloat(s.durata)||0,
+            oreAddebitateRT: idx===0 ? oreUsateRT : null,
+            fasceSessione:   fasceSessione,
+            sovrapposta:     fasceSessione.length > 1,
+            referente:       s.referente||'-',
+            pacchetto:       packRT,
+            saldoPrima:      idx===0 ? saldoPrima : null,
+            saldoDopo:       idx===sessioni.length-1 ? saldoDopo : null,
           });
         });
       }
@@ -4714,65 +4798,117 @@ function renderPdfPanel(items, cliente, tipo) {
   // Titolo
   h += '<div style="font-weight:700;font-size:9.5px;color:'+RED+';border-bottom:1px solid '+RED+';padding-bottom:3px;margin-bottom:6px">Dettaglio Interventi</div>';
 
-  // Tabella — Telefonica ha colonna extra Arrotondamento
-  var TH  = 'background:'+RED+';color:white;padding:5px 6px;border:1px solid #a83226;font-weight:700;font-size:8px';
-  var TD  = 'padding:4px 6px;border:1px solid #ccc;font-size:8.5px;vertical-align:middle';
-  var TDA = 'padding:4px 6px;border:1px solid #ccc;font-size:8.5px;vertical-align:middle;background:#f7f7f7';
-  var TF  = 'padding:5px 6px;border:1px solid #ccc;background:#f0f0f0;border-top:2px solid '+RED+';font-weight:700;font-size:8.5px';
+  // Tabella — Teleassistenza ha colonna extra Coefficiente
+  var TH   = 'background:'+RED+';color:white;padding:5px 6px;border:1px solid #a83226;font-weight:700;font-size:8px';
+  var TD   = 'padding:4px 6px;border:1px solid #ccc;font-size:8.5px;vertical-align:middle';
+  var TDA  = 'padding:4px 6px;border:1px solid #ccc;font-size:8.5px;vertical-align:middle;background:#f7f7f7';
+  var TDOV = 'padding:4px 6px;border:1px solid #e8a000;font-size:8.5px;vertical-align:middle;background:#fff8e8'; // sovrapposizione
+  var TF   = 'padding:5px 6px;border:1px solid #ccc;background:#f0f0f0;border-top:2px solid '+RED+';font-weight:700;font-size:8.5px';
+
+  // Numero colonne dipende dal tipo
+  var totCols = isTeleass ? 9 : 8;
 
   h += '<div style="flex:1"><table style="width:100%;border-collapse:collapse"><thead><tr>';
   h += '<th style="'+TH+';text-align:left;width:12%">Data</th>';
-  h += '<th style="'+TH+';text-align:left;width:14%">N. RT</th>';
+  h += '<th style="'+TH+';text-align:left;width:13%">N. RT</th>';
   h += '<th style="'+TH+';text-align:center;width:9%">Pacchetto</th>';
-  h += '<th style="'+TH+';text-align:center;width:8%">Inizio</th>';
-  h += '<th style="'+TH+';text-align:center;width:8%">Fine</th>';
+  h += '<th style="'+TH+';text-align:center;width:7%">Inizio</th>';
+  h += '<th style="'+TH+';text-align:center;width:7%">Fine</th>';
+  if(isTeleass) h += '<th style="'+TH+';text-align:center;width:11%">Coeff.</th>';
   h += '<th style="'+TH+';text-align:left">Referente</th>';
-  h += '<th style="'+TH+';text-align:center;width:11%">Durata ('+unitaLabel+')</th>';
+  h += '<th style="'+TH+';text-align:center;width:10%">Durata ('+unitaLabel+')</th>';
   h += '<th style="'+TH+';text-align:center;width:10%">Tot. Addebitati</th>';
   h += '</tr></thead><tbody>';
 
-  var totCols = 8; // Data, N.RT, Pacchetto, Inizio, Fine, Referente, Durata, TotAddebitati
   var prevRT = null, zebraIdx = 0;
 
   if(rows.length) {
     rows.forEach(function(r) {
       if(prevRT !== null && r.numRT !== prevRT) {
-        // cambio RT: riga rossa fine + alterna zebra
         h += '<tr><td colspan="'+totCols+'" style="background:'+RED+';padding:0;height:1px;border:none"></td></tr>';
         zebraIdx++;
       }
       prevRT = r.numRT;
-      var td = zebraIdx%2===0 ? TD : TDA;
+
+      // Stile riga: sovrapposizione fasce → arancione, altrimenti zebra normale
+      var isSovr = isTeleass && r.sovrapposta;
+      var td = isSovr ? TDOV : (zebraIdx%2===0 ? TD : TDA);
+
       var durStr = fmtVal(r.durataMin);
-      // Tot. Addebitati: valore arrotondamento letto da SP
-      var minArrotStr;
-      if(r.minArrotondati === null || r.minArrotondati === undefined) {
-        minArrotStr = '-';
-      } else {
-        minArrotStr = r.minArrotondati+' min';
+
+      // Colonna coefficiente (solo Teleassistenza)
+      var coeffStr = '-';
+      if(isTeleass && r.fasceSessione && r.fasceSessione.length) {
+        if(r.fasceSessione.length === 1) {
+          // fascia singola
+          var fc = r.fasceSessione[0];
+          coeffStr = fc.display || ('×'+fc.coeff);
+          if(fc.flat) coeffStr = '<span style="color:#1a6b3a;font-weight:700">flat</span>';
+        } else {
+          // SOVRAPPOSIZIONE: elenco fasce con minuti ciascuna
+          coeffStr = r.fasceSessione.map(function(fc) {
+            var lbl = fc.display || ('×'+fc.coeff);
+            if(fc.flat) lbl = 'flat';
+            return '<span style="display:block;white-space:nowrap">'+escHtml(lbl)
+              +(fc.minuti ? ' <span style="color:#999;font-size:7px">('+fc.minuti+'min)</span>' : '')+'</span>';
+          }).join('');
+          coeffStr = '<div style="line-height:1.5;border-left:2px solid #e8a000;padding-left:4px">'+coeffStr+'</div>';
+        }
       }
+
+      // Tot. Addebitati
+      var totAddStr;
+      if(isTel) {
+        var va = r.minArrotondati;
+        totAddStr = (va !== null && va !== undefined) ? va+' min' : '-';
+      } else if(isTeleass) {
+        var va = r.oreAddebitateRT;
+        if(va !== null && va !== undefined) {
+          var ore = Math.floor(va), min = Math.round((va-ore)*60);
+          totAddStr = (ore>0?ore+'h':'')+(min>0?(ore>0?' ':'')+min+'min':(ore===0?'0h':''));
+        } else { totAddStr = '-'; }
+      } else { totAddStr = '-'; }
+
+      // Eventuale banner sovrapposizione sopra la riga
+      if(isSovr) {
+        h += '<tr><td colspan="'+totCols+'" style="background:#fff3cd;border:1px solid #e8a000;padding:2px 6px;font-size:7px;color:#7a5000;font-weight:700">&#9888; Sovrapposizione fasce orarie</td></tr>';
+      }
+
       h += '<tr>';
       h += '<td style="'+td+'">'+escHtml(r.data)+'</td>';
       h += '<td style="'+td+';font-weight:700;color:'+RED+'">'+escHtml(r.numRT)+'</td>';
       h += '<td style="'+td+';text-align:center;font-size:8px">'+escHtml(r.pacchetto||'-')+'</td>';
       h += '<td style="'+td+';text-align:center">'+escHtml(r.inizio||'-')+'</td>';
       h += '<td style="'+td+';text-align:center">'+escHtml(r.fine||'-')+'</td>';
+      if(isTeleass) h += '<td style="'+td+';text-align:center;font-size:8px">'+coeffStr+'</td>';
       h += '<td style="'+td+'">'+escHtml(r.referente)+'</td>';
       h += '<td style="'+td+';text-align:center">'+durStr+'</td>';
-      h += '<td style="'+td+';text-align:center">'+minArrotStr+'</td>';
+      h += '<td style="'+td+';text-align:center">'+totAddStr+'</td>';
       h += '</tr>';
     });
   } else {
     h += '<tr><td colspan="'+totCols+'" style="padding:12px;text-align:center;color:#999;border:1px solid #ccc">Nessun intervento registrato</td></tr>';
   }
 
-  // Totale minuti addebitati (somma arrotondati, escluso PREMIUM)
-  var totMinArrot = rows.reduce(function(s,r){return s+(r.minArrotondati!==null&&r.minArrotondati!==undefined ? r.minArrotondati : 0);},0);
-  var hasPremium = rows.some(function(r){return r.minArrotondati===null;});
-  var totArrotStr = (totMinArrot > 0 ? totMinArrot+' min' : '') + (hasPremium ? (totMinArrot>0?' + ':'')+'incl.' : '');
+  // Totale addebitati footer
+  var totArrotStr;
+  if(isTel) {
+    var totMinArrot = rows.reduce(function(s,r){return s+(r.minArrotondati!==null&&r.minArrotondati!==undefined ? r.minArrotondati : 0);},0);
+    totArrotStr = totMinArrot > 0 ? totMinArrot+' min' : '-';
+  } else if(isTeleass) {
+    var totOreAdd = rows.reduce(function(s,r){return s+(r.oreAddebitateRT!==null&&r.oreAddebitateRT!==undefined ? r.oreAddebitateRT : 0);},0);
+    if(totOreAdd > 0) {
+      var ot = Math.floor(totOreAdd), mt = Math.round((totOreAdd-ot)*60);
+      totArrotStr = (ot>0?ot+'h':'') + (mt>0?(ot>0?' ':'')+mt+'min':(ot===0?'0h':''));
+    } else { totArrotStr = '-'; }
+  } else {
+    totArrotStr = '-';
+  }
 
+  // Footer: colspan adattato al tipo (Teleassistenza ha 1 colonna in più)
+  var tfColspan = isTeleass ? 7 : 6;
   h += '</tbody><tfoot><tr>';
-  h += '<td colspan="6" style="'+TF+'">Totale consumato</td>';
+  h += '<td colspan="'+tfColspan+'" style="'+TF+'">Totale consumato</td>';
   h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+fmtVal(totMin)+'</td>';
   h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+totArrotStr+'</td>';
   h += '</tr></tfoot></table></div>';
