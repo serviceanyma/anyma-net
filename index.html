@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v83';</script>
+<script>const APP_VERSION = 'v84';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4552,6 +4552,56 @@ function renderPdfPanel(items, cliente, tipo) {
   ──────────────────────────────────────────────────────────────────────── */
   var rows = [];
 
+  /* ── Helper Teleassistenza (definiti fuori dal forEach per evitare conflitti di scope) ── */
+  function calcolaFasceSessione(inizio, fine, dataStr, pacchetto) {
+    if(!inizio || !fine) return [];
+    var p = (pacchetto||'').toUpperCase();
+    var isPrem = p.indexOf('PREMIUM')>=0;
+    try {
+      var d = dataStr ? new Date(dataStr) : new Date();
+      var dow = d.getDay();
+      var isFeriale = (dow>=1 && dow<=5);
+      function toMin(t) { var pt=t.split(':'); return parseInt(pt[0])*60+(parseInt(pt[1])||0); }
+      var mInizio = toMin(inizio);
+      var mFine   = toMin(fine);
+      if(mFine <= mInizio) mFine += 1440;
+      var fasceList = isFeriale ? [
+        {label:'Notturna',  coeff:1.75, da:0,    a:360,  isPremFlat:false},
+        {label:'Straord.',  coeff:1.50, da:360,  a:480,  isPremFlat:true},
+        {label:'Ordinaria', coeff:1.00, da:480,  a:1020, isPremFlat:true},
+        {label:'Straord.',  coeff:1.50, da:1020, a:1320, isPremFlat:true},
+        {label:'Notturna',  coeff:1.75, da:1320, a:1800, isPremFlat:false}
+      ] : [
+        {label:'Nott.Str.', coeff:2.00, da:0,    a:360,  isPremFlat:false},
+        {label:'Straord.',  coeff:1.50, da:360,  a:1320, isPremFlat:true},
+        {label:'Nott.Str.', coeff:2.00, da:1320, a:1800, isPremFlat:false}
+      ];
+      var fasceToccate = [];
+      fasceList.forEach(function(fl) {
+        var si = Math.max(mInizio, fl.da), sf = Math.min(mFine, fl.a);
+        if(sf > si) {
+          var flat = isPrem && fl.isPremFlat;
+          fasceToccate.push({
+            label:   fl.label, coeff: fl.coeff, flat: flat,
+            display: flat ? fl.label+' flat' : '×'+parseFloat(fl.coeff.toFixed(2)),
+            minuti:  sf - si
+          });
+        }
+      });
+      return fasceToccate;
+    } catch(e) { return []; }
+  }
+
+  function oreScalateSessione(fasceSessione, durata, coeffSingolo) {
+    if(fasceSessione && fasceSessione.length) {
+      return fasceSessione.reduce(function(acc, fc) { return acc + (fc.minuti/60)*fc.coeff; }, 0);
+    }
+    if(coeffSingolo !== undefined && coeffSingolo !== null) {
+      return (parseFloat(durata)||0)/60 * parseFloat(coeffSingolo);
+    }
+    return (parseFloat(durata)||0)/60;
+  }
+
   items.forEach(function(item) {
     var f = item.fields||{};
     var title = f.Title||'-';
@@ -4607,14 +4657,7 @@ function renderPdfPanel(items, cliente, tipo) {
     } else if(isTeleass) {
       /* TELEASSISTENZA: SessioniJSON
          Struttura wrapper: { pacchetto, oreUsate, sessioni: [{inizio, fine, referente, durata, coefficiente?, fasceSovrapposte?}] }
-         - coefficiente: valore numerico (es. 1.5) oppure array se sovrapposizione fasce
-         - Tot. Addebitati in ore da SessioniJSON.oreUsate (root wrapper)
-         Coefficienti da contratto (Art.3):
-           ×1,00 ordinaria   Lun-Ven 08:00-17:00
-           ×1,50 straord.    17:00-22:00 / 06:00-08:00 + Sab/Dom/Fest
-           ×1,75 notturna    Lun-Ven 22:00-06:00
-           ×2,00 nott.str.   22:00-06:00 Sab/Dom/Fest
-         Per PREMIUM: ×1,00 e ×1,50 → flat; solo ×1,75 e ×2,00 scalano
+         Le funzioni calcolaFasceSessione e oreScalateSessione sono definite a livello di renderPdfPanel.
       */
       var sessioniWrapper = {};
       try { sessioniWrapper = JSON.parse(f.SessioniJSON||'{}'); } catch(e){}
@@ -4626,78 +4669,6 @@ function renderPdfPanel(items, cliente, tipo) {
       /* Calcola fascia/e orarie per una sessione dato inizio/fine e data
          Restituisce array di fasce: [{label, coeff, isPremiumFlat}]
          Se la sessione attraversa più fasce → array con più elementi (sovrapposizione) */
-      function calcolaFasceSessione(inizio, fine, dataStr, pacchetto) {
-        if(!inizio || !fine) return [];
-        var p = (pacchetto||'').toUpperCase();
-        var isPrem = p.indexOf('PREMIUM')>=0;
-        try {
-          // Parsa data per giorno settimana
-          var d = dataStr ? new Date(dataStr) : new Date();
-          var dow = d.getDay(); // 0=dom,6=sab
-          var isFeriale = (dow>=1 && dow<=5);
-          var isFestivo = (dow===0 || dow===6);
-
-          function toMin(t) {
-            var p=t.split(':'); return parseInt(p[0])*60+(parseInt(p[1])||0);
-          }
-          var mInizio = toMin(inizio);
-          var mFine   = toMin(fine);
-          if(mFine <= mInizio) mFine += 1440; // attraversa mezzanotte
-
-          // Definizione fasce (in minuti dalla mezzanotte)
-          // Ordinaria: lun-ven 08:00-17:00 → 480-1020
-          // Straordinaria: 06:00-08:00 (360-480) + 17:00-22:00 (1020-1320) + sab/dom tutto
-          // Notturna: 22:00-06:00 (1320-1800 o 0-360)
-          var fasce = [];
-          if(isFeriale) {
-            fasce = [
-              {label:'Notturna',   coeff:1.75, da:0,    a:360,  isPremFlat:false},
-              {label:'Straord.',   coeff:1.50, da:360,  a:480,  isPremFlat:true},
-              {label:'Ordinaria',  coeff:1.00, da:480,  a:1020, isPremFlat:true},
-              {label:'Straord.',   coeff:1.50, da:1020, a:1320, isPremFlat:true},
-              {label:'Notturna',   coeff:1.75, da:1320, a:1800, isPremFlat:false},
-            ];
-          } else {
-            fasce = [
-              {label:'Nott.Str.',  coeff:2.00, da:0,    a:360,  isPremFlat:false},
-              {label:'Straord.',   coeff:1.50, da:360,  a:1800, isPremFlat:true},
-              {label:'Nott.Str.',  coeff:2.00, da:1320, a:1800, isPremFlat:false},
-            ];
-          }
-
-          var fasceToccate = [];
-          fasce.forEach(function(f) {
-            var sovrInizio = Math.max(mInizio, f.da);
-            var sovrFine   = Math.min(mFine,   f.a);
-            if(sovrFine > sovrInizio) {
-              var flat = isPrem && f.isPremFlat;
-              fasceToccate.push({
-                label:      f.label,
-                coeff:      f.coeff,
-                flat:       flat,
-                display:    flat ? f.label+' flat' : '×'+f.coeff.toFixed(2).replace('.00','').replace(/\.?0+$/,''),
-                minuti:     sovrFine - sovrInizio
-              });
-            }
-          });
-          return fasceToccate;
-        } catch(e) { return []; }
-      }
-
-      /* Calcola ore scalate per una sessione:
-         somma (minutiFascia/60 * coeff) per ogni fascia.
-         Fallback: durata/60 * coefficiente singolo, o solo durata/60. */
-      function oreScalateSessione(fasceSessione, durata, coeffSingolo) {
-        if(fasceSessione && fasceSessione.length) {
-          return fasceSessione.reduce(function(acc, fc) {
-            return acc + (fc.minuti/60) * fc.coeff;
-          }, 0);
-        }
-        if(coeffSingolo !== undefined && coeffSingolo !== null) {
-          return (parseFloat(durata)||0) / 60 * parseFloat(coeffSingolo);
-        }
-        return (parseFloat(durata)||0) / 60;
-      }
 
       if(!sessioni.length) {
         rows.push({numRT:title, data:dataFallback, inizio:'', fine:'',
