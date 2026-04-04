@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v81';</script>
+<script>const APP_VERSION = 'v83';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1189,6 +1189,13 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
                     <option value="asc">Data ↑ (più vecchio)</option>
                     <option value="rt_asc">N. RT  A → Z</option>
                     <option value="rt_desc">N. RT  Z → A</option>
+                  </select>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <label style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Lingua</label>
+                  <select id="pdf-filtro-lingua" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)">
+                    <option value="ita">🇮🇹 Italiano</option>
+                    <option value="eng">🇬🇧 English</option>
                   </select>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:3px;justify-content:flex-end;padding-top:14px">
@@ -4490,6 +4497,7 @@ function _applicaFiltriResoconto() {
   var mese  = (document.getElementById('pdf-filtro-mese')  || {}).value || '';
   var anno  = (document.getElementById('pdf-filtro-anno')  || {}).value || '';
   var ordine= (document.getElementById('pdf-filtro-ordine')|| {}).value || 'desc';
+  var lingua= (document.getElementById('pdf-filtro-lingua')|| {}).value || 'ita';
 
   // Filtra per anno (sempre) e mese (se non vuoto = resoconto totale anno)
   var filtrati = items.filter(function(item) {
@@ -4502,6 +4510,7 @@ function _applicaFiltriResoconto() {
 
   // Passa l'ordinamento a renderPdfPanel tramite una variabile globale leggera
   _resocontoOrdine = ordine;
+  _resocontoLingua  = lingua;
   renderPdfPanel(filtrati, cliente, tipo);
 }
 
@@ -4675,35 +4684,50 @@ function renderPdfPanel(items, cliente, tipo) {
         } catch(e) { return []; }
       }
 
+      /* Calcola ore scalate per una sessione:
+         somma (minutiFascia/60 * coeff) per ogni fascia.
+         Fallback: durata/60 * coefficiente singolo, o solo durata/60. */
+      function oreScalateSessione(fasceSessione, durata, coeffSingolo) {
+        if(fasceSessione && fasceSessione.length) {
+          return fasceSessione.reduce(function(acc, fc) {
+            return acc + (fc.minuti/60) * fc.coeff;
+          }, 0);
+        }
+        if(coeffSingolo !== undefined && coeffSingolo !== null) {
+          return (parseFloat(durata)||0) / 60 * parseFloat(coeffSingolo);
+        }
+        return (parseFloat(durata)||0) / 60;
+      }
+
       if(!sessioni.length) {
         rows.push({numRT:title, data:dataFallback, inizio:'', fine:'',
-          durataMin:0, oreAddebitateRT:oreUsateRT, fasceSessione:[],
+          durataMin:0, oreScalate:null, fasceSessione:[],
           referente:'-', pacchetto:packRT,
           saldoPrima:saldoPrima, saldoDopo:saldoDopo});
       } else {
         sessioni.forEach(function(s, idx) {
-          // Se il JSON già contiene coefficiente/fasceSovrapposte, usa quelli; altrimenti calcola
           var fasceSessione;
           if(s.fasceSovrapposte && Array.isArray(s.fasceSovrapposte)) {
             fasceSessione = s.fasceSovrapposte;
           } else if(s.coefficiente !== undefined) {
-            fasceSessione = [{label:'', coeff:s.coefficiente, display:'×'+s.coefficiente, minuti:parseFloat(s.durata)||0}];
+            fasceSessione = [{label:'', coeff:parseFloat(s.coefficiente), display:'×'+s.coefficiente, minuti:parseFloat(s.durata)||0, flat:false}];
           } else {
             fasceSessione = calcolaFasceSessione(s.inizio||'', s.fine||'', dataFallback, packRT);
           }
+          var oreScalate = oreScalateSessione(fasceSessione, s.durata, s.coefficiente);
           rows.push({
-            numRT:           title,
-            data:            dataFallback,
-            inizio:          s.inizio||'',
-            fine:            s.fine||'',
-            durataMin:       parseFloat(s.durata)||0,
-            oreAddebitateRT: idx===0 ? oreUsateRT : null,
-            fasceSessione:   fasceSessione,
-            sovrapposta:     fasceSessione.length > 1,
-            referente:       s.referente||'-',
-            pacchetto:       packRT,
-            saldoPrima:      idx===0 ? saldoPrima : null,
-            saldoDopo:       idx===sessioni.length-1 ? saldoDopo : null,
+            numRT:        title,
+            data:         dataFallback,
+            inizio:       s.inizio||'',
+            fine:         s.fine||'',
+            durataMin:    parseFloat(s.durata)||0,
+            oreScalate:   oreScalate,
+            fasceSessione:fasceSessione,
+            sovrapposta:  fasceSessione.length > 1,
+            referente:    s.referente||'-',
+            pacchetto:    packRT,
+            saldoPrima:   idx===0 ? saldoPrima : null,
+            saldoDopo:    idx===sessioni.length-1 ? saldoDopo : null,
           });
         });
       }
@@ -4788,36 +4812,55 @@ function renderPdfPanel(items, cliente, tipo) {
   var LBL = 'display:block;font-size:7px;font-weight:700;color:'+RED+';text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px';
   var TD4 = 'padding:6px 11px;border-right:1px solid #ccc;vertical-align:top;font-size:8.5px';
   h += '<table style="width:100%;border-collapse:collapse;border:1px solid #ccc;margin-bottom:11px"><tr>';
-  h += '<td style="'+TD4+';width:22%"><span style="'+LBL+'">Cliente</span><strong style="font-size:9px">'+escHtml(cliente)+'</strong></td>';
-  h += '<td style="'+TD4+';width:30%"><span style="'+LBL+'">Contratto</span>'+escHtml(tipo)+' &bull; N&deg; '+escHtml(numContr)+'<br><span style="color:#666;font-size:8px">Inizio: '+escHtml(dataInizio)+'</span></td>';
-  h += '<td style="'+TD4+';width:22%"><span style="'+LBL+'">Estratto al</span>'+oggi+'</td>';
-  h += '<td style="padding:6px 11px;vertical-align:top;text-align:center;width:26%"><span style="'+LBL+'">Saldo residuo</span>';
+  h += '<td style="'+TD4+';width:22%"><span style="'+LBL+'">'+L.cliente+'</span><strong style="font-size:9px">'+escHtml(cliente)+'</strong></td>';
+  h += '<td style="'+TD4+';width:30%"><span style="'+LBL+'">'+L.contratto+'</span>'+escHtml(tipo)+' • N° '+escHtml(numContr)+'<br><span style="color:#666;font-size:8px">'+L.inizio2+': '+escHtml(dataInizio)+'</span></td>';
+  h += '<td style="'+TD4+';width:22%"><span style="'+LBL+'">'+L.estrattoAl+'</span>'+oggi+'</td>';
+  h += '<td style="padding:6px 11px;vertical-align:top;text-align:center;width:26%"><span style="'+LBL+'">'+L.saldoRes+'</span>';
   h += '<span style="font-size:14px;font-weight:900;color:'+RED+'">'+(saldoAtt!==null ? saldoAtt+' '+unitaLabel : 'N/A')+'</span></td>';
   h += '</tr></table>';
 
   // Titolo
-  h += '<div style="font-weight:700;font-size:9.5px;color:'+RED+';border-bottom:1px solid '+RED+';padding-bottom:3px;margin-bottom:6px">Dettaglio Interventi</div>';
+  var titoloSez = _lang==='eng' ? 'Intervention Details' : 'Dettaglio Interventi';
+  h += '<div style="font-weight:700;font-size:9.5px;color:'+RED+';border-bottom:1px solid '+RED+';padding-bottom:3px;margin-bottom:6px">'+titoloSez+'</div>';
 
-  // Tabella — Teleassistenza ha colonna extra Coefficiente
+  // Dizionario i18n
+  var _lang = (typeof _resocontoLingua !== 'undefined') ? _resocontoLingua : 'ita';
+  var i18n = {
+    ita: { data:'Data', nrt:'N. RT', pacchetto:'Pacchetto', inizio:'Inizio', fine:'Fine',
+           referente:'Referente', durata:'Durata', coeff:'Coeff.', totAdd:'Tot. Addebitati',
+           totCons:'Totale consumato', nessunoInt:'Nessun intervento registrato',
+           sovrFasce:'Sovrapposizione fasce orarie', estrattoAl:'Estratto al',
+           saldoRes:'Saldo residuo', contratto:'Contratto', cliente:'Cliente', inizio2:'Inizio',
+           interventi:'Interventi', consumato:'Consumato' },
+    eng: { data:'Date', nrt:'RT No.', pacchetto:'Package', inizio:'Start', fine:'End',
+           referente:'Technician', durata:'Duration', coeff:'Coeff.', totAdd:'Charged',
+           totCons:'Total consumed', nessunoInt:'No interventions recorded',
+           sovrFasce:'Overlapping time bands', estrattoAl:'Extracted on',
+           saldoRes:'Remaining balance', contratto:'Contract', cliente:'Client', inizio2:'Start',
+           interventi:'Interventions', consumato:'Consumed' }
+  };
+  var L = i18n[_lang] || i18n.ita;
+
+  // Tabella — Teleassistenza ha colonna extra Coeff. (dopo Durata)
   var TH   = 'background:'+RED+';color:white;padding:5px 6px;border:1px solid #a83226;font-weight:700;font-size:8px';
   var TD   = 'padding:4px 6px;border:1px solid #ccc;font-size:8.5px;vertical-align:middle';
   var TDA  = 'padding:4px 6px;border:1px solid #ccc;font-size:8.5px;vertical-align:middle;background:#f7f7f7';
-  var TDOV = 'padding:4px 6px;border:1px solid #e8a000;font-size:8.5px;vertical-align:middle;background:#fff8e8'; // sovrapposizione
+  var TDOV = 'padding:4px 6px;border:1px solid #e8a000;font-size:8.5px;vertical-align:middle;background:#fff8e8';
   var TF   = 'padding:5px 6px;border:1px solid #ccc;background:#f0f0f0;border-top:2px solid '+RED+';font-weight:700;font-size:8.5px';
 
-  // Numero colonne dipende dal tipo
+  // Numero colonne: Teleassistenza ha Coeff. in più
   var totCols = isTeleass ? 9 : 8;
 
   h += '<div style="flex:1"><table style="width:100%;border-collapse:collapse"><thead><tr>';
-  h += '<th style="'+TH+';text-align:left;width:12%">Data</th>';
-  h += '<th style="'+TH+';text-align:left;width:13%">N. RT</th>';
-  h += '<th style="'+TH+';text-align:center;width:9%">Pacchetto</th>';
-  h += '<th style="'+TH+';text-align:center;width:7%">Inizio</th>';
-  h += '<th style="'+TH+';text-align:center;width:7%">Fine</th>';
-  if(isTeleass) h += '<th style="'+TH+';text-align:center;width:11%">Coeff.</th>';
-  h += '<th style="'+TH+';text-align:left">Referente</th>';
-  h += '<th style="'+TH+';text-align:center;width:10%">Durata ('+unitaLabel+')</th>';
-  h += '<th style="'+TH+';text-align:center;width:10%">Tot. Addebitati</th>';
+  h += '<th style="'+TH+';text-align:left;width:12%">'+L.data+'</th>';
+  h += '<th style="'+TH+';text-align:left;width:13%">'+L.nrt+'</th>';
+  h += '<th style="'+TH+';text-align:center;width:9%">'+L.pacchetto+'</th>';
+  h += '<th style="'+TH+';text-align:center;width:7%">'+L.inizio+'</th>';
+  h += '<th style="'+TH+';text-align:center;width:7%">'+L.fine+'</th>';
+  h += '<th style="'+TH+';text-align:left">'+L.referente+'</th>';
+  h += '<th style="'+TH+';text-align:center;width:10%">'+L.durata+' ('+unitaLabel+')</th>';
+  if(isTeleass) h += '<th style="'+TH+';text-align:center;width:10%">'+L.coeff+'</th>';
+  h += '<th style="'+TH+';text-align:center;width:10%">'+L.totAdd+'</th>';
   h += '</tr></thead><tbody>';
 
   var prevRT = null, zebraIdx = 0;
@@ -4836,42 +4879,42 @@ function renderPdfPanel(items, cliente, tipo) {
 
       var durStr = fmtVal(r.durataMin);
 
-      // Colonna coefficiente (solo Teleassistenza)
-      var coeffStr = '-';
-      if(isTeleass && r.fasceSessione && r.fasceSessione.length) {
-        if(r.fasceSessione.length === 1) {
-          // fascia singola
-          var fc = r.fasceSessione[0];
-          coeffStr = fc.display || ('×'+fc.coeff);
-          if(fc.flat) coeffStr = '<span style="color:#1a6b3a;font-weight:700">flat</span>';
-        } else {
-          // SOVRAPPOSIZIONE: elenco fasce con minuti ciascuna
-          coeffStr = r.fasceSessione.map(function(fc) {
-            var lbl = fc.display || ('×'+fc.coeff);
-            if(fc.flat) lbl = 'flat';
-            return '<span style="display:block;white-space:nowrap">'+escHtml(lbl)
-              +(fc.minuti ? ' <span style="color:#999;font-size:7px">('+fc.minuti+'min)</span>' : '')+'</span>';
-          }).join('');
-          coeffStr = '<div style="line-height:1.5;border-left:2px solid #e8a000;padding-left:4px">'+coeffStr+'</div>';
-        }
-      }
-
       // Tot. Addebitati
       var totAddStr;
       if(isTel) {
         var va = r.minArrotondati;
         totAddStr = (va !== null && va !== undefined) ? va+' min' : '-';
       } else if(isTeleass) {
-        var va = r.oreAddebitateRT;
+        var va = r.oreScalate;
         if(va !== null && va !== undefined) {
-          var ore = Math.floor(va), min = Math.round((va-ore)*60);
-          totAddStr = (ore>0?ore+'h':'')+(min>0?(ore>0?' ':'')+min+'min':(ore===0?'0h':''));
+          // Ore centesimali: es. 2h×1.5 + 1h×1.75 = 4.75h
+          totAddStr = parseFloat(va.toFixed(2))+'h';
         } else { totAddStr = '-'; }
       } else { totAddStr = '-'; }
 
+      // Colonna coefficiente (solo Teleassistenza) — mostrata dopo Durata
+      var coeffStr = '-';
+      if(isTeleass && r.fasceSessione && r.fasceSessione.length) {
+        if(r.fasceSessione.length === 1) {
+          var fc = r.fasceSessione[0];
+          coeffStr = fc.display || ('×'+fc.coeff);
+          if(fc.flat) coeffStr = '<span style="color:#1a6b3a;font-weight:700">flat</span>';
+        } else {
+          // SOVRAPPOSIZIONE: ore centesimali per fascia
+          coeffStr = r.fasceSessione.map(function(fc) {
+            var lbl = fc.display || ('×'+fc.coeff);
+            if(fc.flat) lbl = 'flat';
+            var oreCent = fc.minuti ? (fc.minuti/60).toFixed(2).replace(/\.?0+$/,'')+'h' : '';
+            return '<span style="display:block;white-space:nowrap">'+escHtml(lbl)
+              +(oreCent ? ' <span style="color:#999;font-size:7px">('+oreCent+')</span>' : '')+'</span>';
+          }).join('');
+          coeffStr = '<div style="line-height:1.5;border-left:2px solid #e8a000;padding-left:4px">'+coeffStr+'</div>';
+        }
+      }
+
       // Eventuale banner sovrapposizione sopra la riga
       if(isSovr) {
-        h += '<tr><td colspan="'+totCols+'" style="background:#fff3cd;border:1px solid #e8a000;padding:2px 6px;font-size:7px;color:#7a5000;font-weight:700">&#9888; Sovrapposizione fasce orarie</td></tr>';
+        h += '<tr><td colspan="'+totCols+'" style="background:#fff3cd;border:1px solid #e8a000;padding:2px 6px;font-size:7px;color:#7a5000;font-weight:700">⚠ '+escHtml(L.sovrFasce)+'</td></tr>';
       }
 
       h += '<tr>';
@@ -4880,14 +4923,14 @@ function renderPdfPanel(items, cliente, tipo) {
       h += '<td style="'+td+';text-align:center;font-size:8px">'+escHtml(r.pacchetto||'-')+'</td>';
       h += '<td style="'+td+';text-align:center">'+escHtml(r.inizio||'-')+'</td>';
       h += '<td style="'+td+';text-align:center">'+escHtml(r.fine||'-')+'</td>';
-      if(isTeleass) h += '<td style="'+td+';text-align:center;font-size:8px">'+coeffStr+'</td>';
       h += '<td style="'+td+'">'+escHtml(r.referente)+'</td>';
       h += '<td style="'+td+';text-align:center">'+durStr+'</td>';
+      if(isTeleass) h += '<td style="'+td+';text-align:center;font-size:8px">'+coeffStr+'</td>';
       h += '<td style="'+td+';text-align:center">'+totAddStr+'</td>';
       h += '</tr>';
     });
   } else {
-    h += '<tr><td colspan="'+totCols+'" style="padding:12px;text-align:center;color:#999;border:1px solid #ccc">Nessun intervento registrato</td></tr>';
+    h += '<tr><td colspan="'+totCols+'" style="padding:12px;text-align:center;color:#999;border:1px solid #ccc">'+L.nessunoInt+'</td></tr>';
   }
 
   // Totale addebitati footer
@@ -4896,11 +4939,8 @@ function renderPdfPanel(items, cliente, tipo) {
     var totMinArrot = rows.reduce(function(s,r){return s+(r.minArrotondati!==null&&r.minArrotondati!==undefined ? r.minArrotondati : 0);},0);
     totArrotStr = totMinArrot > 0 ? totMinArrot+' min' : '-';
   } else if(isTeleass) {
-    var totOreAdd = rows.reduce(function(s,r){return s+(r.oreAddebitateRT!==null&&r.oreAddebitateRT!==undefined ? r.oreAddebitateRT : 0);},0);
-    if(totOreAdd > 0) {
-      var ot = Math.floor(totOreAdd), mt = Math.round((totOreAdd-ot)*60);
-      totArrotStr = (ot>0?ot+'h':'') + (mt>0?(ot>0?' ':'')+mt+'min':(ot===0?'0h':''));
-    } else { totArrotStr = '-'; }
+    var totOreAdd = rows.reduce(function(s,r){return s+(r.oreScalate!==null&&r.oreScalate!==undefined ? r.oreScalate : 0);},0);
+    totArrotStr = totOreAdd > 0 ? parseFloat(totOreAdd.toFixed(2))+'h' : '-';
   } else {
     totArrotStr = '-';
   }
@@ -4908,7 +4948,7 @@ function renderPdfPanel(items, cliente, tipo) {
   // Footer: colspan adattato al tipo (Teleassistenza ha 1 colonna in più)
   var tfColspan = isTeleass ? 7 : 6;
   h += '</tbody><tfoot><tr>';
-  h += '<td colspan="'+tfColspan+'" style="'+TF+'">Totale consumato</td>';
+  h += '<td colspan="'+tfColspan+'" style="'+TF+'">'+L.totCons+'</td>';
   h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+fmtVal(totMin)+'</td>';
   h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+totArrotStr+'</td>';
   h += '</tr></tfoot></table></div>';
@@ -4918,8 +4958,8 @@ function renderPdfPanel(items, cliente, tipo) {
   var BL  = 'display:block;font-size:7px;color:'+RED+';text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-bottom:4px';
   var BV  = 'font-size:17px;font-weight:900;color:'+RED+';line-height:1';
   h += '<div style="display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid #e8d0d0">';
-  h += '<div style="'+BOX+'"><span style="'+BL+'">Interventi</span><span style="'+BV+'">'+items.length+'</span></div>';
-  h += '<div style="'+BOX+'"><span style="'+BL+'">Consumato</span><span style="'+BV+'">'+fmtVal(totMin)+'</span></div>';
+  h += '<div style="'+BOX+'"><span style="'+BL+'">'+L.interventi+'</span><span style="'+BV+'">'+items.length+'</span></div>';
+  h += '<div style="'+BOX+'"><span style="'+BL+'">'+L.consumato+'</span><span style="'+BV+'">'+fmtVal(totMin)+'</span></div>';
   if(saldoAtt!==null) h += '<div style="'+BOX+'"><span style="'+BL+'">Saldo residuo</span><span style="'+BV+'">'+saldoAtt+' '+unitaLabel+'</span></div>';
   h += '</div></div>';
 
