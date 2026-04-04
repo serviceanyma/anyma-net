@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v69';</script>
+<script>const APP_VERSION = 'v70';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1160,6 +1160,38 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
                   Stampa PDF
                 </button>
                 <button class="btn btn-sm" onclick="chiudiPdfPanel()" style="padding:4px 8px;font-size:11px">✕</button>
+              </div>
+            </div>
+            <!-- Filtri mese/anno/ordinamento -->
+            <div id="pdf-filtri-bar" style="display:none;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;gap:8px;flex-wrap:wrap;align-items:center">
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;width:100%">
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <label style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Mese</label>
+                  <select id="pdf-filtro-mese" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);min-width:80px">
+                    <option value="">Tutto l'anno</option>
+                    <option value="01">Gennaio</option><option value="02">Febbraio</option>
+                    <option value="03">Marzo</option><option value="04">Aprile</option>
+                    <option value="05">Maggio</option><option value="06">Giugno</option>
+                    <option value="07">Luglio</option><option value="08">Agosto</option>
+                    <option value="09">Settembre</option><option value="10">Ottobre</option>
+                    <option value="11">Novembre</option><option value="12">Dicembre</option>
+                  </select>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <label style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Anno</label>
+                  <select id="pdf-filtro-anno" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);min-width:70px">
+                  </select>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <label style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Ordine</label>
+                  <select id="pdf-filtro-ordine" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)">
+                    <option value="desc">Più recente prima</option>
+                    <option value="asc">Più vecchio prima</option>
+                  </select>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:3px;justify-content:flex-end;padding-top:14px">
+                  <button class="btn btn-sm btn-primary" onclick="_aggiornaResoconto()" style="font-size:11px;padding:4px 12px">Aggiorna</button>
+                </div>
               </div>
             </div>
             <div style="flex:1;overflow-y:auto;padding:16px;background:var(--bg)" id="contr-pdf-preview">
@@ -4381,6 +4413,9 @@ async function saveContrForm() {
 }
 
 // -- Resoconto: apre pannello PDF a destra --
+// Stato corrente del resoconto aperto
+var _resocontoStato = { cliente: '', tipo: '', items: [] };
+
 async function openResoconto(cliente, tipo) {
   var grid = document.getElementById('contr-grid');
   var panel = document.getElementById('contr-pdf-panel');
@@ -4392,6 +4427,34 @@ async function openResoconto(cliente, tipo) {
   if(tit) tit.textContent = tipo + ' — Resoconto';
   var btnS = document.getElementById('btn-stampa-pdf');
   if(btnS) btnS.style.display = 'none';
+
+  // Popola select anno (ultimi 5 anni) con default corrente
+  var annoSel = document.getElementById('pdf-filtro-anno');
+  if(annoSel) {
+    var curY = new Date().getFullYear();
+    annoSel.innerHTML = '';
+    for(var y=curY; y>=curY-4; y--) {
+      var opt = document.createElement('option');
+      opt.value = String(y);
+      opt.textContent = String(y);
+      annoSel.appendChild(opt);
+    }
+    annoSel.value = String(curY);
+  }
+  // Mese corrente come default
+  var meseSel = document.getElementById('pdf-filtro-mese');
+  if(meseSel) {
+    var m = String(new Date().getMonth()+1).padStart(2,'0');
+    meseSel.value = m;
+  }
+  // Ordine default: più recente prima
+  var ordSel = document.getElementById('pdf-filtro-ordine');
+  if(ordSel) ordSel.value = 'desc';
+
+  // Mostra barra filtri
+  var filtriBar = document.getElementById('pdf-filtri-bar');
+  if(filtriBar) filtriBar.style.display = 'flex';
+
   var prev = document.getElementById('contr-pdf-preview');
   if(prev) prev.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">⏳ Caricamento...</div>';
   try {
@@ -4400,19 +4463,49 @@ async function openResoconto(cliente, tipo) {
     var headers = {'Authorization':'Bearer '+tok,'Accept':'application/json','Prefer':'HonorNonIndexedQueriesWarningMayFailRandomly'};
     var rapListId = getSpRappId();
     if(!rapListId) throw new Error('Configura il GUID lista AnymaRapportini in Impostazioni');
-    // Filtro: cliente E tipo esatto (Telefonica / Teleassistenza / Manutenzione / ecc.)
     var filter = encodeURIComponent("fields/Cliente eq '"+cliente+"' and fields/TipoServizio eq '"+tipo+"'");
     var url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+rapListId+
       '/items?expand=fields(select=Title,DataIntervento,Cliente,TipoServizio,OreLavoro,MinutiUsati,Pacchetto,NumContratto,RefNome,Tecnici,SaldoPrima,SaldoDopo,GiornateJSON,SessioniJSON,ChiamateJSON)&$filter='+filter+'&$top=500';
     var resp = await fetch(url,{headers});
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     var data = await resp.json();
-    var items = data.value||[];
-    renderPdfPanel(items, cliente, tipo);
+    _resocontoStato.cliente = cliente;
+    _resocontoStato.tipo = tipo;
+    _resocontoStato.items = data.value||[];
+    _applicaFiltriResoconto();
   } catch(e) {
     var prev2 = document.getElementById('contr-pdf-preview');
     if(prev2) prev2.innerHTML = '<div style="padding:40px;text-align:center;color:var(--red)">Errore: '+escHtml(e.message)+'</div>';
   }
+}
+
+// Applica i filtri mese/anno/ordinamento agli items caricati e aggiorna la preview
+function _applicaFiltriResoconto() {
+  var cliente = _resocontoStato.cliente;
+  var tipo    = _resocontoStato.tipo;
+  var items   = _resocontoStato.items;
+
+  var mese  = (document.getElementById('pdf-filtro-mese')  || {}).value || '';
+  var anno  = (document.getElementById('pdf-filtro-anno')  || {}).value || '';
+  var ordine= (document.getElementById('pdf-filtro-ordine')|| {}).value || 'desc';
+
+  // Filtra per anno (sempre) e mese (se non vuoto = resoconto totale anno)
+  var filtrati = items.filter(function(item) {
+    var data = (item.fields && item.fields.DataIntervento) ? item.fields.DataIntervento.split('T')[0] : '';
+    if(!data) return false;
+    if(anno && !data.startsWith(anno)) return false;
+    if(mese && data.substring(5,7) !== mese) return false;
+    return true;
+  });
+
+  // Passa l'ordinamento a renderPdfPanel tramite una variabile globale leggera
+  _resocontoOrdine = ordine;
+  renderPdfPanel(filtrati, cliente, tipo);
+}
+
+// Chiamata dal pulsante "Aggiorna"
+function _aggiornaResoconto() {
+  _applicaFiltriResoconto();
 }
 
 function chiudiPdfPanel() {
@@ -4541,11 +4634,12 @@ function renderPdfPanel(items, cliente, tipo) {
     }
   });
 
-  // Ordina: data DESC poi orario inizio DESC
+  // Ordina in base all'impostazione (default desc = più recente prima)
+  var _ord = (typeof _resocontoOrdine !== 'undefined') ? _resocontoOrdine : 'desc';
   rows.sort(function(a,b){
     var ka = a.data + (a.inizio||'99:99');
     var kb = b.data + (b.inizio||'99:99');
-    return kb.localeCompare(ka);
+    return _ord === 'asc' ? ka.localeCompare(kb) : kb.localeCompare(ka);
   });
 
   // Totale in minuti
@@ -4615,12 +4709,10 @@ function renderPdfPanel(items, cliente, tipo) {
   h += '<th style="'+TH+';text-align:center;width:8%">Fine</th>';
   h += '<th style="'+TH+';text-align:left">Referente</th>';
   h += '<th style="'+TH+';text-align:center;width:11%">Durata ('+unitaLabel+')</th>';
-  if(isTel) h += '<th style="'+TH+';text-align:center;width:10%">Arrot. (min)</th>';
-  h += '<th style="'+TH+';text-align:center;width:11%">Saldo Prima</th>';
-  h += '<th style="'+TH+';text-align:center;width:11%">Saldo Dopo</th>';
+  h += '<th style="'+TH+';text-align:center;width:10%">Arrot. (min)</th>';
   h += '</tr></thead><tbody>';
 
-  var totCols = isTel ? 9 : 8;
+  var totCols = 7; // Data, N.RT, Inizio, Fine, Referente, Durata, Arrotondamento
   var prevMese = null, zebraIdx = 0;
 
   if(rows.length) {
@@ -4634,8 +4726,7 @@ function renderPdfPanel(items, cliente, tipo) {
       var td = zebraIdx%2===0 ? TD : TDA;
       zebraIdx++;
       var durStr = fmtVal(r.durataMin);
-      var sp = r.saldoPrima!==null ? r.saldoPrima+' '+unitaLabel : '';
-      var sd = r.saldoDopo!==null  ? r.saldoDopo+' '+unitaLabel  : '';
+      var arrotStr = (r.arrot != null && r.arrot !== 0) ? r.arrot+'min' : '-';
       h += '<tr>';
       h += '<td style="'+td+'">'+escHtml(r.data)+'</td>';
       h += '<td style="'+td+';font-weight:700;color:'+RED+'">'+escHtml(r.numRT)+'</td>';
@@ -4643,21 +4734,17 @@ function renderPdfPanel(items, cliente, tipo) {
       h += '<td style="'+td+';text-align:center">'+escHtml(r.fine||'-')+'</td>';
       h += '<td style="'+td+'">'+escHtml(r.referente)+'</td>';
       h += '<td style="'+td+';text-align:center">'+durStr+'</td>';
-      if(isTel) h += '<td style="'+td+';text-align:center">'+(r.arrot ? r.arrot+'min' : '-')+'</td>';
-      h += '<td style="'+td+';text-align:center">'+sp+'</td>';
-      h += '<td style="'+td+';text-align:center">'+sd+'</td>';
+      h += '<td style="'+td+';text-align:center">'+arrotStr+'</td>';
       h += '</tr>';
     });
   } else {
     h += '<tr><td colspan="'+totCols+'" style="padding:12px;text-align:center;color:#999;border:1px solid #ccc">Nessun intervento registrato</td></tr>';
   }
 
-  var footSpan = isTel ? 5 : 4;
   h += '</tbody><tfoot><tr>';
-  h += '<td colspan="'+footSpan+'" style="'+TF+'">Totale consumato</td>';
+  h += '<td colspan="5" style="'+TF+'">Totale consumato</td>';
   h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+fmtVal(totMin)+'</td>';
-  if(isTel) h += '<td style="'+TF+'"></td>';
-  h += '<td colspan="2" style="'+TF+'"></td>';
+  h += '<td style="'+TF+'"></td>';
   h += '</tr></tfoot></table></div>';
 
   // Totali
