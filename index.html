@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v76';</script>
+<script>const APP_VERSION = 'v77';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4562,30 +4562,33 @@ function renderPdfPanel(items, cliente, tipo) {
          Arrotondamento per pacchetto: SPOT/BASE->5 min succ. | STANDARD->1 min succ. | PREMIUM->N/A
          Fascia oraria SPOT: ordinario lun-ven 08:00-17:00 (x1) | fuori orario (x2)
       */
-      var chiamate = [];
-      try { chiamate = JSON.parse(f.ChiamateJSON||'[]')||[]; } catch(e){}
+      // ChiamateJSON ha struttura: { pacchetto, minutiUsati, chiamate: [...] }
+      var chiamateWrapper = {};
+      try { chiamateWrapper = JSON.parse(f.ChiamateJSON||'{}'); } catch(e){}
+      var chiamate = chiamateWrapper.chiamate || [];
+      var packRT   = chiamateWrapper.pacchetto || f.Pacchetto || '-';
+      var minUsatiRT = (chiamateWrapper.minutiUsati !== undefined && chiamateWrapper.minutiUsati !== null)
+        ? parseFloat(chiamateWrapper.minutiUsati) : null;
 
       if(!chiamate.length) {
         rows.push({numRT:title, data:dataFallback, inizio:'', fine:'',
-          durataMin:0, minArrotondati:null,
-          referente:'-', pacchetto:f.Pacchetto||'-',
+          durataMin:0, minArrotondati:minUsatiRT,
+          referente:'-', pacchetto:packRT,
           saldoPrima:saldoPrima, saldoDopo:saldoDopo});
       } else {
         chiamate.forEach(function(c, idx) {
           var dataC = dataFallback;
-          // pacchetto e minutiUsati letti da ChiamateJSON
-          var minArrot = (c.minutiUsati !== undefined && c.minutiUsati !== null && c.minutiUsati !== '')
-            ? parseFloat(c.minutiUsati) : null;
-          var pack = c.pacchetto || f.Pacchetto || '-';
+          // minutiUsati è a livello wrapper (totale RT), non per singola chiamata
+          // lo mostriamo solo sulla prima riga del gruppo
           rows.push({
             numRT:          title,
             data:           dataC,
             inizio:         c.inizio||'',
             fine:           c.fine||'',
             durataMin:      parseFloat(c.durata)||0,
-            minArrotondati: minArrot,
+            minArrotondati: idx===0 ? minUsatiRT : null,
             referente:      c.referente||'-',
-            pacchetto:      pack,
+            pacchetto:      packRT,
             saldoPrima:     idx===0 ? saldoPrima : null,
             saldoDopo:      idx===chiamate.length-1 ? saldoDopo : null,
           });
