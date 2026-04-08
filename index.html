@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v103';</script>
+<script>const APP_VERSION = 'v104';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4904,24 +4904,34 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   var TDOV = 'padding:4px 6px;border:1px solid #e8a000;font-size:8.5px;vertical-align:middle;background:#fff8e8';
   var TF   = 'padding:5px 6px;border:1px solid #ccc;background:#f0f0f0;border-top:2px solid '+RED+';font-weight:700;font-size:8.5px';
 
-  // Numero colonne: Teleassistenza +Coeff, On-Site +OreViag +KM
+  // Numero colonne: Teleassistenza +Coeff | On-Site: Data NRT Pack TipoInt Inizio Fine OreLav OreViag KM
   var hasCoeff   = isTeleass;
   var isOnSiteR  = !isTel && !isTeleass;
-  var totCols = 8 + (hasCoeff ? 1 : 0) + (isOnSiteR ? 2 : 0);
+  var totCols = isOnSiteR ? 9 : (8 + (hasCoeff ? 1 : 0));
+
+  var lblOreLav  = _lang==='eng' ? 'Work h'      : 'Ore Lavoro';
+  var lblOreViag = _lang==='eng' ? 'Travel h'    : 'Ore Viag.';
+  var lblTipoInt = _lang==='eng' ? 'Interv. Type': 'Tipo Intervento';
 
   h += '<div style="flex:1"><table style="width:100%;border-collapse:collapse"><thead><tr>';
   h += '<th style="'+TH+';text-align:left;width:11%">'+L.data+'</th>';
   h += '<th style="'+TH+';text-align:left;width:12%">'+L.nrt+'</th>';
   h += '<th style="'+TH+';text-align:center;width:8%">'+L.pacchetto+'</th>';
-  h += '<th style="'+TH+';text-align:center;width:6%">'+L.inizio+'</th>';
-  h += '<th style="'+TH+';text-align:center;width:6%">'+L.fine+'</th>';
-  var refLabel = isOnSiteR ? (_lang==='eng' ? 'Interv. Type' : 'Tipo Intervento') : L.referente;
-  h += '<th style="'+TH+';text-align:left">'+refLabel+'</th>';
-  h += '<th style="'+TH+';text-align:center;width:9%">'+L.durata+' ('+unitaLabel+')</th>';
-  if(hasCoeff)   h += '<th style="'+TH+';text-align:center;width:9%">'+L.coeff+'</th>';
-  if(isOnSiteR)  h += '<th style="'+TH+';text-align:center;width:8%">'+(_lang==='eng'?'Travel h':'Ore Viag.')+'</th>';
-  if(isOnSiteR)  h += '<th style="'+TH+';text-align:center;width:6%">KM</th>';
-  h += '<th style="'+TH+';text-align:center;width:9%">'+L.totAdd+'</th>';
+  if(isOnSiteR) {
+    h += '<th style="'+TH+';text-align:left">'+lblTipoInt+'</th>';
+    h += '<th style="'+TH+';text-align:center;width:6%">'+L.inizio+'</th>';
+    h += '<th style="'+TH+';text-align:center;width:6%">'+L.fine+'</th>';
+    h += '<th style="'+TH+';text-align:center;width:9%">'+lblOreLav+'</th>';
+    h += '<th style="'+TH+';text-align:center;width:8%">'+lblOreViag+'</th>';
+    h += '<th style="'+TH+';text-align:center;width:6%">KM</th>';
+  } else {
+    h += '<th style="'+TH+';text-align:center;width:6%">'+L.inizio+'</th>';
+    h += '<th style="'+TH+';text-align:center;width:6%">'+L.fine+'</th>';
+    h += '<th style="'+TH+';text-align:left">'+L.referente+'</th>';
+    h += '<th style="'+TH+';text-align:center;width:9%">'+L.durata+' ('+unitaLabel+')</th>';
+    if(hasCoeff) h += '<th style="'+TH+';text-align:center;width:9%">'+L.coeff+'</th>';
+    h += '<th style="'+TH+';text-align:center;width:9%">'+L.totAdd+'</th>';
+  }
   h += '</tr></thead><tbody>';
 
   var prevRT = null, zebraIdx = 0;
@@ -4989,18 +4999,25 @@ function _renderPdfPanelInner(items, cliente, tipo) {
       h += '<td style="'+td+'">'+escHtml(r.data)+'</td>';
       h += '<td style="'+td+';font-weight:700;color:'+RED+'">'+escHtml(r.numRT)+'</td>';
       h += '<td style="'+td+';text-align:center;font-size:8px">'+escHtml(r.pacchetto||'-')+'</td>';
-      h += '<td style="'+td+';text-align:center">'+escHtml(r.inizio||'-')+'</td>';
-      h += '<td style="'+td+';text-align:center">'+escHtml(r.fine||'-')+'</td>';
-      h += '<td style="'+td+'">'+escHtml(r.referente)+'</td>';
-      h += '<td style="'+td+';text-align:center">'+durStr+'</td>';
-      if(hasCoeff)  h += '<td style="'+td+';text-align:center;font-size:8px">'+coeffStr+'</td>';
+      if(!isOnSiteR) {
+        h += '<td style="'+td+';text-align:center">'+escHtml(r.inizio||'-')+'</td>';
+        h += '<td style="'+td+';text-align:center">'+escHtml(r.fine||'-')+'</td>';
+      }
       if(isOnSiteR) {
         var ovStr = r.oreViag > 0 ? fmtVal(r.oreViag*60) : '-';
         var kmStr = r.km > 0 ? r.km+' km' : '-';
+        h += '<td style="'+td+'">'+escHtml(r.referente)+'</td>';
+        h += '<td style="'+td+';text-align:center">'+escHtml(r.inizio||'-')+'</td>';
+        h += '<td style="'+td+';text-align:center">'+escHtml(r.fine||'-')+'</td>';
+        h += '<td style="'+td+';text-align:center">'+durStr+'</td>';
         h += '<td style="'+td+';text-align:center">'+ovStr+'</td>';
         h += '<td style="'+td+';text-align:center">'+kmStr+'</td>';
+      } else {
+        h += '<td style="'+td+'">'+escHtml(r.referente)+'</td>';
+        h += '<td style="'+td+';text-align:center">'+durStr+'</td>';
+        if(hasCoeff) h += '<td style="'+td+';text-align:center;font-size:8px">'+coeffStr+'</td>';
+        h += '<td style="'+td+';text-align:center">'+totAddStr+'</td>';
       }
-      h += '<td style="'+td+';text-align:center">'+totAddStr+'</td>';
       h += '</tr>';
     });
   } else {
@@ -5028,12 +5045,12 @@ function _renderPdfPanelInner(items, cliente, tipo) {
     var totKm      = rows.reduce(function(s,r){return s+(r.km||0);},0);
     var totOVStr   = totOreViag > 0 ? fmtVal(totOreViag*60) : '-';
     var totKmStr   = totKm > 0 ? totKm+' km' : '-';
+    // Footer On-Site: Data NRT Pack TipoInt(colspan 4) | OreLav | OreViag | KM
     h += '</tbody><tfoot><tr>';
     h += '<td colspan="6" style="'+TF+'">'+totLabel+'</td>';
     h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+totArrotStr+'</td>';
     h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+totOVStr+'</td>';
     h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+totKmStr+'</td>';
-    h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+totArrotStr+'</td>';
     h += '</tr></tfoot></table></div>';
   } else {
     var tfColspanFull = hasCoeff ? 8 : 7;
