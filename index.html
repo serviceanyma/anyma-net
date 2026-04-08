@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v94';</script>
+<script>const APP_VERSION = 'v96';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4648,11 +4648,19 @@ function _renderPdfPanelInner(items, cliente, tipo) {
     var saldoPrima = f.SaldoPrima!==undefined ? parseFloat(f.SaldoPrima) : null;
     var saldoDopo  = f.SaldoDopo!==undefined  ? parseFloat(f.SaldoDopo)  : null;
 
-    // Parse GiornateJSON — supporta array piatto [...] o wrapper {giornate:[...]}
+    // Parse GiornateJSON — supporta array piatto [...] o wrapper {giornate:[...], pacchetto, tecnico}
     var giornate = [];
+    var _gwPacchetto = f.Pacchetto || '-';
+    var _gwReferente = f.RefNome || f.Tecnici || '-';
     try {
       var gw = JSON.parse(f.GiornateJSON||'[]');
-      giornate = Array.isArray(gw) ? gw : (gw.giornate||[]);
+      if(Array.isArray(gw)) {
+        giornate = gw;
+      } else {
+        giornate = gw.giornate || [];
+        if(gw.pacchetto) _gwPacchetto = gw.pacchetto;
+        if(gw.tecnico)   _gwReferente = gw.tecnico;
+      }
     } catch(e){}
     // Fallback: se GiornateJSON vuoto, usa DataIntervento SP
     var dataFallback = (f.DataIntervento||'').split('T')[0]||'-';
@@ -4672,23 +4680,36 @@ function _renderPdfPanelInner(items, cliente, tipo) {
       var minUsatiRT = (chiamateWrapper.minutiUsati !== undefined && chiamateWrapper.minutiUsati !== null)
         ? parseFloat(chiamateWrapper.minutiUsati) : null;
 
+      // Fallback arrotondamento: somma TOTALE durate RT poi arrotonda una volta sola
+      // SPOT e BASE: 5 min | STANDARD: 1 min | PREMIUM: N/A
+      var minArrotRT;
+      if(minUsatiRT !== null) {
+        minArrotRT = minUsatiRT; // valore SP prioritario
+      } else {
+        var pUp = packRT.toUpperCase();
+        if(pUp.indexOf('PREMIUM') >= 0) {
+          minArrotRT = null;
+        } else {
+          var totDurataRT = chiamate.reduce(function(s,c){ return s+(parseFloat(c.durata)||0); }, 0);
+          if(pUp.indexOf('STANDARD') >= 0) minArrotRT = Math.ceil(totDurataRT);
+          else                             minArrotRT = Math.ceil(totDurataRT/5)*5; // SPOT e BASE
+        }
+      }
+
       if(!chiamate.length) {
         rows.push({numRT:title, data:dataFallback, inizio:'', fine:'',
-          durataMin:0, minArrotondati:minUsatiRT,
+          durataMin:0, minArrotondati:minArrotRT,
           referente:'-', pacchetto:packRT,
           saldoPrima:saldoPrima, saldoDopo:saldoDopo});
       } else {
         chiamate.forEach(function(c, idx) {
-          var dataC = dataFallback;
-          // minutiUsati è a livello wrapper (totale RT), non per singola chiamata
-          // lo mostriamo solo sulla prima riga del gruppo
           rows.push({
             numRT:          title,
-            data:           dataC,
+            data:           dataFallback,
             inizio:         c.inizio||'',
             fine:           c.fine||'',
             durataMin:      parseFloat(c.durata)||0,
-            minArrotondati: idx===0 ? minUsatiRT : null,
+            minArrotondati: idx===0 ? minArrotRT : null, // solo prima riga del gruppo
             referente:      c.referente||'-',
             pacchetto:      packRT,
             saldoPrima:     idx===0 ? saldoPrima : null,
@@ -4751,7 +4772,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
          Ogni giornata ha la propria data in g.data  */
       if(!giornate.length) {
         rows.push({numRT:title, data:dataFallback, inizio:'', fine:'',
-          durataMin:0, arrot:null, referente:f.RefNome||f.Tecnici||'-', pacchetto:f.Pacchetto||'-',
+          durataMin:0, arrot:null, referente:_gwReferente, pacchetto:_gwPacchetto,
           saldoPrima:saldoPrima, saldoDopo:saldoDopo});
       } else {
         giornate.forEach(function(g, idx) {
@@ -4762,8 +4783,8 @@ function _renderPdfPanelInner(items, cliente, tipo) {
             fine:      g.lavA||'',
             durataMin: (parseFloat(g.oreLav)||0)*60,
             arrot:     null,
-            referente: f.RefNome||f.Tecnici||'-',
-            pacchetto: f.Pacchetto||'-',
+            referente: g.tecnico || _gwReferente,
+            pacchetto: g.pacchetto || _gwPacchetto,
             saldoPrima: idx===0 ? saldoPrima : null,
             saldoDopo:  idx===giornate.length-1 ? saldoDopo : null,
           });
@@ -4912,7 +4933,10 @@ function _renderPdfPanelInner(items, cliente, tipo) {
         if(va !== null && va !== undefined) {
           // Stesso formato di Durata: es. 4h 45min
           totAddStr = fmtVal(va * 60);
-        } else { totAddStr = '-'; }
+        } else {
+        // On-Site: mostra durata come addebitato (a consuntivo)
+        totAddStr = r.durataMin > 0 ? fmtVal(r.durataMin) : '-';
+      }
       } else { totAddStr = '-'; }
 
       // Colonna Coeff.: Teleassistenza usa fasceSessione, Telefonica BASE usa fasceTel
@@ -4969,14 +4993,17 @@ function _renderPdfPanelInner(items, cliente, tipo) {
     var totOreAdd = rows.reduce(function(s,r){return s+(r.oreScalate!==null&&r.oreScalate!==undefined ? r.oreScalate : 0);},0);
     totArrotStr = totOreAdd > 0 ? fmtVal(totOreAdd * 60) : '-';
   } else {
-    totArrotStr = '-';
+    // On-Site: somma durataMin come totale addebitato
+    var totOreOnSite = rows.reduce(function(s,r){return s+(r.durataMin||0);},0);
+    totArrotStr = totOreOnSite > 0 ? fmtVal(totOreOnSite) : '-';
   }
 
   // Footer: colspan adattato al tipo (Teleassistenza ha 1 colonna in più)
   var tfColspan = hasCoeff ? 7 : 6;
+  // Footer: solo Tot.Addebitati, rimuovi colonna Durata
+  var tfColspanFull = hasCoeff ? 8 : 7; // copre tutto fino a Tot.Addebitati
   h += '</tbody><tfoot><tr>';
-  h += '<td colspan="'+tfColspan+'" style="'+TF+'">'+L.totCons+'</td>';
-  h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+fmtVal(totMin)+'</td>';
+  h += '<td colspan="'+tfColspanFull+'" style="'+TF+'">'+L.totCons+'</td>';
   h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+totArrotStr+'</td>';
   h += '</tr></tfoot></table></div>';
 
