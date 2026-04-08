@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v96';</script>
+<script>const APP_VERSION = 'v98';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4485,7 +4485,7 @@ async function openResoconto(cliente, tipo) {
     }
     var filter = encodeURIComponent(filterStr);
     var url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+rapListId+
-      '/items?expand=fields(select=Title,DataIntervento,Cliente,TipoServizio,OreLavoro,MinutiUsati,Pacchetto,NumContratto,RefNome,Tecnici,SaldoPrima,SaldoDopo,GiornateJSON,SessioniJSON,ChiamateJSON)&$filter='+filter+'&$top=500';
+      '/items?expand=fields(select=Title,DataIntervento,Cliente,TipoServizio,OreLavoro,MinutiUsati,Pacchetto,NumContratto,RefNome,Tecnico,Tecnici,NomeTecnico,Referente,SaldoPrima,SaldoDopo,GiornateJSON,SessioniJSON,ChiamateJSON)&$filter='+filter+'&$top=500';
     var resp = await fetch(url,{headers});
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     var data = await resp.json();
@@ -4648,20 +4648,13 @@ function _renderPdfPanelInner(items, cliente, tipo) {
     var saldoPrima = f.SaldoPrima!==undefined ? parseFloat(f.SaldoPrima) : null;
     var saldoDopo  = f.SaldoDopo!==undefined  ? parseFloat(f.SaldoDopo)  : null;
 
-    // Parse GiornateJSON — supporta array piatto [...] o wrapper {giornate:[...], pacchetto, tecnico}
-    var giornate = [];
-    var _gwPacchetto = f.Pacchetto || '-';
-    var _gwReferente = f.RefNome || f.Tecnici || '-';
-    try {
-      var gw = JSON.parse(f.GiornateJSON||'[]');
-      if(Array.isArray(gw)) {
-        giornate = gw;
-      } else {
-        giornate = gw.giornate || [];
-        if(gw.pacchetto) _gwPacchetto = gw.pacchetto;
-        if(gw.tecnico)   _gwReferente = gw.tecnico;
-      }
-    } catch(e){}
+    // GiornateJSON — stesso pattern di ChiamateJSON e SessioniJSON
+    // Struttura wrapper: { pacchetto, tecnico, giornate: [{data, lavDa, lavA, oreLav, ...}] }
+    var giornateWrapper = {};
+    try { giornateWrapper = JSON.parse(f.GiornateJSON||'{}'); } catch(e){}
+    var giornate    = giornateWrapper.giornate || [];
+    var _gwPacchetto = giornateWrapper.pacchetto || f.Pacchetto || '-';
+    var _gwReferente = giornateWrapper.tecnico   || f.RefNome   || '-';
     // Fallback: se GiornateJSON vuoto, usa DataIntervento SP
     var dataFallback = (f.DataIntervento||'').split('T')[0]||'-';
 
@@ -4674,11 +4667,23 @@ function _renderPdfPanelInner(items, cliente, tipo) {
       */
       // ChiamateJSON ha struttura: { pacchetto, minutiUsati, chiamate: [...] }
       var chiamateWrapper = {};
-      try { chiamateWrapper = JSON.parse(f.ChiamateJSON||'{}'); } catch(e){}
-      var chiamate = chiamateWrapper.chiamate || [];
-      var packRT   = chiamateWrapper.pacchetto || f.Pacchetto || '-';
-      var minUsatiRT = (chiamateWrapper.minutiUsati !== undefined && chiamateWrapper.minutiUsati !== null)
-        ? parseFloat(chiamateWrapper.minutiUsati) : null;
+      var chiamate = [];
+      var packRT   = f.Pacchetto || '-';
+      var minUsatiRT = null;
+      try {
+        var _cjRaw = JSON.parse(f.ChiamateJSON||'{}');
+        if(Array.isArray(_cjRaw)) {
+          // Array piatto [{inizio,fine,durata,...}]
+          chiamate = _cjRaw;
+        } else {
+          // Wrapper {pacchetto, minutiUsati, chiamate:[...]}
+          chiamateWrapper = _cjRaw;
+          chiamate   = chiamateWrapper.chiamate || [];
+          if(chiamateWrapper.pacchetto)   packRT     = chiamateWrapper.pacchetto;
+          if(chiamateWrapper.minutiUsati !== undefined && chiamateWrapper.minutiUsati !== null)
+            minUsatiRT = parseFloat(chiamateWrapper.minutiUsati);
+        }
+      } catch(e){}
 
       // Fallback arrotondamento: somma TOTALE durate RT poi arrotonda una volta sola
       // SPOT e BASE: 5 min | STANDARD: 1 min | PREMIUM: N/A
@@ -4783,7 +4788,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
             fine:      g.lavA||'',
             durataMin: (parseFloat(g.oreLav)||0)*60,
             arrot:     null,
-            referente: g.tecnico || _gwReferente,
+            referente: g.tecnico || g.referente || g.Tecnico || _gwReferente,
             pacchetto: g.pacchetto || _gwPacchetto,
             saldoPrima: idx===0 ? saldoPrima : null,
             saldoDopo:  idx===giornate.length-1 ? saldoDopo : null,
