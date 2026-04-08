@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v90';</script>
+<script>const APP_VERSION = 'v89';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4116,15 +4116,15 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
    Campi SP: Title(cliente), TipoContratto, Pacchetto,
    SaldoMinuti, SaldoOre, DataInizio, DataFine,
    NumContratto, Attivo, Note
-   Tipi: Telefonica / Teleassistenza / On-Site
+   Tipi: Telefonica / Teleassistenza / Manutenzione
    Pacchetti: Spot / Base / Standard / Premium
 ====================================== */
 const CONTR_TIPO_COLORS = {
   Telefonica:    '#f97316',
   Teleassistenza:'#06b6d4',
-  On-Site:    '#2ecc71'
+  Manutenzione:  '#2ecc71'
 };
-const CONTR_TIPI = ['Telefonica','Teleassistenza','On-Site'];
+const CONTR_TIPI = ['Telefonica','Teleassistenza','Manutenzione'];
 const CONTR_PACS = ['Spot','Base','Standard','Premium'];
 var _contrEditId      = null; // ID SP item in modifica
 var _contrEditTipo    = '';   // tipo contratto in modifica (per default saldo)
@@ -4300,7 +4300,7 @@ function selectContrCliente(nome) {
 function renderContrDettaglio(nome) {
   var contratti = _contrData.filter(function(c){return c.cliente===nome;});
   // Ordina per tipo
-  var tipoOrder = {Telefonica:0,Teleassistenza:1,On-Site:2};
+  var tipoOrder = {Telefonica:0,Teleassistenza:1,Manutenzione:2};
   contratti.sort(function(a,b){return (tipoOrder[a.tipo]||9)-(tipoOrder[b.tipo]||9);});
   var det = document.getElementById('contr-detail');
   det.innerHTML = contratti.map(function(c){
@@ -4573,7 +4573,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   /* ── Costruzione righe ─────────────────────────────────────────────────
      Telefonica    → una riga per CHIAMATA  (ChiamateJSON)
      Teleassistenza → una riga per SESSIONE (SessioniJSON)
-     On-Site      → una riga per GIORNATA  (GiornateJSON)
+     On-site/Man.  → una riga per GIORNATA  (GiornateJSON)
      Data per ogni riga = data della PROPRIA giornata (non del rapportino)
   ──────────────────────────────────────────────────────────────────────── */
   var rows = [];
@@ -4828,18 +4828,17 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   var pacchetto  = contr ? (contr.pacchetto||'Spot') : 'Spot';
   var oggi       = new Date().toLocaleDateString('it-IT');
 
-  // Scadenza 24 mesi per pacchetti prepagati:
-  //   Telefonica:     BASE e STANDARD → 24 mesi | PREMIUM (canone) e SPOT → no scadenza
-  //   Teleassistenza: BASE, STANDARD, PREMIUM → 24 mesi | SPOT → no scadenza
-  //   On-Site:        canone annuale → no scadenza prepagato
+  // Scadenza 24 mesi per pacchetti prepagati (non Spot, non Premium Illimitato mensile/annuale)
+  // Telefonica: BASE e STANDARD hanno validità 24 mesi
+  // Teleassistenza: BASE, STANDARD, PREMIUM hanno validità 24 mesi
+  // On-Site: canone annuale, nessuna scadenza prepagato
   var dataScadenza = null;
   var scadenzaAvviso = false; // true se scade entro 60gg
   (function() {
     var p = pacchetto.toUpperCase();
-    var isSpot   = p.indexOf('SPOT') >= 0;
-    var isOnSite = tipo === 'On-Site';
-    var isPremTel = isTel && p.indexOf('PREMIUM') >= 0; // Premium Tel. = canone mensile/annuale
-    var haScadenza = !isSpot && !isOnSite && !isPremTel && dataInizio !== '-';
+    var isSpot    = p.indexOf('SPOT') >= 0;
+    var isPremTel = isTel && p.indexOf('PREMIUM') >= 0; // Premium Illim. tel. = canone, no scadenza
+    var haScadenza = !isSpot && !isPremTel && dataInizio !== '-';
     if(!haScadenza) return;
     try {
       var d = new Date(dataInizio);
