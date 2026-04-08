@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v100';</script>
+<script>const APP_VERSION = 'v102';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4564,13 +4564,13 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   var i18n = {
     ita: { data:'Data', nrt:'N. RT', pacchetto:'Pacchetto', inizio:'Inizio', fine:'Fine',
            referente:'Referente', durata:'Durata', coeff:'Coeff.', totAdd:'Tot. Addebitati',
-           totCons:'Totale consumato', nessunoInt:'Nessun intervento registrato',
+           totCons:'TOTALE', nessunoInt:'Nessun intervento registrato',
            sovrFasce:'Sovrapposizione fasce orarie', estrattoAl:'Estratto al',
            saldoRes:'Saldo residuo', contratto:'Contratto', cliente:'Cliente', inizio2:'Inizio',
            interventi:'Interventi', consumato:'Consumato', scadenza:'Scadenza', nessScad:'—' },
     eng: { data:'Date', nrt:'RT No.', pacchetto:'Package', inizio:'Start', fine:'End',
            referente:'Technician', durata:'Duration', coeff:'Coeff.', totAdd:'Charged',
-           totCons:'Total consumed', nessunoInt:'No interventions recorded',
+           totCons:'TOTAL', nessunoInt:'No interventions recorded',
            sovrFasce:'Overlapping time bands', estrattoAl:'Extracted on',
            saldoRes:'Remaining balance', contratto:'Contract', cliente:'Client', inizio2:'Start',
            interventi:'Interventions', consumato:'Consumed', scadenza:'Expiry', nessScad:'—' }
@@ -4690,20 +4690,19 @@ function _renderPdfPanelInner(items, cliente, tipo) {
         }
       } catch(e){}
 
-      // Fallback arrotondamento: somma TOTALE durate RT poi arrotonda una volta sola
-      // SPOT e BASE: 5 min | STANDARD: 1 min | PREMIUM: N/A
+      // Arrotondamento sempre calcolato lato client sul totale durate del RT
+      // minutiUsati da SP usato solo come fallback se non ci sono chiamate con durata
+      // SPOT e BASE: arrotondamento ai 5 min successivi | STANDARD: 1 min | PREMIUM: N/A
+      var pUp = packRT.toUpperCase();
       var minArrotRT;
-      if(minUsatiRT !== null) {
-        minArrotRT = minUsatiRT; // valore SP prioritario
+      if(pUp.indexOf('PREMIUM') >= 0) {
+        minArrotRT = null;
       } else {
-        var pUp = packRT.toUpperCase();
-        if(pUp.indexOf('PREMIUM') >= 0) {
-          minArrotRT = null;
-        } else {
-          var totDurataRT = chiamate.reduce(function(s,c){ return s+(parseFloat(c.durata)||0); }, 0);
-          if(pUp.indexOf('STANDARD') >= 0) minArrotRT = Math.ceil(totDurataRT);
-          else                             minArrotRT = Math.ceil(totDurataRT/5)*5; // SPOT e BASE
-        }
+        // Somma durate reali dalle chiamate; se non disponibili usa minutiUsati
+        var totDurataRT = chiamate.reduce(function(s,c){ return s+(parseFloat(c.durata)||0); }, 0);
+        if(totDurataRT === 0 && minUsatiRT !== null) totDurataRT = minUsatiRT;
+        if(pUp.indexOf('STANDARD') >= 0) minArrotRT = Math.ceil(totDurataRT);
+        else                             minArrotRT = Math.ceil(totDurataRT/5)*5; // SPOT e BASE: 5 min
       }
 
       if(!chiamate.length) {
@@ -4782,7 +4781,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
          Ogni giornata ha la propria data in g.data  */
       if(!giornate.length) {
         rows.push({numRT:title, data:dataFallback, inizio:'', fine:'',
-          durataMin:0, arrot:null, referente:_gwReferente, pacchetto:_gwPacchetto,
+          durataMin:0, oreViag:0, km:0, arrot:null, referente:_gwReferente, pacchetto:_gwPacchetto,
           saldoPrima:saldoPrima, saldoDopo:saldoDopo});
       } else {
         giornate.forEach(function(g, idx) {
@@ -4792,6 +4791,8 @@ function _renderPdfPanelInner(items, cliente, tipo) {
             inizio:    g.lavDa||'',
             fine:      g.lavA||'',
             durataMin: (parseFloat(g.oreLav)||0)*60,
+            oreViag:   parseFloat(g.oreViag)||0,
+            km:        parseFloat(g.km)||0,
             arrot:     null,
             referente: g.tecnico || g.referente || g.Tecnico || _gwReferente,
             pacchetto: g.pacchetto || _gwPacchetto,
@@ -4901,20 +4902,23 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   var TDOV = 'padding:4px 6px;border:1px solid #e8a000;font-size:8.5px;vertical-align:middle;background:#fff8e8';
   var TF   = 'padding:5px 6px;border:1px solid #ccc;background:#f0f0f0;border-top:2px solid '+RED+';font-weight:700;font-size:8.5px';
 
-  // Numero colonne: Teleassistenza ha Coeff. in più
-  var hasCoeff = isTeleass;
-  var totCols = hasCoeff ? 9 : 8;
+  // Numero colonne: Teleassistenza +Coeff, On-Site +OreViag +KM
+  var hasCoeff   = isTeleass;
+  var isOnSiteR  = !isTel && !isTeleass;
+  var totCols = 8 + (hasCoeff ? 1 : 0) + (isOnSiteR ? 2 : 0);
 
   h += '<div style="flex:1"><table style="width:100%;border-collapse:collapse"><thead><tr>';
-  h += '<th style="'+TH+';text-align:left;width:12%">'+L.data+'</th>';
-  h += '<th style="'+TH+';text-align:left;width:13%">'+L.nrt+'</th>';
-  h += '<th style="'+TH+';text-align:center;width:9%">'+L.pacchetto+'</th>';
-  h += '<th style="'+TH+';text-align:center;width:7%">'+L.inizio+'</th>';
-  h += '<th style="'+TH+';text-align:center;width:7%">'+L.fine+'</th>';
+  h += '<th style="'+TH+';text-align:left;width:11%">'+L.data+'</th>';
+  h += '<th style="'+TH+';text-align:left;width:12%">'+L.nrt+'</th>';
+  h += '<th style="'+TH+';text-align:center;width:8%">'+L.pacchetto+'</th>';
+  h += '<th style="'+TH+';text-align:center;width:6%">'+L.inizio+'</th>';
+  h += '<th style="'+TH+';text-align:center;width:6%">'+L.fine+'</th>';
   h += '<th style="'+TH+';text-align:left">'+L.referente+'</th>';
-  h += '<th style="'+TH+';text-align:center;width:10%">'+L.durata+' ('+unitaLabel+')</th>';
-  if(hasCoeff) h += '<th style="'+TH+';text-align:center;width:10%">'+L.coeff+'</th>';
-  h += '<th style="'+TH+';text-align:center;width:10%">'+L.totAdd+'</th>';
+  h += '<th style="'+TH+';text-align:center;width:9%">'+L.durata+' ('+unitaLabel+')</th>';
+  if(hasCoeff)   h += '<th style="'+TH+';text-align:center;width:9%">'+L.coeff+'</th>';
+  if(isOnSiteR)  h += '<th style="'+TH+';text-align:center;width:8%">'+(_lang==='eng'?'Travel h':'Ore Viag.')+'</th>';
+  if(isOnSiteR)  h += '<th style="'+TH+';text-align:center;width:6%">KM</th>';
+  h += '<th style="'+TH+';text-align:center;width:9%">'+L.totAdd+'</th>';
   h += '</tr></thead><tbody>';
 
   var prevRT = null, zebraIdx = 0;
@@ -4986,7 +4990,13 @@ function _renderPdfPanelInner(items, cliente, tipo) {
       h += '<td style="'+td+';text-align:center">'+escHtml(r.fine||'-')+'</td>';
       h += '<td style="'+td+'">'+escHtml(r.referente)+'</td>';
       h += '<td style="'+td+';text-align:center">'+durStr+'</td>';
-      if(hasCoeff) h += '<td style="'+td+';text-align:center;font-size:8px">'+coeffStr+'</td>';
+      if(hasCoeff)  h += '<td style="'+td+';text-align:center;font-size:8px">'+coeffStr+'</td>';
+      if(isOnSiteR) {
+        var ovStr = r.oreViag > 0 ? fmtVal(r.oreViag*60) : '-';
+        var kmStr = r.km > 0 ? r.km+' km' : '-';
+        h += '<td style="'+td+';text-align:center">'+ovStr+'</td>';
+        h += '<td style="'+td+';text-align:center">'+kmStr+'</td>';
+      }
       h += '<td style="'+td+';text-align:center">'+totAddStr+'</td>';
       h += '</tr>';
     });
@@ -5008,14 +5018,27 @@ function _renderPdfPanelInner(items, cliente, tipo) {
     totArrotStr = totOreOnSite > 0 ? fmtVal(totOreOnSite) : '-';
   }
 
-  // Footer: colspan adattato al tipo (Teleassistenza ha 1 colonna in più)
-  var tfColspan = hasCoeff ? 7 : 6;
-  // Footer: solo Tot.Addebitati, rimuovi colonna Durata
-  var tfColspanFull = hasCoeff ? 8 : 7; // copre tutto fino a Tot.Addebitati
-  h += '</tbody><tfoot><tr>';
-  h += '<td colspan="'+tfColspanFull+'" style="'+TF+'">'+L.totCons+'</td>';
-  h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+totArrotStr+'</td>';
-  h += '</tr></tfoot></table></div>';
+  // Footer TOTALE
+  var totLabel = _lang==='eng' ? 'TOTAL' : 'TOTALE';
+  if(isOnSiteR) {
+    var totOreViag = rows.reduce(function(s,r){return s+(r.oreViag||0);},0);
+    var totKm      = rows.reduce(function(s,r){return s+(r.km||0);},0);
+    var totOVStr   = totOreViag > 0 ? fmtVal(totOreViag*60) : '-';
+    var totKmStr   = totKm > 0 ? totKm+' km' : '-';
+    h += '</tbody><tfoot><tr>';
+    h += '<td colspan="6" style="'+TF+'">'+totLabel+'</td>';
+    h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+totArrotStr+'</td>';
+    h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+totOVStr+'</td>';
+    h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+totKmStr+'</td>';
+    h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+totArrotStr+'</td>';
+    h += '</tr></tfoot></table></div>';
+  } else {
+    var tfColspanFull = hasCoeff ? 8 : 7;
+    h += '</tbody><tfoot><tr>';
+    h += '<td colspan="'+tfColspanFull+'" style="'+TF+'">'+totLabel+'</td>';
+    h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+totArrotStr+'</td>';
+    h += '</tr></tfoot></table></div>';
+  }
 
   // Totali
   var BOX = 'flex:1;background:#fdf0f0;border:1px solid #d4a0a0;border-radius:5px;padding:8px 10px;text-align:center';
