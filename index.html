@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v89';</script>
+<script>const APP_VERSION = 'v93';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4116,15 +4116,15 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
    Campi SP: Title(cliente), TipoContratto, Pacchetto,
    SaldoMinuti, SaldoOre, DataInizio, DataFine,
    NumContratto, Attivo, Note
-   Tipi: Telefonica / Teleassistenza / Manutenzione
+   Tipi: Telefonica / Teleassistenza / On-Site
    Pacchetti: Spot / Base / Standard / Premium
 ====================================== */
 const CONTR_TIPO_COLORS = {
   Telefonica:    '#f97316',
   Teleassistenza:'#06b6d4',
-  Manutenzione:  '#2ecc71'
+  'On-Site':  '#2ecc71'
 };
-const CONTR_TIPI = ['Telefonica','Teleassistenza','Manutenzione'];
+const CONTR_TIPI = ['Telefonica','Teleassistenza','On-Site'];
 const CONTR_PACS = ['Spot','Base','Standard','Premium'];
 var _contrEditId      = null; // ID SP item in modifica
 var _contrEditTipo    = '';   // tipo contratto in modifica (per default saldo)
@@ -4300,7 +4300,7 @@ function selectContrCliente(nome) {
 function renderContrDettaglio(nome) {
   var contratti = _contrData.filter(function(c){return c.cliente===nome;});
   // Ordina per tipo
-  var tipoOrder = {Telefonica:0,Teleassistenza:1,Manutenzione:2};
+  var tipoOrder = {Telefonica:0,Teleassistenza:1,'On-Site':2};
   contratti.sort(function(a,b){return (tipoOrder[a.tipo]||9)-(tipoOrder[b.tipo]||9);});
   var det = document.getElementById('contr-detail');
   det.innerHTML = contratti.map(function(c){
@@ -4472,7 +4472,17 @@ async function openResoconto(cliente, tipo) {
     var headers = {'Authorization':'Bearer '+tok,'Accept':'application/json','Prefer':'HonorNonIndexedQueriesWarningMayFailRandomly'};
     var rapListId = getSpRappId();
     if(!rapListId) throw new Error('Configura il GUID lista AnymaRapportini in Impostazioni');
-    var filter = encodeURIComponent("fields/Cliente eq '"+cliente+"' and fields/TipoServizio eq '"+tipo+"'");
+    // On-Site: raccoglie tutti i TipoServizio tranne Telefonica e Teleassistenza
+    // (compatibile con Manutenzione e qualsiasi altro valore presente in SP)
+    var filterStr;
+    if(tipo === 'On-Site') {
+      filterStr = "fields/Cliente eq '" + cliente + "'" +
+        " and fields/TipoServizio ne 'Telefonica'" +
+        " and fields/TipoServizio ne 'Teleassistenza'";
+    } else {
+      filterStr = "fields/Cliente eq '" + cliente + "' and fields/TipoServizio eq '" + tipo + "'";
+    }
+    var filter = encodeURIComponent(filterStr);
     var url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+rapListId+
       '/items?expand=fields(select=Title,DataIntervento,Cliente,TipoServizio,OreLavoro,MinutiUsati,Pacchetto,NumContratto,RefNome,Tecnici,SaldoPrima,SaldoDopo,GiornateJSON,SessioniJSON,ChiamateJSON)&$filter='+filter+'&$top=500';
     var resp = await fetch(url,{headers});
@@ -4573,52 +4583,13 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   /* ── Costruzione righe ─────────────────────────────────────────────────
      Telefonica    → una riga per CHIAMATA  (ChiamateJSON)
      Teleassistenza → una riga per SESSIONE (SessioniJSON)
-     On-site/Man.  → una riga per GIORNATA  (GiornateJSON)
+     On-Site      → una riga per GIORNATA  (GiornateJSON)
      Data per ogni riga = data della PROPRIA giornata (non del rapportino)
   ──────────────────────────────────────────────────────────────────────── */
   var rows = [];
 
   /* ── Helper Teleassistenza (definiti fuori dal forEach per evitare conflitti di scope) ── */
-  /* Telefonica BASE: calcola fasce orarie per una chiamata (stesso metodo Teleassistenza)
-     Fasce D222: Ordinaria lun-ven 08:00-17:00 ×1,00 | Fuori orario tutto il resto ×2,00
-     Solo BASE ha il moltiplicatore; STANDARD=flat, PREMIUM=incluso, SPOT=N/A
-     Restituisce array [{label, coeff, flat, display, minuti}] come calcolaFasceSessione */
-  function calcolaFasceTelefonica(inizio, fine, dataStr, pacchetto) {
-    var p = (pacchetto||'').toUpperCase();
-    if(p.indexOf('BASE') < 0) return []; // Solo BASE
-    if(!inizio || !fine) return [];
-    try {
-      function toMin(t) { var pt=t.split(':'); return parseInt(pt[0])*60+(parseInt(pt[1])||0); }
-      var mInizio = toMin(inizio);
-      var mFine   = toMin(fine);
-      if(mFine <= mInizio) mFine += 1440; // attraversa mezzanotte
-      var d = dataStr ? new Date(dataStr) : new Date();
-      var dow = d.getDay();
-      var isFeriale = (dow>=1 && dow<=5);
-      // Fasce: Ordinaria lun-ven 08:00-17:00, tutto il resto = Fuori orario
-      var fasceList = isFeriale ? [
-        {label:'F.O.',      coeff:2.00, da:0,    a:480,  flat:false},
-        {label:'Ordinaria', coeff:1.00, da:480,  a:1020, flat:false},
-        {label:'F.O.',      coeff:2.00, da:1020, a:1800, flat:false}
-      ] : [
-        {label:'F.O.',      coeff:2.00, da:0,    a:1800, flat:false}
-      ];
-      var fasceToccate = [];
-      fasceList.forEach(function(fl) {
-        var si = Math.max(mInizio, fl.da), sf = Math.min(mFine, fl.a);
-        if(sf > si) {
-          fasceToccate.push({
-            label:   fl.label,
-            coeff:   fl.coeff,
-            flat:    false,
-            display: '×'+fl.coeff.toFixed(2).replace('.00',''),
-            minuti:  sf - si
-          });
-        }
-      });
-      return fasceToccate;
-    } catch(e) { return []; }
-  }
+
 
   function calcolaFasceSessione(inizio, fine, dataStr, pacchetto) {
     if(!inizio || !fine) return [];
@@ -4676,9 +4647,12 @@ function _renderPdfPanelInner(items, cliente, tipo) {
     var saldoPrima = f.SaldoPrima!==undefined ? parseFloat(f.SaldoPrima) : null;
     var saldoDopo  = f.SaldoDopo!==undefined  ? parseFloat(f.SaldoDopo)  : null;
 
-    // Parse GiornateJSON — array di giornate, ognuna con data propria
+    // Parse GiornateJSON — supporta array piatto [...] o wrapper {giornate:[...]}
     var giornate = [];
-    try { giornate = JSON.parse(f.GiornateJSON||'[]')||[]; } catch(e){}
+    try {
+      var gw = JSON.parse(f.GiornateJSON||'[]');
+      giornate = Array.isArray(gw) ? gw : (gw.giornate||[]);
+    } catch(e){}
     // Fallback: se GiornateJSON vuoto, usa DataIntervento SP
     var dataFallback = (f.DataIntervento||'').split('T')[0]||'-';
 
@@ -4714,7 +4688,6 @@ function _renderPdfPanelInner(items, cliente, tipo) {
             fine:           c.fine||'',
             durataMin:      parseFloat(c.durata)||0,
             minArrotondati: idx===0 ? minUsatiRT : null,
-            fasceTel:       calcolaFasceTelefonica(c.inizio||'', c.fine||'', dataC, packRT),
             referente:      c.referente||'-',
             pacchetto:      packRT,
             saldoPrima:     idx===0 ? saldoPrima : null,
@@ -4828,17 +4801,18 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   var pacchetto  = contr ? (contr.pacchetto||'Spot') : 'Spot';
   var oggi       = new Date().toLocaleDateString('it-IT');
 
-  // Scadenza 24 mesi per pacchetti prepagati (non Spot, non Premium Illimitato mensile/annuale)
-  // Telefonica: BASE e STANDARD hanno validità 24 mesi
-  // Teleassistenza: BASE, STANDARD, PREMIUM hanno validità 24 mesi
-  // On-Site: canone annuale, nessuna scadenza prepagato
+  // Scadenza 24 mesi per pacchetti prepagati:
+  //   Telefonica:     BASE e STANDARD → 24 mesi | PREMIUM (canone) e SPOT → no scadenza
+  //   Teleassistenza: BASE, STANDARD, PREMIUM → 24 mesi | SPOT → no scadenza
+  //   On-Site:        canone annuale → no scadenza prepagato
   var dataScadenza = null;
   var scadenzaAvviso = false; // true se scade entro 60gg
   (function() {
     var p = pacchetto.toUpperCase();
-    var isSpot    = p.indexOf('SPOT') >= 0;
-    var isPremTel = isTel && p.indexOf('PREMIUM') >= 0; // Premium Illim. tel. = canone, no scadenza
-    var haScadenza = !isSpot && !isPremTel && dataInizio !== '-';
+    var isSpot   = p.indexOf('SPOT') >= 0;
+    var isOnSite = tipo === 'On-Site';
+    var isPremTel = isTel && p.indexOf('PREMIUM') >= 0; // Premium Tel. = canone mensile/annuale
+    var haScadenza = !isSpot && !isOnSite && !isPremTel && dataInizio !== '-';
     if(!haScadenza) return;
     try {
       var d = new Date(dataInizio);
@@ -4896,7 +4870,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   var TF   = 'padding:5px 6px;border:1px solid #ccc;background:#f0f0f0;border-top:2px solid '+RED+';font-weight:700;font-size:8.5px';
 
   // Numero colonne: Teleassistenza ha Coeff. in più
-  var hasCoeff = isTeleass || (isTel && rows.some(function(r){return r.fasceTel && r.fasceTel.length > 0;}));
+  var hasCoeff = isTeleass;
   var totCols = hasCoeff ? 9 : 8;
 
   h += '<div style="flex:1"><table style="width:100%;border-collapse:collapse"><thead><tr>';
@@ -4922,7 +4896,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
       prevRT = r.numRT;
 
       // Stile riga: sovrapposizione fasce → arancione, altrimenti zebra normale
-      var isSovr = (isTeleass && r.sovrapposta) || (isTel && r.fasceTel && r.fasceTel.length > 1);
+      var isSovr = isTeleass && r.sovrapposta;
       var td = isSovr ? TDOV : (zebraIdx%2===0 ? TD : TDA);
 
       var durStr = fmtVal(r.durataMin);
@@ -4935,14 +4909,14 @@ function _renderPdfPanelInner(items, cliente, tipo) {
       } else if(isTeleass) {
         var va = r.oreScalate;
         if(va !== null && va !== undefined) {
-          // Ore centesimali: es. 2h×1.5 + 1h×1.75 = 4.75h
-          totAddStr = parseFloat(va.toFixed(2))+'h';
+          // Stesso formato di Durata: es. 4h 45min
+          totAddStr = fmtVal(va * 60);
         } else { totAddStr = '-'; }
       } else { totAddStr = '-'; }
 
       // Colonna Coeff.: Teleassistenza usa fasceSessione, Telefonica BASE usa fasceTel
       var coeffStr = '-';
-      var fasceCella = isTeleass ? (r.fasceSessione||[]) : (isTel ? (r.fasceTel||[]) : []);
+      var fasceCella = isTeleass ? (r.fasceSessione||[]) : [];
       if(fasceCella.length) {
         if(fasceCella.length === 1) {
           var fc = fasceCella[0];
@@ -4955,7 +4929,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
             var lbl = fc.display || ('×'+fc.coeff);
             if(fc.flat) lbl = 'flat';
             var qta = fc.minuti
-              ? (isTeleass ? (fc.minuti/60).toFixed(2).replace(/\.?0+$/, '')+'h' : fc.minuti+'min')
+              ? (isTeleass ? fmtVal(fc.minuti) : fc.minuti+'min')
               : '';
             return '<span style="display:block;white-space:nowrap">'+escHtml(lbl)
               +(qta ? ' <span style="color:#999;font-size:7px">('+qta+')</span>' : '')+'</span>';
@@ -4992,7 +4966,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
     totArrotStr = totMinArrot > 0 ? totMinArrot+' min' : '-';
   } else if(isTeleass) {
     var totOreAdd = rows.reduce(function(s,r){return s+(r.oreScalate!==null&&r.oreScalate!==undefined ? r.oreScalate : 0);},0);
-    totArrotStr = totOreAdd > 0 ? parseFloat(totOreAdd.toFixed(2))+'h' : '-';
+    totArrotStr = totOreAdd > 0 ? fmtVal(totOreAdd * 60) : '-';
   } else {
     totArrotStr = '-';
   }
