@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v98';</script>
+<script>const APP_VERSION = 'v100';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4485,7 +4485,7 @@ async function openResoconto(cliente, tipo) {
     }
     var filter = encodeURIComponent(filterStr);
     var url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+rapListId+
-      '/items?expand=fields(select=Title,DataIntervento,Cliente,TipoServizio,OreLavoro,MinutiUsati,Pacchetto,NumContratto,RefNome,Tecnico,Tecnici,NomeTecnico,Referente,SaldoPrima,SaldoDopo,GiornateJSON,SessioniJSON,ChiamateJSON)&$filter='+filter+'&$top=500';
+      '/items?expand=fields(select=Title,DataIntervento,Cliente,TipoServizio,OreLavoro,MinutiUsati,Pacchetto,PacchettoContratto,NumContratto,RefNome,Tecnico,Tecnici,NomeTecnico,Referente,TecnicoRT,SaldoPrima,SaldoDopo,GiornateJSON,SessioniJSON,ChiamateJSON)&$filter='+filter+'&$top=500';
     var resp = await fetch(url,{headers});
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     var data = await resp.json();
@@ -4648,13 +4648,18 @@ function _renderPdfPanelInner(items, cliente, tipo) {
     var saldoPrima = f.SaldoPrima!==undefined ? parseFloat(f.SaldoPrima) : null;
     var saldoDopo  = f.SaldoDopo!==undefined  ? parseFloat(f.SaldoDopo)  : null;
 
-    // GiornateJSON — stesso pattern di ChiamateJSON e SessioniJSON
-    // Struttura wrapper: { pacchetto, tecnico, giornate: [{data, lavDa, lavA, oreLav, ...}] }
-    var giornateWrapper = {};
-    try { giornateWrapper = JSON.parse(f.GiornateJSON||'{}'); } catch(e){}
-    var giornate    = giornateWrapper.giornate || [];
-    var _gwPacchetto = giornateWrapper.pacchetto || f.Pacchetto || '-';
-    var _gwReferente = giornateWrapper.tecnico   || f.RefNome   || '-';
+    // GiornateJSON — array piatto [{data, lavDa, lavA, oreLav, oreViag, ...}]
+    // pacchetto e tecnico vengono da campi SP separati
+    var giornate = [];
+    try {
+      var _gjRaw = JSON.parse(f.GiornateJSON||'null');
+      if(Array.isArray(_gjRaw))      giornate = _gjRaw;
+      else if(_gjRaw && _gjRaw.giornate) giornate = _gjRaw.giornate;
+    } catch(e){}
+    // Pacchetto: leggi da SP (campo Pacchetto)
+    var _gwPacchetto = f.Pacchetto || f.PacchettoContratto || f.TipoContratto || '-';
+    // Tecnico: leggi da SP — campo variabile, prova tutti i nomi noti
+    var _gwReferente = f.Tecnico || f.RefNome || f.NomeTecnico || f.Tecnici || f.Referente || f.TecnicoRT || '-';
     // Fallback: se GiornateJSON vuoto, usa DataIntervento SP
     var dataFallback = (f.DataIntervento||'').split('T')[0]||'-';
 
