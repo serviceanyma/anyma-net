@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v88';</script>
+<script>const APP_VERSION = 'v90';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4116,15 +4116,15 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
    Campi SP: Title(cliente), TipoContratto, Pacchetto,
    SaldoMinuti, SaldoOre, DataInizio, DataFine,
    NumContratto, Attivo, Note
-   Tipi: Telefonica / Teleassistenza / Manutenzione
+   Tipi: Telefonica / Teleassistenza / On-Site
    Pacchetti: Spot / Base / Standard / Premium
 ====================================== */
 const CONTR_TIPO_COLORS = {
   Telefonica:    '#f97316',
   Teleassistenza:'#06b6d4',
-  Manutenzione:  '#2ecc71'
+  On-Site:    '#2ecc71'
 };
-const CONTR_TIPI = ['Telefonica','Teleassistenza','Manutenzione'];
+const CONTR_TIPI = ['Telefonica','Teleassistenza','On-Site'];
 const CONTR_PACS = ['Spot','Base','Standard','Premium'];
 var _contrEditId      = null; // ID SP item in modifica
 var _contrEditTipo    = '';   // tipo contratto in modifica (per default saldo)
@@ -4300,7 +4300,7 @@ function selectContrCliente(nome) {
 function renderContrDettaglio(nome) {
   var contratti = _contrData.filter(function(c){return c.cliente===nome;});
   // Ordina per tipo
-  var tipoOrder = {Telefonica:0,Teleassistenza:1,Manutenzione:2};
+  var tipoOrder = {Telefonica:0,Teleassistenza:1,On-Site:2};
   contratti.sort(function(a,b){return (tipoOrder[a.tipo]||9)-(tipoOrder[b.tipo]||9);});
   var det = document.getElementById('contr-detail');
   det.innerHTML = contratti.map(function(c){
@@ -4573,32 +4573,51 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   /* ── Costruzione righe ─────────────────────────────────────────────────
      Telefonica    → una riga per CHIAMATA  (ChiamateJSON)
      Teleassistenza → una riga per SESSIONE (SessioniJSON)
-     On-site/Man.  → una riga per GIORNATA  (GiornateJSON)
+     On-Site      → una riga per GIORNATA  (GiornateJSON)
      Data per ogni riga = data della PROPRIA giornata (non del rapportino)
   ──────────────────────────────────────────────────────────────────────── */
   var rows = [];
 
   /* ── Helper Teleassistenza (definiti fuori dal forEach per evitare conflitti di scope) ── */
-  /* Telefonica BASE: fuori orario ×2,00 sul costo al minuto (D222 pag.2)
-     Usata per mostrare il moltiplicatore nella colonna Tot.Addebitati del resoconto.
-     NON modifica minutiUsati (già calcolato correttamente in SP).
-     Restituisce stringa display es. "×2,00 f.o." oppure null se non applicabile. */
-  function fasciaOrariaTelefonicaBase(inizio, dataStr, pacchetto) {
+  /* Telefonica BASE: calcola fasce orarie per una chiamata (stesso metodo Teleassistenza)
+     Fasce D222: Ordinaria lun-ven 08:00-17:00 ×1,00 | Fuori orario tutto il resto ×2,00
+     Solo BASE ha il moltiplicatore; STANDARD=flat, PREMIUM=incluso, SPOT=N/A
+     Restituisce array [{label, coeff, flat, display, minuti}] come calcolaFasceSessione */
+  function calcolaFasceTelefonica(inizio, fine, dataStr, pacchetto) {
     var p = (pacchetto||'').toUpperCase();
-    // Solo per BASE; STANDARD è flat, PREMIUM incluso, SPOT ha scatto separato
-    if(p.indexOf('BASE') < 0) return null;
-    if(!inizio) return null;
+    if(p.indexOf('BASE') < 0) return []; // Solo BASE
+    if(!inizio || !fine) return [];
     try {
-      var pt = inizio.split(':');
-      var hh = parseInt(pt[0])||0, mm = parseInt(pt[1])||0;
-      var totMin = hh*60 + mm;
+      function toMin(t) { var pt=t.split(':'); return parseInt(pt[0])*60+(parseInt(pt[1])||0); }
+      var mInizio = toMin(inizio);
+      var mFine   = toMin(fine);
+      if(mFine <= mInizio) mFine += 1440; // attraversa mezzanotte
       var d = dataStr ? new Date(dataStr) : new Date();
       var dow = d.getDay();
       var isFeriale = (dow>=1 && dow<=5);
-      // Orario ordinario: lun-ven 08:00-17:00
-      var isOrdinario = isFeriale && totMin >= 480 && totMin < 1020;
-      return isOrdinario ? '×1,00' : '×2,00 f.o.';
-    } catch(e) { return null; }
+      // Fasce: Ordinaria lun-ven 08:00-17:00, tutto il resto = Fuori orario
+      var fasceList = isFeriale ? [
+        {label:'F.O.',      coeff:2.00, da:0,    a:480,  flat:false},
+        {label:'Ordinaria', coeff:1.00, da:480,  a:1020, flat:false},
+        {label:'F.O.',      coeff:2.00, da:1020, a:1800, flat:false}
+      ] : [
+        {label:'F.O.',      coeff:2.00, da:0,    a:1800, flat:false}
+      ];
+      var fasceToccate = [];
+      fasceList.forEach(function(fl) {
+        var si = Math.max(mInizio, fl.da), sf = Math.min(mFine, fl.a);
+        if(sf > si) {
+          fasceToccate.push({
+            label:   fl.label,
+            coeff:   fl.coeff,
+            flat:    false,
+            display: '×'+fl.coeff.toFixed(2).replace('.00',''),
+            minuti:  sf - si
+          });
+        }
+      });
+      return fasceToccate;
+    } catch(e) { return []; }
   }
 
   function calcolaFasceSessione(inizio, fine, dataStr, pacchetto) {
@@ -4695,7 +4714,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
             fine:           c.fine||'',
             durataMin:      parseFloat(c.durata)||0,
             minArrotondati: idx===0 ? minUsatiRT : null,
-            fasciaBase:     fasciaOrariaTelefonicaBase(c.inizio||'', dataC, packRT),
+            fasceTel:       calcolaFasceTelefonica(c.inizio||'', c.fine||'', dataC, packRT),
             referente:      c.referente||'-',
             pacchetto:      packRT,
             saldoPrima:     idx===0 ? saldoPrima : null,
@@ -4809,17 +4828,18 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   var pacchetto  = contr ? (contr.pacchetto||'Spot') : 'Spot';
   var oggi       = new Date().toLocaleDateString('it-IT');
 
-  // Scadenza 24 mesi per pacchetti prepagati (non Spot, non Premium Illimitato mensile/annuale)
-  // Telefonica: BASE e STANDARD hanno validità 24 mesi
-  // Teleassistenza: BASE, STANDARD, PREMIUM hanno validità 24 mesi
-  // On-Site: canone annuale, nessuna scadenza prepagato
+  // Scadenza 24 mesi per pacchetti prepagati:
+  //   Telefonica:     BASE e STANDARD → 24 mesi | PREMIUM (canone) e SPOT → no scadenza
+  //   Teleassistenza: BASE, STANDARD, PREMIUM → 24 mesi | SPOT → no scadenza
+  //   On-Site:        canone annuale → no scadenza prepagato
   var dataScadenza = null;
   var scadenzaAvviso = false; // true se scade entro 60gg
   (function() {
     var p = pacchetto.toUpperCase();
-    var isSpot    = p.indexOf('SPOT') >= 0;
-    var isPremTel = isTel && p.indexOf('PREMIUM') >= 0; // Premium Illim. tel. = canone, no scadenza
-    var haScadenza = !isSpot && !isPremTel && dataInizio !== '-';
+    var isSpot   = p.indexOf('SPOT') >= 0;
+    var isOnSite = tipo === 'On-Site';
+    var isPremTel = isTel && p.indexOf('PREMIUM') >= 0; // Premium Tel. = canone mensile/annuale
+    var haScadenza = !isSpot && !isOnSite && !isPremTel && dataInizio !== '-';
     if(!haScadenza) return;
     try {
       var d = new Date(dataInizio);
@@ -4877,7 +4897,8 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   var TF   = 'padding:5px 6px;border:1px solid #ccc;background:#f0f0f0;border-top:2px solid '+RED+';font-weight:700;font-size:8.5px';
 
   // Numero colonne: Teleassistenza ha Coeff. in più
-  var totCols = isTeleass ? 9 : 8;
+  var hasCoeff = isTeleass || (isTel && rows.some(function(r){return r.fasceTel && r.fasceTel.length > 0;}));
+  var totCols = hasCoeff ? 9 : 8;
 
   h += '<div style="flex:1"><table style="width:100%;border-collapse:collapse"><thead><tr>';
   h += '<th style="'+TH+';text-align:left;width:12%">'+L.data+'</th>';
@@ -4887,7 +4908,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   h += '<th style="'+TH+';text-align:center;width:7%">'+L.fine+'</th>';
   h += '<th style="'+TH+';text-align:left">'+L.referente+'</th>';
   h += '<th style="'+TH+';text-align:center;width:10%">'+L.durata+' ('+unitaLabel+')</th>';
-  if(isTeleass) h += '<th style="'+TH+';text-align:center;width:10%">'+L.coeff+'</th>';
+  if(hasCoeff) h += '<th style="'+TH+';text-align:center;width:10%">'+L.coeff+'</th>';
   h += '<th style="'+TH+';text-align:center;width:10%">'+L.totAdd+'</th>';
   h += '</tr></thead><tbody>';
 
@@ -4902,7 +4923,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
       prevRT = r.numRT;
 
       // Stile riga: sovrapposizione fasce → arancione, altrimenti zebra normale
-      var isSovr = isTeleass && r.sovrapposta;
+      var isSovr = (isTeleass && r.sovrapposta) || (isTel && r.fasceTel && r.fasceTel.length > 1);
       var td = isSovr ? TDOV : (zebraIdx%2===0 ? TD : TDA);
 
       var durStr = fmtVal(r.durataMin);
@@ -4911,13 +4932,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
       var totAddStr;
       if(isTel) {
         var va = r.minArrotondati;
-        if(va !== null && va !== undefined) {
-          totAddStr = va+' min';
-          if(r.fasciaBase) {
-            var foColor = r.fasciaBase.indexOf('2,00') >= 0 ? '#c0392b' : '#27ae60';
-            totAddStr += '<br><span style="font-size:6.5px;color:'+foColor+';font-weight:700">'+escHtml(r.fasciaBase)+'</span>';
-          }
-        } else { totAddStr = '-'; }
+        totAddStr = (va !== null && va !== undefined) ? va+' min' : '-';
       } else if(isTeleass) {
         var va = r.oreScalate;
         if(va !== null && va !== undefined) {
@@ -4926,21 +4941,25 @@ function _renderPdfPanelInner(items, cliente, tipo) {
         } else { totAddStr = '-'; }
       } else { totAddStr = '-'; }
 
-      // Colonna coefficiente (solo Teleassistenza) — mostrata dopo Durata
+      // Colonna Coeff.: Teleassistenza usa fasceSessione, Telefonica BASE usa fasceTel
       var coeffStr = '-';
-      if(isTeleass && r.fasceSessione && r.fasceSessione.length) {
-        if(r.fasceSessione.length === 1) {
-          var fc = r.fasceSessione[0];
+      var fasceCella = isTeleass ? (r.fasceSessione||[]) : (isTel ? (r.fasceTel||[]) : []);
+      if(fasceCella.length) {
+        if(fasceCella.length === 1) {
+          var fc = fasceCella[0];
           coeffStr = fc.display || ('×'+fc.coeff);
           if(fc.flat) coeffStr = '<span style="color:#1a6b3a;font-weight:700">flat</span>';
         } else {
-          // SOVRAPPOSIZIONE: ore centesimali per fascia
-          coeffStr = r.fasceSessione.map(function(fc) {
+          // SOVRAPPOSIZIONE: minuti per fascia
+          var unitFascia = isTeleass ? 'h' : 'min';
+          coeffStr = fasceCella.map(function(fc) {
             var lbl = fc.display || ('×'+fc.coeff);
             if(fc.flat) lbl = 'flat';
-            var oreCent = fc.minuti ? (fc.minuti/60).toFixed(2).replace(/\.?0+$/,'')+'h' : '';
+            var qta = fc.minuti
+              ? (isTeleass ? (fc.minuti/60).toFixed(2).replace(/\.?0+$/, '')+'h' : fc.minuti+'min')
+              : '';
             return '<span style="display:block;white-space:nowrap">'+escHtml(lbl)
-              +(oreCent ? ' <span style="color:#999;font-size:7px">('+oreCent+')</span>' : '')+'</span>';
+              +(qta ? ' <span style="color:#999;font-size:7px">('+qta+')</span>' : '')+'</span>';
           }).join('');
           coeffStr = '<div style="line-height:1.5;border-left:2px solid #e8a000;padding-left:4px">'+coeffStr+'</div>';
         }
@@ -4959,7 +4978,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
       h += '<td style="'+td+';text-align:center">'+escHtml(r.fine||'-')+'</td>';
       h += '<td style="'+td+'">'+escHtml(r.referente)+'</td>';
       h += '<td style="'+td+';text-align:center">'+durStr+'</td>';
-      if(isTeleass) h += '<td style="'+td+';text-align:center;font-size:8px">'+coeffStr+'</td>';
+      if(hasCoeff) h += '<td style="'+td+';text-align:center;font-size:8px">'+coeffStr+'</td>';
       h += '<td style="'+td+';text-align:center">'+totAddStr+'</td>';
       h += '</tr>';
     });
@@ -4980,7 +4999,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   }
 
   // Footer: colspan adattato al tipo (Teleassistenza ha 1 colonna in più)
-  var tfColspan = isTeleass ? 7 : 6;
+  var tfColspan = hasCoeff ? 7 : 6;
   h += '</tbody><tfoot><tr>';
   h += '<td colspan="'+tfColspan+'" style="'+TF+'">'+L.totCons+'</td>';
   h += '<td style="'+TF+';text-align:center;color:'+RED+'">'+fmtVal(totMin)+'</td>';
