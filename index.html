@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION='v105';</script>
+<script>const APP_VERSION = 'v105';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4146,128 +4146,6 @@ function contrApplySort() {
   renderContratti();
 }
 
-// -- Calcola saldo residuo live e aggiorna SaldoPrima su AnymaContratti --
-// Chiamata da openResoconto dopo il fetch dei rapportini
-// items = tutti i RT del cliente/tipo (NON filtrati per mese)
-async function aggiornaSaldoResiduo(cliente, tipo, allItems) {
-  var contr = _contrData.find(function(c){ return c.cliente===cliente && c.tipo===tipo; });
-  if(!contr || !contr._spId) return null; // contratto non trovato in cache
-
-  var isTel     = tipo==='Telefonica';
-  var isTeleass = tipo==='Teleassistenza';
-  var isOnSite  = !isTel && !isTeleass;
-
-  // On-Site non ha saldo scalare
-  if(isOnSite) return null;
-
-  var pac = (contr.pacchetto||'Spot').toUpperCase();
-  // Spot e Premium Telefonica non hanno saldo prepagato
-  if(pac.indexOf('SPOT')>=0) return null;
-  if(isTel && pac.indexOf('PREMIUM')>=0) return null;
-
-  // Saldo iniziale del contratto (immutabile)
-  var saldoIniziale = isTel ? (contr.saldoMinuti||0) : (contr.saldoOre||0);
-
-  // Calcola consumo totale da TUTTI i RT (nell'intero periodo contratto, non filtrati per mese)
-  var totConsumato = 0;
-  allItems.forEach(function(item) {
-    var f = item.fields||{};
-    if(isTel) {
-      // Telefonica: somma durate chiamate da ChiamateJSON
-      try {
-        var cjRaw = JSON.parse(f.ChiamateJSON||'{}');
-        var chiamate = Array.isArray(cjRaw) ? cjRaw : (cjRaw.chiamate||[]);
-        var totDurata = chiamate.reduce(function(s,c){ return s+(parseFloat(c.durata)||0); },0);
-        if(totDurata===0 && cjRaw.minutiUsati) totDurata=parseFloat(cjRaw.minutiUsati)||0;
-        // Arrotondamento per pacchetto
-        var pUp = (f.Pacchetto||pac).toUpperCase();
-        if(pUp.indexOf('PREMIUM')<0) {
-          totDurata = pUp.indexOf('STANDARD')>=0 ? Math.ceil(totDurata) : Math.ceil(totDurata/5)*5;
-        }
-        totConsumato += totDurata;
-      } catch(e){}
-    } else {
-      // Teleassistenza: somma oreUsate da SessioniJSON (con coefficienti calcolati live)
-      try {
-        var sjRaw = JSON.parse(f.SessioniJSON||'{}');
-        var sessioni = Array.isArray(sjRaw) ? sjRaw : (sjRaw.sessioni||[]);
-        var dataStr = (f.DataIntervento||'').split('T')[0];
-        var pac2 = f.Pacchetto || sjRaw.pacchetto || 'Spot';
-        sessioni.forEach(function(s) {
-          var dur = parseFloat(s.durata)||0;
-          if(!s.inizio||!s.fine) { totConsumato += dur/60; return; }
-          // Calcola fasce per questa sessione
-          var fasce = _calcolaFasceResoconto(s.inizio, s.fine, dataStr, pac2);
-          if(fasce.length) {
-            totConsumato += fasce.reduce(function(a,fc){ return a+(fc.minuti/60)*fc.coeff; },0);
-          } else {
-            totConsumato += dur/60;
-          }
-        });
-      } catch(e){}
-    }
-  });
-
-  var saldoResiduo = Math.max(0, saldoIniziale - totConsumato);
-  saldoResiduo = isTel ? Math.round(saldoResiduo) : parseFloat(saldoResiduo.toFixed(2));
-
-  // Aggiorna cache locale
-  contr.saldoResiduo = saldoResiduo;
-
-  // PATCH su AnymaContratti.SaldoPrima
-  try {
-    var tok = await anGetToken();
-    if(!tok) return saldoResiduo;
-    var rawId = getSpContrId();
-    if(!rawId) return saldoResiduo;
-    var listId = decodeURIComponent(rawId).replace(/[{}]/g,'');
-    var url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+'/items/'+contr._spId+'/fields';
-    await fetch(url, {
-      method:'PATCH',
-      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
-      body: JSON.stringify({SaldoPrima: saldoResiduo})
-    });
-  } catch(e){ console.warn('[aggiornaSaldoResiduo] PATCH fallita:',e.message); }
-
-  return saldoResiduo;
-}
-
-// Helper per calcolo fasce teleassistenza (versione standalone, identica a calcolaFasceSessione nel render)
-function _calcolaFasceResoconto(inizio, fine, dataStr, pacchetto) {
-  if(!inizio || !fine) return [];
-  var p = (pacchetto||'').toUpperCase();
-  if(p.indexOf('SPOT')>=0) return [];
-  var isPrem = p.indexOf('PREMIUM')>=0;
-  try {
-    var d = dataStr ? new Date(dataStr) : new Date();
-    var dow = d.getDay();
-    var isFeriale = (dow>=1 && dow<=5);
-    function toMin(t){ var pt=t.split(':'); return parseInt(pt[0])*60+(parseInt(pt[1])||0); }
-    var mI=toMin(inizio), mF=toMin(fine);
-    if(mF<=mI) mF+=1440;
-    var fasceList = isFeriale ? [
-      {label:'Notturna',  coeff:1.75, da:0,    a:360,  isPremFlat:false},
-      {label:'Straord.',  coeff:1.50, da:360,  a:480,  isPremFlat:true},
-      {label:'Ordinaria', coeff:1.00, da:480,  a:1020, isPremFlat:true},
-      {label:'Straord.',  coeff:1.50, da:1020, a:1320, isPremFlat:true},
-      {label:'Notturna',  coeff:1.75, da:1320, a:1800, isPremFlat:false}
-    ] : [
-      {label:'Nott.Str.', coeff:2.00, da:0,    a:360,  isPremFlat:false},
-      {label:'Straord.',  coeff:1.50, da:360,  a:1320, isPremFlat:true},
-      {label:'Nott.Str.', coeff:2.00, da:1320, a:1800, isPremFlat:false}
-    ];
-    var out=[];
-    fasceList.forEach(function(fl){
-      var si=Math.max(mI,fl.da), sf=Math.min(mF,fl.a);
-      if(sf>si) {
-        var flat=isPrem&&fl.isPremFlat;
-        out.push({label:fl.label, coeff:flat?1.0:fl.coeff, flat:flat, minuti:sf-si});
-      }
-    });
-    return out;
-  } catch(e){ return []; }
-}
-
 // -- Carica AnymaContratti da SP --
 async function loadContratti() {
   var rawId = getSpContrId();
@@ -4286,7 +4164,7 @@ async function loadContratti() {
     // AnymaContratti è su /sites/SERVICE - usa siteId fisso
     _contrListId = listId;
     var url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+
-      '/items?expand=fields(select=Title,TipoContratto,Pacchetto,SaldoMinuti,SaldoOre,SaldoPrima,DataInizio,DataFine,NumContratto,Attivo,Note)&$top=500';
+      '/items?expand=fields(select=Title,TipoContratto,Pacchetto,SaldoMinuti,SaldoOre,DataInizio,DataFine,NumContratto,Attivo,Note)&$top=500';
     var resp = await fetch(url,{headers});
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     var data = await resp.json();
@@ -4299,8 +4177,6 @@ async function loadContratti() {
         pacchetto:   f.Pacchetto||'Spot',
         saldoMinuti: parseInt(f.SaldoMinuti||0),
         saldoOre:    parseFloat(f.SaldoOre||0),
-        // SaldoPrima = saldo residuo aggiornato dall'ultimo resoconto
-        saldoPrima:  f.SaldoPrima!=null ? parseFloat(f.SaldoPrima) : null,
         dataInizio:  f.DataInizio ? f.DataInizio.split('T')[0] : '',
         dataFine:    f.DataFine   ? f.DataFine.split('T')[0]   : '',
         numContratto:f.NumContratto||'',
@@ -4581,9 +4457,9 @@ async function openResoconto(cliente, tipo) {
     var m = String(new Date().getMonth()+1).padStart(2,'0');
     meseSel.value = m;
   }
-  // Ordine default: più recente prima
+  // Ordine default: N. RT decrescente (Z→A)
   var ordSel = document.getElementById('pdf-filtro-ordine');
-  if(ordSel) ordSel.value = 'desc';
+  if(ordSel) ordSel.value = 'rt_desc';
 
   // Mostra barra filtri
   var filtriBar = document.getElementById('pdf-filtri-bar');
@@ -4609,17 +4485,13 @@ async function openResoconto(cliente, tipo) {
     }
     var filter = encodeURIComponent(filterStr);
     var url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+rapListId+
-      '/items?expand=fields(select=Title,DataIntervento,Cliente,TipoServizio,TipoIntervento,Tipo0,OreLavoro,MinutiUsati,Pacchetto,PacchettoContratto,NumContratto,RefNome,Tecnico,Tecnici,NomeTecnico,Referente,TecnicoRT,SaldoPrima,GiornateJSON,SessioniJSON,ChiamateJSON)&$filter='+filter+'&$top=500';
+      '/items?expand=fields(select=Title,DataIntervento,Cliente,TipoServizio,TipoIntervento,Tipo0,OreLavoro,MinutiUsati,Pacchetto,PacchettoContratto,NumContratto,RefNome,Tecnico,Tecnici,NomeTecnico,Referente,TecnicoRT,SaldoPrima,SaldoDopo,GiornateJSON,SessioniJSON,ChiamateJSON)&$filter='+filter+'&$top=500';
     var resp = await fetch(url,{headers});
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     var data = await resp.json();
     _resocontoStato.cliente = cliente;
     _resocontoStato.tipo = tipo;
     _resocontoStato.items = data.value||[];
-    // Calcola saldo residuo live da TUTTI i RT e aggiorna AnymaContratti.SaldoPrima
-    aggiornaSaldoResiduo(cliente, tipo, _resocontoStato.items).catch(function(e){
-      console.warn('[openResoconto] aggiornaSaldoResiduo:', e.message);
-    });
     _applicaFiltriResoconto();
   } catch(e) {
     var prev2 = document.getElementById('contr-pdf-preview');
@@ -4635,7 +4507,7 @@ function _applicaFiltriResoconto() {
 
   var mese  = (document.getElementById('pdf-filtro-mese')  || {}).value || '';
   var anno  = (document.getElementById('pdf-filtro-anno')  || {}).value || '';
-  var ordine= (document.getElementById('pdf-filtro-ordine')|| {}).value || 'desc';
+  var ordine= (document.getElementById('pdf-filtro-ordine')|| {}).value || 'rt_desc';
   var lingua= (document.getElementById('pdf-filtro-lingua')|| {}).value || 'ita';
 
   // Filtra per anno (sempre) e mese (se non vuoto = resoconto totale anno)
@@ -4774,6 +4646,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
     var f = item.fields||{};
     var title = f.Title||'-';
     var saldoPrima = f.SaldoPrima!==undefined ? parseFloat(f.SaldoPrima) : null;
+    var saldoDopo  = f.SaldoDopo!==undefined  ? parseFloat(f.SaldoDopo)  : null;
 
     // GiornateJSON — array piatto [{data, lavDa, lavA, oreLav, oreViag, ...}]
     // pacchetto e tecnico vengono da campi SP separati
@@ -4838,7 +4711,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
         rows.push({numRT:title, data:dataFallback, inizio:'', fine:'',
           durataMin:0, minArrotondati:minArrotRT,
           referente:'-', pacchetto:packRT,
-          saldoPrima:saldoPrima});
+          saldoPrima:saldoPrima, saldoDopo:saldoDopo});
       } else {
         chiamate.forEach(function(c, idx) {
           rows.push({
@@ -4851,6 +4724,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
             referente:      c.referente||'-',
             pacchetto:      packRT,
             saldoPrima:     idx===0 ? saldoPrima : null,
+            saldoDopo:      idx===chiamate.length-1 ? saldoDopo : null,
           });
         });
       }
@@ -4865,9 +4739,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
       var sessioni   = sessioniWrapper.sessioni || [];
       var packRT     = sessioniWrapper.pacchetto || f.Pacchetto || '-';
       var oreUsateRT = (sessioniWrapper.oreUsate !== undefined && sessioniWrapper.oreUsate !== null)
-        ? parseFloat(sessioniWrapper.oreUsate)
-        : (sessioniWrapper.oreAddebitare !== undefined && sessioniWrapper.oreAddebitare !== null)
-          ? parseFloat(sessioniWrapper.oreAddebitare) : null; // retrocompatibilità campo vecchio
+        ? parseFloat(sessioniWrapper.oreUsate) : null;
 
       /* Calcola fascia/e orarie per una sessione dato inizio/fine e data
          Restituisce array di fasce: [{label, coeff, isPremiumFlat}]
@@ -4877,7 +4749,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
         rows.push({numRT:title, data:dataFallback, inizio:'', fine:'',
           durataMin:0, oreScalate:null, fasceSessione:[],
           referente:'-', pacchetto:packRT,
-          saldoPrima:saldoPrima});
+          saldoPrima:saldoPrima, saldoDopo:saldoDopo});
       } else {
         sessioni.forEach(function(s, idx) {
           var fasceSessione;
@@ -4901,7 +4773,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
             referente:    s.referente||'-',
             pacchetto:    packRT,
             saldoPrima:   idx===0 ? saldoPrima : null,
-
+            saldoDopo:    idx===sessioni.length-1 ? saldoDopo : null,
           });
         });
       }
@@ -4912,7 +4784,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
       if(!giornate.length) {
         rows.push({numRT:title, data:dataFallback, inizio:'', fine:'',
           durataMin:0, oreViag:0, km:0, arrot:null, referente:_gwTipoInt, pacchetto:_gwPacchetto,
-          saldoPrima:saldoPrima});
+          saldoPrima:saldoPrima, saldoDopo:saldoDopo});
       } else {
         giornate.forEach(function(g, idx) {
           rows.push({
@@ -4927,7 +4799,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
             referente: g.tipoIntervento || g.tipo || _gwTipoInt,
             pacchetto: g.pacchetto || _gwPacchetto,
             saldoPrima: idx===0 ? saldoPrima : null,
-
+            saldoDopo:  idx===giornate.length-1 ? saldoDopo : null,
           });
         });
       }
@@ -4935,7 +4807,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   });
 
   // Ordina in base all'impostazione (default desc = più recente prima)
-  var _ord = (typeof _resocontoOrdine !== 'undefined') ? _resocontoOrdine : 'desc';
+  var _ord = (typeof _resocontoOrdine !== 'undefined') ? _resocontoOrdine : 'rt_desc';
   rows.sort(function(a,b){
     if(_ord === 'rt_asc') return (a.numRT||'').localeCompare(b.numRT||'');
     if(_ord === 'rt_desc') return (b.numRT||'').localeCompare(a.numRT||'');
@@ -4958,21 +4830,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   }
 
   var contr      = _contrData.find(function(c){return c.cliente===cliente && c.tipo===tipo;});
-  // saldoResiduo: usa il valore live calcolato da aggiornaSaldoResiduo (in contr.saldoResiduo)
-  // Fallback a SaldoPrima da SP (che è il residuo aggiornato all'ultima apertura resoconto)
-  // Fallback finale a saldoMinuti/saldoOre (saldo iniziale contratto) se non ancora calcolato
-  var saldoAtt;
-  if(contr) {
-    if(contr.saldoResiduo !== undefined) {
-      saldoAtt = contr.saldoResiduo;
-    } else if(contr.saldoPrima !== undefined && contr.saldoPrima !== null) {
-      saldoAtt = contr.saldoPrima;
-    } else {
-      saldoAtt = isTel ? contr.saldoMinuti : contr.saldoOre;
-    }
-  } else {
-    saldoAtt = null;
-  }
+  var saldoAtt   = contr ? (isTel ? contr.saldoMinuti : contr.saldoOre) : null;
   var numContr   = contr ? (contr.numContratto||'-') : '-';
   var dataInizio = contr ? (contr.dataInizio||'-') : '-';
   var pacchetto  = contr ? (contr.pacchetto||'Spot') : 'Spot';
@@ -5076,10 +4934,24 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   }
   h += '</tr></thead><tbody>';
 
+  // Pre-calcola subtotali per RT
+  var rtTotals = {};
+  rows.forEach(function(r) {
+    if(!rtTotals[r.numRT]) rtTotals[r.numRT] = {minArrot:0, oreScalate:0, durataMin:0, oreViag:0, km:0};
+    var rt = rtTotals[r.numRT];
+    rt.durataMin  += r.durataMin||0;
+    rt.oreViag    += r.oreViag||0;
+    rt.km         += r.km||0;
+    if(r.minArrotondati!=null) rt.minArrot   += r.minArrotondati;
+    if(r.oreScalate!=null)     rt.oreScalate += r.oreScalate;
+  });
+  var TF_RT = 'padding:3px 6px;border:1px solid #ccc;background:#f0f0f0;border-top:1.5px solid '+RED+';font-weight:700;font-size:8px;color:#444';
+
   var prevRT = null, zebraIdx = 0;
 
   if(rows.length) {
-    rows.forEach(function(r) {
+    rows.forEach(function(r, rIdx) {
+      var isLastOfRT = (rIdx === rows.length-1) || (rows[rIdx+1].numRT !== r.numRT);
       if(prevRT !== null && r.numRT !== prevRT) {
         h += '<tr><td colspan="'+totCols+'" style="background:'+RED+';padding:0;height:1px;border:none"></td></tr>';
         zebraIdx++;
@@ -5161,6 +5033,33 @@ function _renderPdfPanelInner(items, cliente, tipo) {
         h += '<td style="'+td+';text-align:center">'+totAddStr+'</td>';
       }
       h += '</tr>';
+
+      // Riga subtotale per RT (solo sull'ultima riga del gruppo)
+      if(isLastOfRT) {
+        var rt = rtTotals[r.numRT];
+        var subLabel = _lang==='eng' ? 'Subtotal' : 'Subtotale';
+        h += '<tr>';
+        if(isOnSiteR) {
+          var subOreL = rt.durataMin > 0 ? fmtVal(rt.durataMin) : '-';
+          var subOreV = rt.oreViag   > 0 ? fmtVal(rt.oreViag*60) : '-';
+          var subKm   = rt.km        > 0 ? rt.km+' km' : '-';
+          h += '<td colspan="6" style="'+TF_RT+'">'+subLabel+'</td>';
+          h += '<td style="'+TF_RT+';text-align:center;color:'+RED+'">'+subOreL+'</td>';
+          h += '<td style="'+TF_RT+';text-align:center;color:'+RED+'">'+subOreV+'</td>';
+          h += '<td style="'+TF_RT+';text-align:center;color:'+RED+'">'+subKm+'</td>';
+        } else if(isTel) {
+          var subMin = rt.minArrot > 0 ? rt.minArrot+' min' : '-';
+          var subSpan = hasCoeff ? 8 : 7;
+          h += '<td colspan="'+subSpan+'" style="'+TF_RT+'">'+subLabel+'</td>';
+          h += '<td style="'+TF_RT+';text-align:center;color:'+RED+'">'+subMin+'</td>';
+        } else {
+          var subOre = rt.oreScalate > 0 ? fmtVal(rt.oreScalate*60) : '-';
+          var subSpan2 = hasCoeff ? 8 : 7;
+          h += '<td colspan="'+subSpan2+'" style="'+TF_RT+'">'+subLabel+'</td>';
+          h += '<td style="'+TF_RT+';text-align:center;color:'+RED+'">'+subOre+'</td>';
+        }
+        h += '</tr>';
+      }
     });
   } else {
     h += '<tr><td colspan="'+totCols+'" style="padding:12px;text-align:center;color:#999;border:1px solid #ccc">'+L.nessunoInt+'</td></tr>';
