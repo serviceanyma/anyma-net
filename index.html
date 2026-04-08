@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v87';</script>
+<script>const APP_VERSION = 'v88';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4556,13 +4556,13 @@ function _renderPdfPanelInner(items, cliente, tipo) {
            totCons:'Totale consumato', nessunoInt:'Nessun intervento registrato',
            sovrFasce:'Sovrapposizione fasce orarie', estrattoAl:'Estratto al',
            saldoRes:'Saldo residuo', contratto:'Contratto', cliente:'Cliente', inizio2:'Inizio',
-           interventi:'Interventi', consumato:'Consumato' },
+           interventi:'Interventi', consumato:'Consumato', scadenza:'Scadenza', nessScad:'—' },
     eng: { data:'Date', nrt:'RT No.', pacchetto:'Package', inizio:'Start', fine:'End',
            referente:'Technician', durata:'Duration', coeff:'Coeff.', totAdd:'Charged',
            totCons:'Total consumed', nessunoInt:'No interventions recorded',
            sovrFasce:'Overlapping time bands', estrattoAl:'Extracted on',
            saldoRes:'Remaining balance', contratto:'Contract', cliente:'Client', inizio2:'Start',
-           interventi:'Interventions', consumato:'Consumed' }
+           interventi:'Interventions', consumato:'Consumed', scadenza:'Expiry', nessScad:'—' }
   };
   var L = i18n[_lang] || i18n.ita;
 
@@ -4579,6 +4579,28 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   var rows = [];
 
   /* ── Helper Teleassistenza (definiti fuori dal forEach per evitare conflitti di scope) ── */
+  /* Telefonica BASE: fuori orario ×2,00 sul costo al minuto (D222 pag.2)
+     Usata per mostrare il moltiplicatore nella colonna Tot.Addebitati del resoconto.
+     NON modifica minutiUsati (già calcolato correttamente in SP).
+     Restituisce stringa display es. "×2,00 f.o." oppure null se non applicabile. */
+  function fasciaOrariaTelefonicaBase(inizio, dataStr, pacchetto) {
+    var p = (pacchetto||'').toUpperCase();
+    // Solo per BASE; STANDARD è flat, PREMIUM incluso, SPOT ha scatto separato
+    if(p.indexOf('BASE') < 0) return null;
+    if(!inizio) return null;
+    try {
+      var pt = inizio.split(':');
+      var hh = parseInt(pt[0])||0, mm = parseInt(pt[1])||0;
+      var totMin = hh*60 + mm;
+      var d = dataStr ? new Date(dataStr) : new Date();
+      var dow = d.getDay();
+      var isFeriale = (dow>=1 && dow<=5);
+      // Orario ordinario: lun-ven 08:00-17:00
+      var isOrdinario = isFeriale && totMin >= 480 && totMin < 1020;
+      return isOrdinario ? '×1,00' : '×2,00 f.o.';
+    } catch(e) { return null; }
+  }
+
   function calcolaFasceSessione(inizio, fine, dataStr, pacchetto) {
     if(!inizio || !fine) return [];
     var p = (pacchetto||'').toUpperCase();
@@ -4673,6 +4695,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
             fine:           c.fine||'',
             durataMin:      parseFloat(c.durata)||0,
             minArrotondati: idx===0 ? minUsatiRT : null,
+            fasciaBase:     fasciaOrariaTelefonicaBase(c.inizio||'', dataC, packRT),
             referente:      c.referente||'-',
             pacchetto:      packRT,
             saldoPrima:     idx===0 ? saldoPrima : null,
@@ -4783,7 +4806,29 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   var saldoAtt   = contr ? (isTel ? contr.saldoMinuti : contr.saldoOre) : null;
   var numContr   = contr ? (contr.numContratto||'-') : '-';
   var dataInizio = contr ? (contr.dataInizio||'-') : '-';
+  var pacchetto  = contr ? (contr.pacchetto||'Spot') : 'Spot';
   var oggi       = new Date().toLocaleDateString('it-IT');
+
+  // Scadenza 24 mesi per pacchetti prepagati (non Spot, non Premium Illimitato mensile/annuale)
+  // Telefonica: BASE e STANDARD hanno validità 24 mesi
+  // Teleassistenza: BASE, STANDARD, PREMIUM hanno validità 24 mesi
+  // On-Site: canone annuale, nessuna scadenza prepagato
+  var dataScadenza = null;
+  var scadenzaAvviso = false; // true se scade entro 60gg
+  (function() {
+    var p = pacchetto.toUpperCase();
+    var isSpot    = p.indexOf('SPOT') >= 0;
+    var isPremTel = isTel && p.indexOf('PREMIUM') >= 0; // Premium Illim. tel. = canone, no scadenza
+    var haScadenza = !isSpot && !isPremTel && dataInizio !== '-';
+    if(!haScadenza) return;
+    try {
+      var d = new Date(dataInizio);
+      d.setMonth(d.getMonth() + 24);
+      dataScadenza = d.toISOString().split('T')[0];
+      var msToExp = d - new Date();
+      scadenzaAvviso = msToExp > 0 && msToExp < 60 * 24 * 3600 * 1000; // entro 60gg
+    } catch(e) {}
+  })();
   var logoSrc    = typeof LOGO_RESOCONTO!=='undefined' && LOGO_RESOCONTO ? LOGO_RESOCONTO : '';
   var RED  = '#8B1A1A';
   var FONT = 'Barlow,Arial,sans-serif';
@@ -4811,7 +4856,10 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   var TD4 = 'padding:6px 11px;border-right:1px solid #ccc;vertical-align:top;font-size:8.5px';
   h += '<table style="width:100%;border-collapse:collapse;border:1px solid #ccc;margin-bottom:11px"><tr>';
   h += '<td style="'+TD4+';width:22%"><span style="'+LBL+'">'+L.cliente+'</span><strong style="font-size:9px">'+escHtml(cliente)+'</strong></td>';
-  h += '<td style="'+TD4+';width:30%"><span style="'+LBL+'">'+L.contratto+'</span>'+escHtml(tipo)+' • N° '+escHtml(numContr)+'<br><span style="color:#666;font-size:8px">'+L.inizio2+': '+escHtml(dataInizio)+'</span></td>';
+  var scadStr = dataScadenza
+    ? ('<br><span style="font-size:8px;color:'+(scadenzaAvviso?'#c0392b':'#666')+'">'+L.scadenza+': '+escHtml(dataScadenza)+(scadenzaAvviso?' ⚠':'')+'</span>')
+    : '';
+  h += '<td style="'+TD4+';width:30%"><span style="'+LBL+'">'+L.contratto+'</span>'+escHtml(tipo)+' • N° '+escHtml(numContr)+'<br><span style="color:#666;font-size:8px">'+L.inizio2+': '+escHtml(dataInizio)+'</span>'+scadStr+'</td>';
   h += '<td style="'+TD4+';width:22%"><span style="'+LBL+'">'+L.estrattoAl+'</span>'+oggi+'</td>';
   h += '<td style="padding:6px 11px;vertical-align:top;text-align:center;width:26%"><span style="'+LBL+'">'+L.saldoRes+'</span>';
   h += '<span style="font-size:14px;font-weight:900;color:'+RED+'">'+(saldoAtt!==null ? saldoAtt+' '+unitaLabel : 'N/A')+'</span></td>';
@@ -4863,7 +4911,13 @@ function _renderPdfPanelInner(items, cliente, tipo) {
       var totAddStr;
       if(isTel) {
         var va = r.minArrotondati;
-        totAddStr = (va !== null && va !== undefined) ? va+' min' : '-';
+        if(va !== null && va !== undefined) {
+          totAddStr = va+' min';
+          if(r.fasciaBase) {
+            var foColor = r.fasciaBase.indexOf('2,00') >= 0 ? '#c0392b' : '#27ae60';
+            totAddStr += '<br><span style="font-size:6.5px;color:'+foColor+';font-weight:700">'+escHtml(r.fasciaBase)+'</span>';
+          }
+        } else { totAddStr = '-'; }
       } else if(isTeleass) {
         var va = r.oreScalate;
         if(va !== null && va !== undefined) {
