@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v93';</script>
+<script>const APP_VERSION = 'v94';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4122,7 +4122,8 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 const CONTR_TIPO_COLORS = {
   Telefonica:    '#f97316',
   Teleassistenza:'#06b6d4',
-  'On-Site':  '#2ecc71'
+  'On-Site':   '#2ecc71',
+  Manutenzione:  '#2ecc71'  // alias retrocompatibilità SP
 };
 const CONTR_TIPI = ['Telefonica','Teleassistenza','On-Site'];
 const CONTR_PACS = ['Spot','Base','Standard','Premium'];
@@ -4172,7 +4173,7 @@ async function loadContratti() {
       return {
         _spId:       i.id,
         cliente:     f.Title||'',
-        tipo:        f.TipoContratto||'Telefonica',
+        tipo:        (f.TipoContratto==='Manutenzione' ? 'On-Site' : (f.TipoContratto||'Telefonica')),
         pacchetto:   f.Pacchetto||'Spot',
         saldoMinuti: parseInt(f.SaldoMinuti||0),
         saldoOre:    parseFloat(f.SaldoOre||0),
@@ -4300,7 +4301,7 @@ function selectContrCliente(nome) {
 function renderContrDettaglio(nome) {
   var contratti = _contrData.filter(function(c){return c.cliente===nome;});
   // Ordina per tipo
-  var tipoOrder = {Telefonica:0,Teleassistenza:1,'On-Site':2};
+  var tipoOrder = {Telefonica:0,Teleassistenza:1,'On-Site':2,Manutenzione:2};
   contratti.sort(function(a,b){return (tipoOrder[a.tipo]||9)-(tipoOrder[b.tipo]||9);});
   var det = document.getElementById('contr-detail');
   det.innerHTML = contratti.map(function(c){
