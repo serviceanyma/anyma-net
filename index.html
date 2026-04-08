@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v102';</script>
+<script>const APP_VERSION = 'v103';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4485,7 +4485,7 @@ async function openResoconto(cliente, tipo) {
     }
     var filter = encodeURIComponent(filterStr);
     var url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+rapListId+
-      '/items?expand=fields(select=Title,DataIntervento,Cliente,TipoServizio,OreLavoro,MinutiUsati,Pacchetto,PacchettoContratto,NumContratto,RefNome,Tecnico,Tecnici,NomeTecnico,Referente,TecnicoRT,SaldoPrima,SaldoDopo,GiornateJSON,SessioniJSON,ChiamateJSON)&$filter='+filter+'&$top=500';
+      '/items?expand=fields(select=Title,DataIntervento,Cliente,TipoServizio,TipoIntervento,Tipo0,OreLavoro,MinutiUsati,Pacchetto,PacchettoContratto,NumContratto,RefNome,Tecnico,Tecnici,NomeTecnico,Referente,TecnicoRT,SaldoPrima,SaldoDopo,GiornateJSON,SessioniJSON,ChiamateJSON)&$filter='+filter+'&$top=500';
     var resp = await fetch(url,{headers});
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     var data = await resp.json();
@@ -4660,6 +4660,8 @@ function _renderPdfPanelInner(items, cliente, tipo) {
     var _gwPacchetto = f.Pacchetto || f.PacchettoContratto || f.TipoContratto || '-';
     // Tecnico: leggi da SP — campo variabile, prova tutti i nomi noti
     var _gwReferente = f.Tecnico || f.RefNome || f.NomeTecnico || f.Tecnici || f.Referente || f.TecnicoRT || '-';
+    // Tipo intervento On-Site: da giornata o da campo SP
+    var _gwTipoInt = f.TipoIntervento || f.Tipo0 || f.TipoServizio || '-';
     // Fallback: se GiornateJSON vuoto, usa DataIntervento SP
     var dataFallback = (f.DataIntervento||'').split('T')[0]||'-';
 
@@ -4781,7 +4783,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
          Ogni giornata ha la propria data in g.data  */
       if(!giornate.length) {
         rows.push({numRT:title, data:dataFallback, inizio:'', fine:'',
-          durataMin:0, oreViag:0, km:0, arrot:null, referente:_gwReferente, pacchetto:_gwPacchetto,
+          durataMin:0, oreViag:0, km:0, arrot:null, referente:_gwTipoInt, pacchetto:_gwPacchetto,
           saldoPrima:saldoPrima, saldoDopo:saldoDopo});
       } else {
         giornate.forEach(function(g, idx) {
@@ -4794,7 +4796,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
             oreViag:   parseFloat(g.oreViag)||0,
             km:        parseFloat(g.km)||0,
             arrot:     null,
-            referente: g.tecnico || g.referente || g.Tecnico || _gwReferente,
+            referente: g.tipoIntervento || g.tipo || _gwTipoInt,
             pacchetto: g.pacchetto || _gwPacchetto,
             saldoPrima: idx===0 ? saldoPrima : null,
             saldoDopo:  idx===giornate.length-1 ? saldoDopo : null,
@@ -4913,7 +4915,8 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   h += '<th style="'+TH+';text-align:center;width:8%">'+L.pacchetto+'</th>';
   h += '<th style="'+TH+';text-align:center;width:6%">'+L.inizio+'</th>';
   h += '<th style="'+TH+';text-align:center;width:6%">'+L.fine+'</th>';
-  h += '<th style="'+TH+';text-align:left">'+L.referente+'</th>';
+  var refLabel = isOnSiteR ? (_lang==='eng' ? 'Interv. Type' : 'Tipo Intervento') : L.referente;
+  h += '<th style="'+TH+';text-align:left">'+refLabel+'</th>';
   h += '<th style="'+TH+';text-align:center;width:9%">'+L.durata+' ('+unitaLabel+')</th>';
   if(hasCoeff)   h += '<th style="'+TH+';text-align:center;width:9%">'+L.coeff+'</th>';
   if(isOnSiteR)  h += '<th style="'+TH+';text-align:center;width:8%">'+(_lang==='eng'?'Travel h':'Ore Viag.')+'</th>';
