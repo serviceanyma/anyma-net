@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v105';</script>
+<script>const APP_VERSION = 'v106';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4830,10 +4830,30 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   }
 
   var contr      = _contrData.find(function(c){return c.cliente===cliente && c.tipo===tipo;});
-  var saldoAtt   = contr ? (isTel ? contr.saldoMinuti : contr.saldoOre) : null;
   var numContr   = contr ? (contr.numContratto||'-') : '-';
   var dataInizio = contr ? (contr.dataInizio||'-') : '-';
   var pacchetto  = contr ? (contr.pacchetto||'Spot') : 'Spot';
+  // Calcola saldoAtt: saldo iniziale contratto - consumato dalle righe (può essere negativo)
+  var saldoAtt = null;
+  if(contr) {
+    var pUp = pacchetto.toUpperCase();
+    var isSpotPac = pUp.indexOf('SPOT') >= 0;
+    var isPremTelPac = isTel && pUp.indexOf('PREMIUM') >= 0;
+    var hasSaldo = !isSpotPac && !isPremTelPac && !(!isTel && !isTeleass); // On-Site: no saldo
+    if(hasSaldo) {
+      var saldoIniziale = isTel ? (contr.saldoMinuti||0) : (contr.saldoOre||0);
+      var totConsumato;
+      if(isTel) {
+        // Somma minuti arrotondati per RT (solo prima riga del gruppo ha minArrotondati)
+        totConsumato = rows.reduce(function(s,r){ return s+(r.minArrotondati!=null?r.minArrotondati:0); },0);
+      } else if(isTeleass) {
+        // Somma ore scalate (con coefficienti)
+        totConsumato = rows.reduce(function(s,r){ return s+(r.oreScalate!=null?r.oreScalate:0); },0);
+      }
+      saldoAtt = parseFloat((saldoIniziale - (totConsumato||0)).toFixed(2));
+    }
+  }
+  var saldoNegativo = saldoAtt !== null && saldoAtt < 0;
   var oggi       = new Date().toLocaleDateString('it-IT');
 
   // Scadenza 24 mesi per pacchetti prepagati:
@@ -4890,7 +4910,15 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   h += '<td style="'+TD4+';width:30%"><span style="'+LBL+'">'+L.contratto+'</span>'+escHtml(tipo)+' • N° '+escHtml(numContr)+'<br><span style="color:#666;font-size:8px">'+L.inizio2+': '+escHtml(dataInizio)+'</span>'+scadStr+'</td>';
   h += '<td style="'+TD4+';width:22%"><span style="'+LBL+'">'+L.estrattoAl+'</span>'+oggi+'</td>';
   h += '<td style="padding:6px 11px;vertical-align:top;text-align:center;width:26%"><span style="'+LBL+'">'+L.saldoRes+'</span>';
-  h += '<span style="font-size:14px;font-weight:900;color:'+RED+'">'+(saldoAtt!==null ? saldoAtt+' '+unitaLabel : 'N/A')+'</span></td>';
+  if(saldoAtt!==null) {
+    var saldoColor = saldoNegativo ? '#c0392b' : RED;
+    var saldoStr   = (saldoNegativo ? '' : '')+saldoAtt+' '+unitaLabel;
+    var saldoNote  = saldoNegativo ? '<br><span style="font-size:7px;color:#c0392b;font-weight:700">⚠ '+(_lang==='eng'?'Balance exceeded':'Saldo esaurito')+'</span>' : '';
+    h += '<span style="font-size:14px;font-weight:900;color:'+saldoColor+'">'+saldoStr+'</span>'+saldoNote;
+  } else {
+    h += '<span style="font-size:14px;font-weight:900;color:'+RED+'">N/A</span>';
+  }
+  h += '</td>';
   h += '</tr></table>';
 
   // Titolo
@@ -5108,7 +5136,17 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   h += '<div style="display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid #e8d0d0">';
   h += '<div style="'+BOX+'"><span style="'+BL+'">'+L.interventi+'</span><span style="'+BV+'">'+items.length+'</span></div>';
   h += '<div style="'+BOX+'"><span style="'+BL+'">'+L.consumato+'</span><span style="'+BV+'">'+fmtVal(totMin)+'</span></div>';
-  if(saldoAtt!==null) h += '<div style="'+BOX+'"><span style="'+BL+'">Saldo residuo</span><span style="'+BV+'">'+saldoAtt+' '+unitaLabel+'</span></div>';
+  if(saldoAtt!==null) {
+    var boxBorder = saldoNegativo ? '1px solid #e8a0a0' : '1px solid #d4a0a0';
+    var boxBg     = saldoNegativo ? '#fff5f5' : '#fdf0f0';
+    var boxColor  = saldoNegativo ? '#c0392b' : RED;
+    var boxNote   = saldoNegativo ? '<br><span style="font-size:6px;color:#c0392b;font-weight:700">⚠ '+(_lang==='eng'?'Balance exceeded':'Saldo esaurito')+'</span>' : '';
+    var saldoLabel = _lang==='eng' ? 'Remaining balance' : 'Saldo residuo';
+    h += '<div style="flex:1;background:'+boxBg+';border:'+boxBorder+';border-radius:5px;padding:8px 10px;text-align:center">'
+       + '<span style="'+BL+'">'+saldoLabel+'</span>'
+       + '<span style="font-size:17px;font-weight:900;color:'+boxColor+';line-height:1">'+saldoAtt+' '+unitaLabel+'</span>'
+       + boxNote+'</div>';
+  }
   h += '</div></div>';
 
   var wrapper = '<div style="'+wrap+'">'+h+'</div>';
