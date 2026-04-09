@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v106';</script>
+<script>const APP_VERSION = 'v107';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4238,8 +4238,9 @@ async function generaContratti() {
         Title: nome,
         TipoContratto: tipo,
         Pacchetto: defPac,
+        // Premium Teleassistenza ha saldo ore; Premium Telefonica = canone (no saldo)
         SaldoMinuti: (defPac!=='Spot'&&defPac!=='Premium') ? (def.saldoMinuti||0) : 0,
-        SaldoOre:    (defPac!=='Spot'&&defPac!=='Premium') ? (def.saldoOre||0)    : 0,
+        SaldoOre:    (defPac!=='Spot'&&!(defPac==='Premium'&&tipo==='Telefonica')) ? (def.saldoOre||0) : 0,
         Attivo: true,
         Note: 'Creato automaticamente'
       };
@@ -4308,7 +4309,7 @@ function renderContrDettaglio(nome) {
     var col = CONTR_TIPO_COLORS[c.tipo]||'var(--text)';
     var saldoStr = '';
     if(c.tipo==='Telefonica') saldoStr = c.pacchetto!=='Spot'&&c.pacchetto!=='Premium' ? c.saldoMinuti+' min' : 'N/A';
-    else saldoStr = c.pacchetto!=='Spot'&&c.pacchetto!=='Premium' ? c.saldoOre+' h' : 'N/A';
+    else saldoStr = c.pacchetto!=='Spot' && !(c.tipo==='On-Site'&&c.pacchetto==='Premium') ? c.saldoOre+' h' : 'N/A';
     var saldoColor = saldoStr==='N/A' ? 'var(--text3)' : col;
     return '<div style="background:var(--bg3);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:12px;padding:20px 22px;display:flex;flex-direction:column;gap:14px">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">' +
@@ -4838,7 +4839,8 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   if(contr) {
     var pUp = pacchetto.toUpperCase();
     var isSpotPac = pUp.indexOf('SPOT') >= 0;
-    var isPremTelPac = isTel && pUp.indexOf('PREMIUM') >= 0;
+    var isPremTelPac = isTel && pUp.indexOf('PREMIUM') >= 0; // Premium Tel. = canone, no saldo prepagato
+    // Teleassistenza Premium: HA saldo ore (scalato con coefficienti notturni)
     var hasSaldo = !isSpotPac && !isPremTelPac && !(!isTel && !isTeleass); // On-Site: no saldo
     if(hasSaldo) {
       var saldoIniziale = isTel ? (contr.saldoMinuti||0) : (contr.saldoOre||0);
@@ -5235,14 +5237,19 @@ function renderResoconto(items, tipo) {
 function renderContrDefaultsGrid() {
   var d = getContrDefaults();
   var tipi = CONTR_TIPI;
-  var pacs = ['Base','Standard']; // Spot e Premium non hanno saldo configurabile
   var html = '';
   tipi.forEach(function(tipo){
-    pacs.forEach(function(pac){
+    // Teleassistenza: Base, Standard, Premium hanno saldo ore
+    // Telefonica: Base, Standard hanno saldo minuti (Premium = canone mensile, no saldo prepagato)
+    // On-Site: Base, Standard (canone ore)
+    var pacsPerTipo = (tipo==='Teleassistenza') ? ['Base','Standard','Premium'] : ['Base','Standard'];
+    pacsPerTipo.forEach(function(pac){
       var val = (d[tipo]&&d[tipo][pac])||{saldoMinuti:0,saldoOre:0,pacchetto:pac};
       var isTel = tipo==='Telefonica';
       var colore = CONTR_TIPO_COLORS[tipo]||'var(--text)';
       var fieldId = 'cdef_'+tipo+'_'+pac;
+      // Per Premium Teleassistenza non mostrare il select pacchetto default (è fisso Premium)
+      var isPremTA = tipo==='Teleassistenza' && pac==='Premium';
       html += '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px">' +
         '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">' +
           '<span style="font-size:10px;font-weight:700;color:'+colore+';text-transform:uppercase;letter-spacing:.5px">'+tipo+'</span>' +
@@ -5250,10 +5257,12 @@ function renderContrDefaultsGrid() {
         '</div>' +
         '<label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px">'+(isTel?'Minuti':'Ore')+'</label>' +
         '<input type="number" id="'+fieldId+'" style="width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px;padding:5px 8px;outline:none;box-sizing:border-box" min="0" step="'+(isTel?1:0.5)+'" value="'+(isTel?(val.saldoMinuti||0):(val.saldoOre||0))+'">' +
-        '<label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;margin-top:6px">Pacchetto default</label>' +
-        '<select id="'+fieldId+'_pac" style="width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;outline:none">' +
-          CONTR_PACS.filter(function(p){return p!=='Spot'&&p!=='Premium';}).map(function(p){return '<option'+(p===pac?' selected':'')+'>'+p+'</option>';}).join('') +
-        '</select>' +
+        (isPremTA ? '' :
+          '<label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;margin-top:6px">Pacchetto default</label>' +
+          '<select id="'+fieldId+'_pac" style="width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;padding:4px 8px;outline:none">' +
+            pacsPerTipo.filter(function(p){return p!=='Spot';}).map(function(p){return '<option'+(p===pac?' selected':'')+'>'+p+'</option>';}).join('') +
+          '</select>'
+        ) +
       '</div>';
     });
   });
@@ -5265,11 +5274,13 @@ function saveContrDefaultsUI() {
   var d = getContrDefaults();
   CONTR_TIPI.forEach(function(tipo){
     if(!d[tipo]) d[tipo]={};
-    ['Base','Standard'].forEach(function(pac){
+    var pacsPerTipo = (tipo==='Teleassistenza') ? ['Base','Standard','Premium'] : ['Base','Standard'];
+    pacsPerTipo.forEach(function(pac){
       var id = 'cdef_'+tipo+'_'+pac;
       var inp = document.getElementById(id);
       var pac2 = document.getElementById(id+'_pac');
       if(!d[tipo][pac]) d[tipo][pac]={};
+      // Premium Teleassistenza: pacchetto fisso, non ha select
       d[tipo][pac].pacchetto = pac2 ? pac2.value : pac;
       if(tipo==='Telefonica') d[tipo][pac].saldoMinuti = inp ? parseInt(inp.value)||0 : 0;
       else d[tipo][pac].saldoOre = inp ? parseFloat(inp.value)||0 : 0;
