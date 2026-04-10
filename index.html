@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v108';</script>
+<script>const APP_VERSION = 'v109';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1120,6 +1120,10 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         <button class="btn btn-sm btn-primary" id="btn-contr-gen" onclick="generaContratti()" style="display:none">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>
           Genera contratti
+        </button>
+        <button class="btn btn-sm" id="btn-resoconto-globale" onclick="apriModalResocontoGlobale()" style="display:none;background:rgba(139,26,26,.15);color:#c0392b;border-color:rgba(139,26,26,.3)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><rect x="2" y="2" width="12" height="12" rx="1.5"/><line x1="5" y1="5" x2="11" y2="5"/><line x1="5" y1="8" x2="11" y2="8"/><line x1="5" y1="11" x2="9" y2="11"/></svg>
+          Resoconto mensile
         </button>
         <span class="tag-count" id="contr-count" style="display:none"></span>
         <input type="text" class="filter-input" id="contr-search" placeholder="Cerca cliente..." oninput="renderContratti()" style="display:none;max-width:200px">
@@ -4189,6 +4193,7 @@ async function loadContratti() {
     document.getElementById('btn-contr-load').disabled = false;
     document.getElementById('btn-contr-load').textContent = '↻ Aggiorna';
     document.getElementById('btn-contr-gen').style.display = '';
+    document.getElementById('btn-resoconto-globale').style.display = '';
     document.getElementById('contr-count').style.display = '';
     document.getElementById('contr-search').style.display = '';
     document.getElementById('contr-sort-sel').style.display = '';
@@ -4546,7 +4551,63 @@ function stampaResoconto() {
   w.document.write('<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;800&display=swap" rel="stylesheet">');
   w.document.write('<style>*{margin:0;padding:0;box-sizing:border-box}body{background:white;font-family:Barlow,Arial,Helvetica,sans-serif}.pdf-page{width:750px;padding:16px 20px;background:white;font-family:Barlow,Arial,Helvetica,sans-serif;font-size:7.5pt;color:#222;line-height:1.35;position:relative;page-break-after:always}.pdf-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:2px solid #8B1A1A;padding-bottom:6px;margin-bottom:8px}.pdf-logo-img{max-width:160px;height:auto;flex-shrink:0}.pdf-company{font-size:6.5pt;color:#444;line-height:1.45;text-align:right;white-space:nowrap;flex-shrink:0}.pdf-company strong{font-size:7.5pt;color:#222;display:block}.pdf-infobar{display:flex;gap:0;margin-bottom:8px;border:1px solid #ccc;border-radius:4px;overflow:hidden;font-size:7pt}.pdf-infobar-cell{flex:1;padding:5px 10px;border-right:1px solid #ccc;line-height:1.5}.pdf-infobar-cell:last-child{border-right:none}.pdf-infobar-label{font-size:6pt;font-weight:700;color:#8B1A1A;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:2px}.pdf-sec{font-weight:700;font-size:8pt;color:#8B1A1A;border-bottom:1px solid #8B1A1A;padding-bottom:3px;margin:8px 0 4px}.pdf-tbl{width:100%;border-collapse:collapse;font-size:7pt}.pdf-tbl th{background:#8B1A1A;color:white;padding:4px 5px;text-align:center;border:1px solid #a83226;font-size:6.5pt;font-weight:700}.pdf-tbl th.thl{text-align:left}.pdf-tbl td{padding:3px 5px;border:1px solid #bbb;text-align:center;vertical-align:middle;font-size:7pt}.pdf-tbl td.tdl{text-align:left}.pdf-tbl td.num{text-align:right;font-weight:700}.pdf-tbl tr:nth-child(even) td{background:#f8f8f8}.pdf-tbl tfoot td{font-weight:bold;background:#f0f0f0;border-top:2px solid #8B1A1A}.pdf-tot{display:flex;gap:8px;margin-top:8px}.pdf-tot-box{flex:1;background:#f9f0f0;border:1px solid #d4a0a0;border-radius:4px;padding:6px 8px;text-align:center}.pdf-tot-label{font-size:6pt;color:#8B1A1A;text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-bottom:2px}.pdf-tot-val{font-size:13pt;font-weight:900;color:#8B1A1A}.pdf-wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:72px;font-weight:900;color:rgba(139,26,26,.06);white-space:nowrap;pointer-events:none;letter-spacing:6px;z-index:1}@media print{body{background:white}.pdf-page{width:750px;padding:16px 20px;box-shadow:none;page-break-after:always}}</style></head><body>');;
   w.document.write(el.outerHTML);
-  w.document.write('</body></html>');
+  w.document.write('
+<!-- ═══════════════════════════════════════════════════════
+     MODAL RESOCONTO MENSILE GLOBALE
+═══════════════════════════════════════════════════════ -->
+<div id="modal-res-globale" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;width:420px;max-width:95vw;display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:14px;font-weight:700;color:var(--text)">Resoconto mensile globale</span>
+      <button onclick="chiudiModalResocontoGlobale()" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0 4px">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <label style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Mese</label>
+        <select id="rg-mese" style="font-size:12px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)">
+          <option value="01">Gennaio</option><option value="02">Febbraio</option>
+          <option value="03">Marzo</option><option value="04">Aprile</option>
+          <option value="05">Maggio</option><option value="06">Giugno</option>
+          <option value="07">Luglio</option><option value="08">Agosto</option>
+          <option value="09">Settembre</option><option value="10">Ottobre</option>
+          <option value="11">Novembre</option><option value="12">Dicembre</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <label style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Anno</label>
+        <select id="rg-anno" style="font-size:12px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)"></select>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <label style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Tipologia</label>
+      <select id="rg-tipo" style="font-size:12px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)">
+        <option value="Telefonica">Telefonica</option>
+        <option value="Teleassistenza">Teleassistenza</option>
+        <option value="On-Site">On-Site</option>
+      </select>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <label style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Lingua</label>
+      <select id="rg-lingua" style="font-size:12px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)">
+        <option value="ita">🇮🇹 Italiano</option>
+        <option value="eng">🇬🇧 English</option>
+      </select>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text)">
+      <input type="checkbox" id="rg-includi-vuoti" style="width:14px;height:14px;accent-color:#8B1A1A">
+      Includi clienti senza interventi nel mese
+    </label>
+    <div id="rg-status" style="font-size:11px;color:var(--text3);min-height:16px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="chiudiModalResocontoGlobale()" class="btn btn-sm">Annulla</button>
+      <button onclick="generaResocontoGlobale()" class="btn btn-sm btn-primary" id="btn-rg-genera">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M4 6V2h8v4M2 6h12a1 1 0 0 1 1 1v5H1V7a1 1 0 0 1 1-1zM4 11v3h8v-3"/></svg>
+        Genera PDF
+      </button>
+    </div>
+  </div>
+</div>
+</body></html>');
   w.document.close();
   setTimeout(function(){w.print();},600);
 }
@@ -5293,6 +5354,448 @@ function hideLoading(){document.getElementById('loadingOverlay').classList.add('
 
 // Mostra versione nel logo
 (function(){ var v=typeof APP_VERSION!=='undefined'?APP_VERSION:''; var el=document.getElementById('app-version-lbl'); if(el) el.textContent=v; var el2=document.getElementById('login-version-lbl'); if(el2) el2.textContent=v; })();
+
+// ══════════════════════════════════════════════════════════
+// RESOCONTO MENSILE GLOBALE
+// ══════════════════════════════════════════════════════════
+
+function apriModalResocontoGlobale() {
+  var modal = document.getElementById('modal-res-globale');
+  if(!modal) return;
+  // Popola anni
+  var annoSel = document.getElementById('rg-anno');
+  var curY = new Date().getFullYear();
+  annoSel.innerHTML = '';
+  for(var y=curY; y>=curY-4; y--) {
+    var o=document.createElement('option'); o.value=String(y); o.textContent=String(y);
+    annoSel.appendChild(o);
+  }
+  annoSel.value = String(curY);
+  // Mese corrente
+  document.getElementById('rg-mese').value = String(new Date().getMonth()+1).padStart(2,'0');
+  document.getElementById('rg-status').textContent = '';
+  modal.style.display = 'flex';
+}
+
+function chiudiModalResocontoGlobale() {
+  var modal = document.getElementById('modal-res-globale');
+  if(modal) modal.style.display = 'none';
+}
+
+async function generaResocontoGlobale() {
+  var mese   = document.getElementById('rg-mese').value;
+  var anno   = document.getElementById('rg-anno').value;
+  var tipo   = document.getElementById('rg-tipo').value;
+  var lingua = document.getElementById('rg-lingua').value;
+  var includiVuoti = document.getElementById('rg-includi-vuoti').checked;
+  var btnGen = document.getElementById('btn-rg-genera');
+  var status = document.getElementById('rg-status');
+
+  btnGen.disabled = true;
+  btnGen.textContent = '⏳ Caricamento...';
+  status.textContent = '';
+
+  try {
+    var tok = await anGetToken();
+    if(!tok) throw new Error('Token scaduto');
+    var headers = {'Authorization':'Bearer '+tok,'Accept':'application/json','Prefer':'HonorNonIndexedQueriesWarningMayFailRandomly'};
+    var rapListId = getSpRappId();
+    if(!rapListId) throw new Error('Configura il GUID lista AnymaRapportini in Impostazioni');
+
+    // Fetch RT: tutti del mese/anno per la tipologia
+    var filterStr;
+    if(tipo==='On-Site') {
+      filterStr = "fields/TipoServizio ne 'Telefonica' and fields/TipoServizio ne 'Teleassistenza'";
+    } else {
+      filterStr = "fields/TipoServizio eq '"+tipo+"'";
+    }
+    var url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+rapListId+
+      '/items?expand=fields(select=Title,DataIntervento,Cliente,TipoServizio,TipoIntervento,Tipo0,OreLavoro,MinutiUsati,Pacchetto,PacchettoContratto,NumContratto,RefNome,Tecnico,Tecnici,NomeTecnico,Referente,TecnicoRT,SaldoPrima,GiornateJSON,SessioniJSON,ChiamateJSON)&$filter='+encodeURIComponent(filterStr)+'&$top=1000';
+    var resp = await fetch(url, {headers:headers});
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    var data = await resp.json();
+    var allItems = data.value||[];
+
+    // Filtra per mese/anno
+    var filtered = allItems.filter(function(item) {
+      var d=(item.fields&&item.fields.DataIntervento)?item.fields.DataIntervento.split('T')[0]:'';
+      if(!d) return false;
+      return d.startsWith(anno+'-'+mese);
+    });
+
+    // Raggruppa per cliente
+    var clientiMap = {};
+    filtered.forEach(function(item) {
+      var cl = (item.fields&&item.fields.Cliente)||'-';
+      if(!clientiMap[cl]) clientiMap[cl]=[];
+      clientiMap[cl].push(item);
+    });
+
+    // Se includiVuoti: aggiungi clienti con contratto attivo ma 0 RT
+    if(includiVuoti) {
+      _contrData.forEach(function(contr) {
+        if(contr.tipo!==tipo && !(tipo==='On-Site')) return;
+        if(tipo==='On-Site' && contr.tipo==='Telefonica') return;
+        if(tipo==='On-Site' && contr.tipo==='Teleassistenza') return;
+        if(!contr.attivo) return;
+        if(!clientiMap[contr.cliente]) clientiMap[contr.cliente]=[];
+      });
+    }
+
+    // Ordina clienti A→Z
+    var clientiOrdinati = Object.keys(clientiMap).sort(function(a,b){return a.localeCompare(b,'it');});
+
+    if(clientiOrdinati.length===0) {
+      status.textContent = 'Nessun intervento trovato per il periodo selezionato.';
+      btnGen.disabled=false; btnGen.textContent='Genera PDF';
+      return;
+    }
+
+    status.textContent = 'Generazione PDF per '+clientiOrdinati.length+' clienti...';
+
+    // Genera HTML per tutti i clienti
+    var pagesHtml = '';
+    clientiOrdinati.forEach(function(cliente) {
+      var items = clientiMap[cliente]||[];
+      // Ordina RT per numRT Z→A
+      items.sort(function(a,b){
+        var na=(a.fields&&a.fields.Title)||'';
+        var nb=(b.fields&&b.fields.Title)||'';
+        return nb.localeCompare(na);
+      });
+      pagesHtml += _buildPaginaResocontoGlobale(items, cliente, tipo, lingua);
+    });
+
+    // Apri finestra di stampa
+    var w = window.open('','_blank','width=900,height=700');
+    w.document.write('<html><head><title>Resoconto '+tipo+' '+mese+'/'+anno+'</title>');
+    w.document.write('<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;800;900&display=swap" rel="stylesheet">');
+    w.document.write('<style>'+_getResocontoGlobaleCSS()+'</style></head><body>');
+    w.document.write(pagesHtml);
+    w.document.write('</body></html>');
+    w.document.close();
+    setTimeout(function(){w.print();},800);
+
+    chiudiModalResocontoGlobale();
+  } catch(e) {
+    status.textContent = 'Errore: '+e.message;
+    console.error('[generaResocontoGlobale]', e);
+  }
+  btnGen.disabled=false; btnGen.textContent='Genera PDF';
+}
+
+function _getResocontoGlobaleCSS() {
+  return '*{margin:0;padding:0;box-sizing:border-box}'
+    +'body{background:white;font-family:Barlow,Arial,sans-serif}'
+    +'.rg-page{width:750px;padding:14px 20px 18px;background:white;font-size:7.5pt;color:#222;line-height:1.35;position:relative;page-break-after:always}'
+    +'.rg-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:2.5px solid #8B1A1A;padding-bottom:6px;margin-bottom:8px}'
+    +'.rg-company{font-size:6pt;color:#444;line-height:1.5;text-align:right;white-space:nowrap}'
+    +'.rg-company strong{font-size:7pt;color:#222;display:block}'
+    +'.rg-infobar{display:flex;border:1px solid #ccc;border-radius:3px;overflow:hidden;margin-bottom:7px;font-size:7pt}'
+    +'.rg-ic{padding:4px 9px;border-right:1px solid #ccc;flex:1;line-height:1.4}'
+    +'.rg-ic:last-child{border-right:none;text-align:center}'
+    +'.rg-lbl{display:block;font-size:5.5pt;font-weight:700;color:#8B1A1A;text-transform:uppercase;letter-spacing:.4px;margin-bottom:1px}'
+    +'.rg-sec{font-weight:700;font-size:7.5pt;color:#8B1A1A;border-bottom:1px solid #8B1A1A;padding-bottom:2px;margin:6px 0 4px}'
+    +'.rg-tbl{width:100%;border-collapse:collapse;font-size:6.5pt}'
+    +'.rg-tbl th{background:#8B1A1A;color:white;padding:3px 4px;border:1px solid #a83226;font-size:6pt;font-weight:700;text-align:center}'
+    +'.rg-tbl th.thl{text-align:left}'
+    +'.rg-tbl td{padding:2.5px 4px;border:1px solid #bbb;text-align:center;vertical-align:middle}'
+    +'.rg-tbl td.tdl{text-align:left}'
+    +'.rg-tbl tr.zb td{background:#f7f7f7}'
+    +'.rg-tbl tr.sep td{background:#8B1A1A;padding:0;height:1px;border:none}'
+    +'.rg-tbl tr.sub td{background:#f0f0f0;font-weight:700;font-size:6pt;border-top:1.5px solid #8B1A1A}'
+    +'.rg-tbl tfoot td{font-weight:700;background:#f0f0f0;border-top:2px solid #8B1A1A;font-size:6.5pt}'
+    +'.rg-tbl tr.ov td{background:#fff8e8;border-color:#e8a000}'
+    +'.rg-wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:72px;font-weight:900;color:rgba(139,26,26,.05);white-space:nowrap;pointer-events:none;letter-spacing:6px;z-index:0}'
+    +'@media print{body{background:white}.rg-page{page-break-after:always}}';
+}
+
+function _buildPaginaResocontoGlobale(items, cliente, tipo, _lang) {
+  var RED = '#8B1A1A';
+  var isTel     = tipo==='Telefonica';
+  var isTeleass = tipo==='Teleassistenza';
+  var isOnSite  = !isTel && !isTeleass;
+  var unitaLabel = isTel ? 'min' : 'h';
+
+  var i18n = {
+    ita:{data:'Data',nrt:'N. RT',pacchetto:'Pacchetto',inizio:'Inizio',fine:'Fine',
+         referente:'Referente',durata:'Durata',coeff:'Coeff.',totAdd:'Tot. Add.',
+         totale:'TOTALE',subtotale:'Subtotale',nessunoInt:'Nessun intervento',
+         saldoRes:'Saldo residuo',contratto:'Contratto',estrattoAl:'Estratto al',
+         scadenza:'Scadenza',oreLav:'Ore Lavoro',oreViag:'Ore Viag.',
+         sovrFasce:'Sovrapposizione fasce'},
+    eng:{data:'Date',nrt:'RT No.',pacchetto:'Package',inizio:'Start',fine:'End',
+         referente:'Technician',durata:'Duration',coeff:'Coeff.',totAdd:'Charged',
+         totale:'TOTAL',subtotale:'Subtotal',nessunoInt:'No interventions',
+         saldoRes:'Balance',contratto:'Contract',estrattoAl:'Extracted',
+         scadenza:'Expiry',oreLav:'Work h',oreViag:'Travel h',
+         sovrFasce:'Overlapping bands'}
+  };
+  var L = i18n[_lang]||i18n.ita;
+
+  // Dati contratto
+  var contr = _contrData.find(function(c){return c.cliente===cliente && (
+    (isTel&&c.tipo==='Telefonica')||(isTeleass&&c.tipo==='Teleassistenza')||(isOnSite&&c.tipo==='On-Site')
+  );});
+  var numContr   = contr?(contr.numContratto||'—'):'—';
+  var dataInizio = contr?(contr.dataInizio||'—'):'—';
+  var pacchetto  = contr?(contr.pacchetto||'Spot'):'Spot';
+  var oggi = new Date().toLocaleDateString('it-IT');
+
+  // Logo
+  var logoSrc = typeof LOGO_RESOCONTO!=='undefined'&&LOGO_RESOCONTO?LOGO_RESOCONTO:'';
+
+  // ── Costruisci righe (stessa logica di _renderPdfPanelInner) ──
+  function fmtVal(min){
+    if(isTel) return min+'min';
+    var o=min/60; if(o===0)return '0h';
+    var ore=Math.floor(o),m=Math.round((o-ore)*60);
+    if(m===0)return ore+'h'; if(ore===0)return m+'min';
+    return ore+'h '+m+'min';
+  }
+  function calcDurMin(a,b){if(!a||!b)return 0;var pa=a.split(':'),pb=b.split(':');var d=(parseInt(pb[0])*60+parseInt(pb[1]))-(parseInt(pa[0])*60+parseInt(pa[1]));return d<0?d+1440:d;}
+  function toMin(t){var p=t.split(':');return parseInt(p[0])*60+(parseInt(p[1])||0);}
+
+  function calcolaFasce(inizio,fine,dataStr,pac){
+    if(!inizio||!fine)return[];
+    var p=(pac||'').toUpperCase();
+    if(p.indexOf('SPOT')>=0)return[];
+    var isPrem=p.indexOf('PREMIUM')>=0;
+    try{
+      var d=dataStr?new Date(dataStr):new Date();
+      var dow=d.getDay(),isFer=(dow>=1&&dow<=5);
+      var mI=toMin(inizio),mF=toMin(fine);if(mF<=mI)mF+=1440;
+      var fl=isFer?[{l:'Notturna',c:1.75,da:0,a:360,pf:false},{l:'Straord.',c:1.5,da:360,a:480,pf:true},{l:'Ordinaria',c:1.0,da:480,a:1020,pf:true},{l:'Straord.',c:1.5,da:1020,a:1320,pf:true},{l:'Notturna',c:1.75,da:1320,a:1800,pf:false}]:[{l:'Nott.Str.',c:2.0,da:0,a:360,pf:false},{l:'Straord.',c:1.5,da:360,a:1320,pf:true},{l:'Nott.Str.',c:2.0,da:1320,a:1800,pf:false}];
+      var out=[];
+      fl.forEach(function(f){var si=Math.max(mI,f.da),sf=Math.min(mF,f.a);if(sf>si){var flat=isPrem&&f.pf;out.push({label:f.l,coeff:f.c,flat:flat,display:flat?f.l+' flat':'×'+f.c,minuti:sf-si});}});
+      return out;
+    }catch(e){return[];}
+  }
+  function oreScalate(fasce,dur,coeff){
+    if(fasce&&fasce.length)return fasce.reduce(function(a,f){return a+(f.minuti/60)*f.coeff;},0);
+    if(coeff!=null)return (parseFloat(dur)||0)/60*parseFloat(coeff);
+    return (parseFloat(dur)||0)/60;
+  }
+
+  var rows=[];
+  items.forEach(function(item){
+    var f=item.fields||{};
+    var title=f.Title||'-';
+    var dataFb=(f.DataIntervento||'').split('T')[0]||'-';
+    var packRT=f.Pacchetto||'-';
+
+    if(isTel){
+      var cjRaw={}; var chiamate=[];
+      try{cjRaw=JSON.parse(f.ChiamateJSON||'{}');chiamate=Array.isArray(cjRaw)?cjRaw:(cjRaw.chiamate||[]);}catch(e){}
+      if(cjRaw.pacchetto)packRT=cjRaw.pacchetto;
+      var pUp=packRT.toUpperCase();
+      var minUsati=cjRaw.minutiUsati||0;
+      var totDur=chiamate.reduce(function(s,ch){return s+(parseFloat(ch.durata)||0);},0)||minUsati;
+      var minArr=pUp.indexOf('PREMIUM')>=0?null:(pUp.indexOf('STANDARD')>=0?Math.ceil(totDur):Math.ceil(totDur/5)*5);
+      if(!chiamate.length){rows.push({numRT:title,data:dataFb,inizio:'',fine:'',durataMin:0,minArrotondati:minArr,referente:'-',pacchetto:packRT,saldoPrima:null});}
+      else{chiamate.forEach(function(ch,idx){rows.push({numRT:title,data:dataFb,inizio:ch.inizio||'',fine:ch.fine||'',durataMin:parseFloat(ch.durata)||0,minArrotondati:idx===0?minArr:null,referente:ch.referente||'-',pacchetto:packRT,saldoPrima:null});});}
+
+    } else if(isTeleass){
+      var sjRaw={}; var sessioni=[];
+      try{sjRaw=JSON.parse(f.SessioniJSON||'{}');sessioni=Array.isArray(sjRaw)?sjRaw:(sjRaw.sessioni||[]);}catch(e){}
+      if(sjRaw.pacchetto)packRT=sjRaw.pacchetto;
+      if(!sessioni.length){rows.push({numRT:title,data:dataFb,inizio:'',fine:'',durataMin:0,oreScalate:null,fasceSessione:[],sovrapposta:false,referente:'-',pacchetto:packRT});}
+      else{sessioni.forEach(function(s){
+        var fasce=calcolaFasce(s.inizio||'',s.fine||'',dataFb,packRT);
+        var os=oreScalate(fasce,s.durata,s.coefficiente);
+        rows.push({numRT:title,data:dataFb,inizio:s.inizio||'',fine:s.fine||'',durataMin:parseFloat(s.durata)||0,oreScalate:os,fasceSessione:fasce,sovrapposta:fasce.length>1,referente:s.referente||'-',pacchetto:packRT});
+      });}
+
+    } else {
+      var giornate=[];
+      try{var gj=JSON.parse(f.GiornateJSON||'null');if(Array.isArray(gj))giornate=gj;else if(gj&&gj.giornate)giornate=gj.giornate;}catch(e){}
+      var gwPac=f.Pacchetto||'-';
+      var gwTipoInt=f.TipoIntervento||f.Tipo0||f.TipoServizio||'-';
+      if(!giornate.length){rows.push({numRT:title,data:dataFb,inizio:'',fine:'',durataMin:0,oreViag:0,km:0,referente:gwTipoInt,pacchetto:gwPac});}
+      else{giornate.forEach(function(g){rows.push({numRT:title,data:g.data||dataFb,inizio:g.lavDa||'',fine:g.lavA||'',durataMin:parseFloat(g.oreLav||0)*60,oreViag:parseFloat(g.oreViag||0),km:parseInt(g.km||0),referente:g.tipoIntervento||gwTipoInt,pacchetto:g.pacchetto||gwPac});});}
+    }
+  });
+
+  // Ordina Z→A per numRT (già ordinati, ma mantieni sicurezza)
+  rows.sort(function(a,b){return (b.numRT||'').localeCompare(a.numRT||'');});
+
+  // Pre-calcola totali per RT
+  var rtTotals={};
+  rows.forEach(function(r){
+    if(!rtTotals[r.numRT])rtTotals[r.numRT]={minArrot:0,oreScalate:0,durataMin:0,oreViag:0,km:0};
+    var rt=rtTotals[r.numRT];
+    rt.durataMin+=r.durataMin||0;rt.oreViag+=r.oreViag||0;rt.km+=r.km||0;
+    if(r.minArrotondati!=null)rt.minArrot+=r.minArrotondati;
+    if(r.oreScalate!=null)rt.oreScalate+=r.oreScalate;
+  });
+
+  // Calcolo saldo
+  var pUp=(pacchetto||'').toUpperCase();
+  var isSpotP=pUp.indexOf('SPOT')>=0;
+  var isPremTelP=isTel&&pUp.indexOf('PREMIUM')>=0;
+  var saldoAtt=null;
+  if(contr&&!isSpotP&&!isPremTelP&&!isOnSite){
+    var saldoIniz=isTel?(contr.saldoMinuti||0):(contr.saldoOre||0);
+    var totCons=0;
+    if(isTel)totCons=rows.reduce(function(s,r){return s+(r.minArrotondati!=null?r.minArrotondati:0);},0);
+    else totCons=rows.reduce(function(s,r){return s+(r.oreScalate!=null?r.oreScalate:0);},0);
+    saldoAtt=parseFloat((saldoIniz-totCons).toFixed(2));
+  }
+  var saldoNeg=saldoAtt!==null&&saldoAtt<0;
+
+  // ── HTML pagina ──
+  var h='<div class="rg-page">';
+  h+='<div class="rg-wm">ANYMA</div>';
+
+  // Header
+  h+='<div class="rg-hdr">';
+  h+='<div style="flex-shrink:0;max-width:160px">'+(logoSrc?'<img src="'+logoSrc+'" style="max-width:100%;height:auto">':'<span style="font-size:20px;font-weight:900;color:'+RED+'">ANYMA</span>')+'</div>';
+  h+='<div class="rg-company"><strong>ANYMA SRL</strong>Via Val di Sole 31 - 36010 - Zanè (VI) - Italy<br>Tel. +39 0445 223889 | info@anymapack.it<br>P.IVA IT04494860242 | C.F. & R.I. Vicenza 04494860242</div>';
+  h+='</div>';
+
+  // Infobar compatta (1 riga, 3 celle)
+  var saldoColor=saldoNeg?'#c0392b':RED;
+  var saldoStr=saldoAtt!==null?(saldoAtt+' '+unitaLabel):'N/A';
+  var saldoNote=saldoNeg?'<br><span style="font-size:5pt;color:#c0392b;font-weight:700">⚠ '+(_lang==='eng'?'Balance exceeded':'Saldo esaurito')+'</span>':'';
+  h+='<div class="rg-infobar">';
+  h+='<div class="rg-ic" style="flex:1.4"><span class="rg-lbl">'+L.cliente+'</span><strong style="font-size:7.5pt">'+escHtml(cliente)+'</strong></div>';
+  h+='<div class="rg-ic" style="flex:2"><span class="rg-lbl">'+L.contratto+'</span>'+escHtml(tipo)+' • '+escHtml(pacchetto)+' • N° '+escHtml(numContr)+'<span style="color:#888;font-size:6pt;margin-left:6px">'+L.estrattoAl+': '+oggi+'</span></div>';
+  h+='<div class="rg-ic" style="flex:.8;text-align:center"><span class="rg-lbl">'+L.saldoRes+'</span><span style="font-size:11pt;font-weight:900;color:'+saldoColor+'">'+saldoStr+'</span>'+saldoNote+'</div>';
+  h+='</div>';
+
+  // Titolo sezione
+  h+='<div class="rg-sec">'+(_lang==='eng'?'Intervention Details':'Dettaglio Interventi')+'</div>';
+
+  // Tabella
+  var hasCoeff=isTeleass;
+  var totCols=isOnSite?9:(8+(hasCoeff?1:0));
+  var TH='background:#8B1A1A;color:white;padding:3px 4px;border:1px solid #a83226;font-size:6pt;font-weight:700;text-align:center';
+  var TF='padding:2.5px 4px;border:1px solid #ccc;background:#f0f0f0;border-top:2px solid #8B1A1A;font-weight:700;font-size:6pt';
+  var TF_RT='padding:2.5px 4px;border:1px solid #ccc;background:#f0f0f0;border-top:1.5px solid #8B1A1A;font-weight:700;font-size:6pt;color:#444';
+
+  h+='<table class="rg-tbl"><thead><tr>';
+  h+='<th class="thl" style="'+TH+';width:11%">'+L.data+'</th>';
+  h+='<th class="thl" style="'+TH+';width:13%">'+L.nrt+'</th>';
+  h+='<th style="'+TH+';width:8%">'+L.pacchetto+'</th>';
+  if(isOnSite){
+    h+='<th class="thl" style="'+TH+'">'+L.referente+'</th>';
+    h+='<th style="'+TH+';width:6%">'+L.inizio+'</th>';
+    h+='<th style="'+TH+';width:6%">'+L.fine+'</th>';
+    h+='<th style="'+TH+';width:8%">'+L.oreLav+'</th>';
+    h+='<th style="'+TH+';width:7%">'+L.oreViag+'</th>';
+    h+='<th style="'+TH+';width:6%">KM</th>';
+  } else {
+    h+='<th style="'+TH+';width:6%">'+L.inizio+'</th>';
+    h+='<th style="'+TH+';width:6%">'+L.fine+'</th>';
+    h+='<th class="thl" style="'+TH+'">'+L.referente+'</th>';
+    h+='<th style="'+TH+';width:8%">'+L.durata+' ('+unitaLabel+')</th>';
+    if(hasCoeff)h+='<th style="'+TH+';width:8%">'+L.coeff+'</th>';
+    h+='<th style="'+TH+';width:8%">'+L.totAdd+'</th>';
+  }
+  h+='</tr></thead><tbody>';
+
+  var prevRT=null,zebraIdx=0;
+  if(rows.length){
+    rows.forEach(function(r,rIdx){
+      var isLast=(rIdx===rows.length-1)||(rows[rIdx+1].numRT!==r.numRT);
+      if(prevRT!==null&&r.numRT!==prevRT){h+='<tr class="sep"><td colspan="'+totCols+'"></td></tr>';zebraIdx++;}
+      prevRT=r.numRT;
+      var isSovr=isTeleass&&r.sovrapposta;
+      var trCls=isSovr?'ov':(zebraIdx%2===0?'':'zb');
+
+      var durStr=fmtVal(r.durataMin);
+      var totAddStr='-';
+      if(isTel){var va=r.minArrotondati;totAddStr=(va!=null)?va+' min':'-';}
+      else if(isTeleass){var va=r.oreScalate;totAddStr=(va!=null)?fmtVal(va*60):'-';}
+
+      var coeffStr='-';
+      if(isTeleass&&r.fasceSessione&&r.fasceSessione.length){
+        var fs=r.fasceSessione;
+        if(fs.length===1){coeffStr=fs[0].flat?'<span style="color:#1a6b3a">flat</span>':fs[0].display;}
+        else{coeffStr=fs.map(function(fc){return '<span style="display:block">'+escHtml(fc.flat?'flat':fc.display)+'<span style="color:#999;font-size:5.5pt"> ('+fmtVal(fc.minuti)+')</span></span>';}).join('');}
+      }
+
+      if(isSovr)h+='<tr><td colspan="'+totCols+'" style="background:#fff3cd;border:1px solid #e8a000;padding:2px 4px;font-size:6pt;color:#7a5000;font-weight:700">⚠ '+escHtml(L.sovrFasce)+'</td></tr>';
+      h+='<tr class="'+trCls+'">';
+      h+='<td class="tdl">'+escHtml(r.data)+'</td>';
+      h+='<td class="tdl" style="font-weight:700;color:'+RED+'">'+escHtml(r.numRT)+'</td>';
+      h+='<td style="font-size:6pt">'+escHtml(r.pacchetto||'-')+'</td>';
+      if(isOnSite){
+        var ovStr=r.oreViag>0?fmtVal(r.oreViag*60):'-';
+        var kmStr=r.km>0?r.km+' km':'-';
+        h+='<td class="tdl">'+escHtml(r.referente)+'</td>';
+        h+='<td>'+escHtml(r.inizio||'-')+'</td>';
+        h+='<td>'+escHtml(r.fine||'-')+'</td>';
+        h+='<td>'+durStr+'</td>';
+        h+='<td>'+ovStr+'</td>';
+        h+='<td>'+kmStr+'</td>';
+      } else {
+        h+='<td>'+escHtml(r.inizio||'-')+'</td>';
+        h+='<td>'+escHtml(r.fine||'-')+'</td>';
+        h+='<td class="tdl">'+escHtml(r.referente)+'</td>';
+        h+='<td>'+durStr+'</td>';
+        if(hasCoeff)h+='<td style="font-size:6pt">'+coeffStr+'</td>';
+        h+='<td>'+totAddStr+'</td>';
+      }
+      h+='</tr>';
+
+      // Subtotale per RT
+      if(isLast){
+        var rt=rtTotals[r.numRT];
+        var subLbl=L.subtotale;
+        h+='<tr>';
+        if(isOnSite){
+          h+='<td colspan="6" style="'+TF_RT+'">'+subLbl+'</td>';
+          h+='<td style="'+TF_RT+';text-align:center;color:'+RED+'">'+fmtVal(rt.durataMin)+'</td>';
+          h+='<td style="'+TF_RT+';text-align:center;color:'+RED+'">'+(rt.oreViag>0?fmtVal(rt.oreViag*60):'-')+'</td>';
+          h+='<td style="'+TF_RT+';text-align:center;color:'+RED+'">'+(rt.km>0?rt.km+' km':'-')+'</td>';
+        } else if(isTel){
+          var sp=hasCoeff?8:7;
+          h+='<td colspan="'+sp+'" style="'+TF_RT+'">'+subLbl+'</td>';
+          h+='<td style="'+TF_RT+';text-align:center;color:'+RED+'">'+(rt.minArrot>0?rt.minArrot+' min':'-')+'</td>';
+        } else {
+          var sp2=hasCoeff?8:7;
+          h+='<td colspan="'+sp2+'" style="'+TF_RT+'">'+subLbl+'</td>';
+          h+='<td style="'+TF_RT+';text-align:center;color:'+RED+'">'+(rt.oreScalate>0?fmtVal(rt.oreScalate*60):'-')+'</td>';
+        }
+        h+='</tr>';
+      }
+    });
+  } else {
+    h+='<tr><td colspan="'+totCols+'" style="padding:10px;text-align:center;color:#999;border:1px solid #ccc">'+L.nessunoInt+'</td></tr>';
+  }
+
+  // Footer TOTALE
+  var totLabel=_lang==='eng'?'TOTAL':'TOTALE';
+  if(isOnSite){
+    var tOreL=rows.reduce(function(s,r){return s+(r.durataMin||0);},0);
+    var tOreV=rows.reduce(function(s,r){return s+(r.oreViag||0);},0);
+    var tKm=rows.reduce(function(s,r){return s+(r.km||0);},0);
+    h+='</tbody><tfoot><tr>';
+    h+='<td colspan="6" style="'+TF+'">'+totLabel+'</td>';
+    h+='<td style="'+TF+';text-align:center;color:'+RED+'">'+(tOreL>0?fmtVal(tOreL):'-')+'</td>';
+    h+='<td style="'+TF+';text-align:center;color:'+RED+'">'+(tOreV>0?fmtVal(tOreV*60):'-')+'</td>';
+    h+='<td style="'+TF+';text-align:center;color:'+RED+'">'+(tKm>0?tKm+' km':'-')+'</td>';
+    h+='</tr></tfoot>';
+  } else if(isTel){
+    var tMin=rows.reduce(function(s,r){return s+(r.minArrotondati!=null?r.minArrotondati:0);},0);
+    var sp=hasCoeff?8:7;
+    h+='</tbody><tfoot><tr>';
+    h+='<td colspan="'+sp+'" style="'+TF+'">'+totLabel+'</td>';
+    h+='<td style="'+TF+';text-align:center;color:'+RED+'">'+(tMin>0?tMin+' min':'-')+'</td>';
+    h+='</tr></tfoot>';
+  } else {
+    var tOre=rows.reduce(function(s,r){return s+(r.oreScalate!=null?r.oreScalate:0);},0);
+    var sp2=hasCoeff?8:7;
+    h+='</tbody><tfoot><tr>';
+    h+='<td colspan="'+sp2+'" style="'+TF+'">'+totLabel+'</td>';
+    h+='<td style="'+TF+';text-align:center;color:'+RED+'">'+(tOre>0?fmtVal(tOre*60):'-')+'</td>';
+    h+='</tr></tfoot>';
+  }
+  h+='</table></div>';
+  return h;
+}
+
 </script>
 </body>
 </html>
