@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v109';</script>
+<script>const APP_VERSION = 'v110';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4549,7 +4549,7 @@ function stampaResoconto() {
   var w = window.open('','_blank','width=900,height=700');
   w.document.write('<html><head><title>Resoconto ANYMA</title>');
   w.document.write('<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;800&display=swap" rel="stylesheet">');
-  w.document.write('<style>*{margin:0;padding:0;box-sizing:border-box}body{background:white;font-family:Barlow,Arial,Helvetica,sans-serif}.pdf-page{width:750px;padding:16px 20px;background:white;font-family:Barlow,Arial,Helvetica,sans-serif;font-size:7.5pt;color:#222;line-height:1.35;position:relative;page-break-after:always}.pdf-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:2px solid #8B1A1A;padding-bottom:6px;margin-bottom:8px}.pdf-logo-img{max-width:160px;height:auto;flex-shrink:0}.pdf-company{font-size:6.5pt;color:#444;line-height:1.45;text-align:right;white-space:nowrap;flex-shrink:0}.pdf-company strong{font-size:7.5pt;color:#222;display:block}.pdf-infobar{display:flex;gap:0;margin-bottom:8px;border:1px solid #ccc;border-radius:4px;overflow:hidden;font-size:7pt}.pdf-infobar-cell{flex:1;padding:5px 10px;border-right:1px solid #ccc;line-height:1.5}.pdf-infobar-cell:last-child{border-right:none}.pdf-infobar-label{font-size:6pt;font-weight:700;color:#8B1A1A;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:2px}.pdf-sec{font-weight:700;font-size:8pt;color:#8B1A1A;border-bottom:1px solid #8B1A1A;padding-bottom:3px;margin:8px 0 4px}.pdf-tbl{width:100%;border-collapse:collapse;font-size:7pt}.pdf-tbl th{background:#8B1A1A;color:white;padding:4px 5px;text-align:center;border:1px solid #a83226;font-size:6.5pt;font-weight:700}.pdf-tbl th.thl{text-align:left}.pdf-tbl td{padding:3px 5px;border:1px solid #bbb;text-align:center;vertical-align:middle;font-size:7pt}.pdf-tbl td.tdl{text-align:left}.pdf-tbl td.num{text-align:right;font-weight:700}.pdf-tbl tr:nth-child(even) td{background:#f8f8f8}.pdf-tbl tfoot td{font-weight:bold;background:#f0f0f0;border-top:2px solid #8B1A1A}.pdf-tot{display:flex;gap:8px;margin-top:8px}.pdf-tot-box{flex:1;background:#f9f0f0;border:1px solid #d4a0a0;border-radius:4px;padding:6px 8px;text-align:center}.pdf-tot-label{font-size:6pt;color:#8B1A1A;text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-bottom:2px}.pdf-tot-val{font-size:13pt;font-weight:900;color:#8B1A1A}.pdf-wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:72px;font-weight:900;color:rgba(139,26,26,.06);white-space:nowrap;pointer-events:none;letter-spacing:6px;z-index:1}@media print{body{background:white}.pdf-page{width:750px;padding:16px 20px;box-shadow:none;page-break-after:always}}</style></head><body>');;
+  w.document.write('<style>@page{size:A4 portrait;margin:12mm 14mm}*{margin:0;padding:0;box-sizing:border-box}body{background:white;font-family:Barlow,Arial,Helvetica,sans-serif}.pdf-page{width:100%;max-width:182mm;margin:0 auto;padding:0;background:white;font-family:Barlow,Arial,Helvetica,sans-serif;font-size:7.5pt;color:#222;line-height:1.35;position:relative;page-break-after:always}.pdf-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:2px solid #8B1A1A;padding-bottom:6px;margin-bottom:8px}.pdf-logo-img{max-width:160px;height:auto;flex-shrink:0}.pdf-company{font-size:6.5pt;color:#444;line-height:1.45;text-align:right;white-space:nowrap;flex-shrink:0}.pdf-company strong{font-size:7.5pt;color:#222;display:block}.pdf-infobar{display:flex;gap:0;margin-bottom:8px;border:1px solid #ccc;border-radius:4px;overflow:hidden;font-size:7pt}.pdf-infobar-cell{flex:1;padding:5px 10px;border-right:1px solid #ccc;line-height:1.5}.pdf-infobar-cell:last-child{border-right:none}.pdf-infobar-label{font-size:6pt;font-weight:700;color:#8B1A1A;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:2px}.pdf-sec{font-weight:700;font-size:8pt;color:#8B1A1A;border-bottom:1px solid #8B1A1A;padding-bottom:3px;margin:8px 0 4px}.pdf-tbl{width:100%;border-collapse:collapse;font-size:7pt}.pdf-tbl th{background:#8B1A1A;color:white;padding:4px 5px;text-align:center;border:1px solid #a83226;font-size:6.5pt;font-weight:700}.pdf-tbl th.thl{text-align:left}.pdf-tbl td{padding:3px 5px;border:1px solid #bbb;text-align:center;vertical-align:middle;font-size:7pt}.pdf-tbl td.tdl{text-align:left}.pdf-tbl td.num{text-align:right;font-weight:700}.pdf-tbl tr:nth-child(even) td{background:#f8f8f8}.pdf-tbl tfoot td{font-weight:bold;background:#f0f0f0;border-top:2px solid #8B1A1A}.pdf-tot{display:flex;gap:8px;margin-top:8px}.pdf-tot-box{flex:1;background:#f9f0f0;border:1px solid #d4a0a0;border-radius:4px;padding:6px 8px;text-align:center}.pdf-tot-label{font-size:6pt;color:#8B1A1A;text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-bottom:2px}.pdf-tot-val{font-size:13pt;font-weight:900;color:#8B1A1A}.pdf-wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:72px;font-weight:900;color:rgba(139,26,26,.06);white-space:nowrap;pointer-events:none;letter-spacing:6px;z-index:1}@media print{body{background:white}.pdf-page{page-break-after:always}}</style></head><body>');;
   w.document.write(el.outerHTML);
   w.document.write('</body></html>');
   w.document.close();
@@ -5394,26 +5394,27 @@ async function generaResocontoGlobale() {
 }
 
 function _getCSSResocontoGlobale(){
-  return '*{margin:0;padding:0;box-sizing:border-box}body{background:white;font-family:Barlow,Arial,sans-serif}'
-    +'.rg-page{width:750px;padding:14px 20px 18px;background:white;font-size:7.5pt;color:#222;line-height:1.35;position:relative;page-break-after:always}'
-    +'.rg-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:2.5px solid #8B1A1A;padding-bottom:6px;margin-bottom:8px}'
-    +'.rg-company{font-size:6pt;color:#444;line-height:1.5;text-align:right;white-space:nowrap}'
-    +'.rg-company strong{font-size:7pt;color:#222;display:block}'
-    +'.rg-infobar{display:flex;border:1px solid #ccc;border-radius:3px;overflow:hidden;margin-bottom:7px}'
-    +'.rg-ic{padding:4px 9px;border-right:1px solid #ccc;line-height:1.4}'
+  return '@page{size:A4 portrait;margin:10mm 12mm}'
+    +'*{margin:0;padding:0;box-sizing:border-box}body{background:white;font-family:Barlow,Arial,sans-serif}'
+    +'.rg-page{width:100%;max-width:186mm;margin:0 auto;padding:0;background:white;font-size:7pt;color:#222;line-height:1.35;position:relative;page-break-after:always}'
+    +'.rg-hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:2px solid #8B1A1A;padding-bottom:4px;margin-bottom:6px}'
+    +'.rg-company{font-size:5.5pt;color:#555;line-height:1.4;text-align:right;white-space:nowrap}'
+    +'.rg-company strong{font-size:6.5pt;color:#222;display:inline;margin-right:4px}'
+    +'.rg-infobar{display:flex;border:1px solid #ccc;border-radius:3px;overflow:hidden;margin-bottom:6px}'
+    +'.rg-ic{padding:3px 8px;border-right:1px solid #ccc;line-height:1.4}'
     +'.rg-ic:last-child{border-right:none}'
-    +'.rg-lbl{display:block;font-size:5.5pt;font-weight:700;color:#8B1A1A;text-transform:uppercase;letter-spacing:.4px;margin-bottom:1px}'
-    +'.rg-sec{font-weight:700;font-size:7.5pt;color:#8B1A1A;border-bottom:1px solid #8B1A1A;padding-bottom:2px;margin:6px 0 4px}'
+    +'.rg-lbl{display:block;font-size:5pt;font-weight:700;color:#8B1A1A;text-transform:uppercase;letter-spacing:.4px;margin-bottom:1px}'
+    +'.rg-sec{font-weight:700;font-size:7pt;color:#8B1A1A;border-bottom:1px solid #8B1A1A;padding-bottom:2px;margin:5px 0 3px}'
     +'.rg-tbl{width:100%;border-collapse:collapse}'
-    +'.rg-tbl th{background:#8B1A1A;color:white;padding:3px 4px;border:1px solid #a83226;font-size:6pt;font-weight:700;text-align:center}'
+    +'.rg-tbl th{background:#8B1A1A;color:white;padding:3px 4px;border:1px solid #a83226;font-size:5.5pt;font-weight:700;text-align:center}'
     +'.rg-tbl th.thl{text-align:left}'
-    +'.rg-tbl td{padding:2.5px 4px;border:1px solid #bbb;text-align:center;vertical-align:middle;font-size:6.5pt}'
+    +'.rg-tbl td{padding:2px 4px;border:1px solid #bbb;text-align:center;vertical-align:middle;font-size:6pt}'
     +'.rg-tbl td.tdl{text-align:left}'
     +'.rg-tbl tr.zb td{background:#f7f7f7}'
     +'.rg-tbl tr.sep td{background:#8B1A1A;padding:0;height:1px;border:none}'
     +'.rg-tbl tr.ov td{background:#fff8e8;border-color:#e8a000}'
-    +'.rg-tbl tfoot td{font-weight:700;background:#f0f0f0;border-top:2px solid #8B1A1A;font-size:6.5pt}'
-    +'.rg-wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:72px;font-weight:900;color:rgba(139,26,26,.05);white-space:nowrap;pointer-events:none;letter-spacing:6px}'
+    +'.rg-tbl tfoot td{font-weight:700;background:#f0f0f0;border-top:2px solid #8B1A1A;font-size:6pt}'
+    +'.rg-wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:60px;font-weight:900;color:rgba(139,26,26,.04);white-space:nowrap;pointer-events:none;letter-spacing:6px}'
     +'@media print{.rg-page{page-break-after:always}}';
 }
 
@@ -5487,8 +5488,10 @@ function _buildPaginaResocontoGlobale(items, cliente, tipo, _lang) {
   var saldoNote=saldoNeg?'<br><span style="font-size:5pt;color:#c0392b;font-weight:700">&#x26A0; '+(_lang==='eng'?'Balance exceeded':'Saldo esaurito')+'</span>':'';
 
   var h='<div class="rg-page"><div class="rg-wm">ANYMA</div>';
-  h+='<div class="rg-hdr"><div style="flex-shrink:0;max-width:160px">'+(logoSrc?'<img src="'+logoSrc+'" style="max-width:100%;height:auto">':'<span style="font-size:20px;font-weight:900;color:'+RED+'">ANYMA</span>')+'</div>';
-  h+='<div class="rg-company"><strong>ANYMA SRL</strong>Via Val di Sole 31 - 36010 - Zan\xe8 (VI) - Italy<br>Tel. +39 0445 223889 | info@anymapack.it<br>P.IVA IT04494860242 | C.F. &amp; R.I. Vicenza 04494860242</div></div>';
+  h+='<div class="rg-hdr">';
+  h+='<div style="flex-shrink:0;max-width:90px">'+(logoSrc?'<img src="'+logoSrc+'" style="max-width:100%;height:auto">':'<span style="font-size:14px;font-weight:900;color:'+RED+'">ANYMA</span>')+'</div>';
+  h+='<div class="rg-company"><strong>ANYMA SRL</strong> Via Val di Sole 31 - 36010 - Zan\xe8 (VI) &nbsp;|&nbsp; Tel. +39 0445 223889 &nbsp;|&nbsp; info@anymapack.it &nbsp;|&nbsp; P.IVA IT04494860242</div>';
+  h+='</div>';
   h+='<div class="rg-infobar">';
   h+='<div class="rg-ic" style="flex:1.4"><span class="rg-lbl">'+L.cliente+'</span><strong style="font-size:7.5pt">'+escHtml(cliente)+'</strong></div>';
   h+='<div class="rg-ic" style="flex:2"><span class="rg-lbl">'+L.contratto+'</span>'+escHtml(tipo)+' &bull; '+escHtml(pacchetto)+' &bull; N&deg; '+escHtml(numContr)+'<span style="color:#888;font-size:5.5pt;margin-left:6px">'+L.estrattoAl+': '+oggi+'</span></div>';
