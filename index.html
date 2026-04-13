@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v111';</script>
+<script>const APP_VERSION = 'v112';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -625,6 +625,14 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
   </div>
 
   <div class="nav-sep"></div>
+  <div class="nav-section-label">Assistenza</div>
+  <div class="nav-item" id="nav-ticket" onclick="showView('ticket')">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H9l-3 2v-2H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/></svg>
+    Ticket Assistenza
+    <span class="badge-count" id="cnt-ticket">-</span>
+  </div>
+
+  <div class="nav-sep"></div>
   <div class="nav-sep"></div>
   <div class="nav-item" id="nav-email" onclick="showView('email')">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1"/><path d="M1 5l7 5 7-5"/></svg>
@@ -774,6 +782,22 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
             style="width:100%;margin-top:7px;font-size:11px;padding:5px 8px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);outline:none;box-sizing:border-box"
             oninput="saveSpSetting('sp_rapp_id',this.value,this)">
           <div id="settings-sp-rapp-id-status" style="font-size:11px;margin-top:4px;color:var(--text3)">Non salvato</div>
+        </div>
+      </div>
+
+      <!-- Card Ticket Assistenza -->
+      <div class="settings-card">
+        <div class="settings-card-icon" style="background:rgba(0,100,200,.15);flex-shrink:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#0064c8" stroke-width="1.5" width="18" height="18"><path d="M3 5h18a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H8l-4 3v-3H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/></svg>
+        </div>
+        <div class="settings-card-info" style="flex:1;min-width:0">
+          <div class="settings-card-title">Ticket Assistenza - Email</div>
+          <div class="settings-card-path">Casella usata per ricezione e risposta automatica</div>
+          <input type="email" id="settings-ticket-email"
+            placeholder="service@anymapack.it"
+            style="width:100%;margin-top:7px;font-size:11px;padding:5px 8px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);outline:none;box-sizing:border-box"
+            oninput="saveTicketEmailSetting()">
+          <div style="font-size:10px;color:var(--text3);margin-top:4px" id="settings-ticket-email-status">Non configurata</div>
         </div>
       </div>
 
@@ -1371,6 +1395,125 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
   </div>
 
   <!-- VIEW: EMAIL ASSISTANT -->
+
+  <!-- ===== TICKET ASSISTENZA ===== -->
+  <div id="view-ticket" class="content-view">
+    <div class="proj-view" style="gap:0">
+
+      <!-- Toolbar -->
+      <div class="proj-top">
+        <div class="sp-status"><div class="sp-dot" id="tkt-dot"></div><span id="tkt-status-txt">Non connesso</span></div>
+        <button class="btn btn-sm" onclick="loadTicket()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5M13.5 2.5v3.5h-3.5"/></svg>
+          Aggiorna
+        </button>
+        <button class="btn btn-sm btn-primary" onclick="apriNuovoTicket()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>
+          Nuovo ticket
+        </button>
+        <button class="btn btn-sm" id="btn-tkt-leggi-email" onclick="leggiEmailTicket()" style="background:rgba(0,100,200,.1);color:#0064c8;border-color:rgba(0,100,200,.3)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1"/><path d="M1 5l7 5 7-5"/></svg>
+          Leggi Email <span id="tkt-btn-email-lbl">service@</span>
+        </button>
+        <span id="tkt-count" style="display:none;font-size:11px;color:var(--text3);margin-left:4px"></span>
+        <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+          <select class="sel" id="tkt-filtro-stato" onchange="renderTicket()" style="font-size:11px">
+            <option value="">Tutti gli stati</option>
+            <option value="Nuovo">Nuovo</option>
+            <option value="In lavorazione">In lavorazione</option>
+            <option value="Attesa cliente">Attesa cliente</option>
+            <option value="Risolto">Risolto</option>
+            <option value="Chiuso">Chiuso</option>
+          </select>
+          <select class="sel" id="tkt-filtro-priorita" onchange="renderTicket()" style="font-size:11px">
+            <option value="">Tutte le priorità</option>
+            <option value="Alta">Alta</option>
+            <option value="Media">Media</option>
+            <option value="Bassa">Bassa</option>
+          </select>
+          <input type="text" class="filter-input" id="tkt-search" placeholder="Cerca ticket..." oninput="renderTicket()" style="max-width:180px">
+        </div>
+      </div>
+
+      <!-- Split: lista | dettaglio -->
+      <div style="display:flex;flex:1;min-height:0;overflow:hidden">
+        <!-- Lista ticket -->
+        <div style="width:340px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
+          <div class="list-header"><span>Ticket</span><span id="tkt-list-count" style="color:var(--accent);font-size:10px"></span></div>
+          <div class="list-scroll" id="tkt-list"></div>
+        </div>
+        <!-- Dettaglio ticket -->
+        <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+          <div id="tkt-empty" class="detail-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5h18a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H8l-4 3v-3H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/></svg>
+            Seleziona un ticket
+          </div>
+          <div id="tkt-detail" style="display:none;flex:1;overflow-y:auto;padding:24px"></div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /#view-ticket -->
+
+  <!-- MODALE Nuovo/Modifica Ticket -->
+  <div id="tkt-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;align-items:center;justify-content:center">
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:28px 32px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h2 style="font-size:16px;font-weight:700;color:var(--text);margin:0" id="tkt-modal-title">Nuovo Ticket</h2>
+        <button onclick="chiudiTktModal()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px">✕</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label class="form-label">Cliente *</label>
+            <input type="text" id="tkt-f-cliente" class="form-input" placeholder="Nome cliente">
+          </div>
+          <div>
+            <label class="form-label">Email mittente</label>
+            <input type="email" id="tkt-f-email" class="form-input" placeholder="cliente@example.com">
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Oggetto *</label>
+          <input type="text" id="tkt-f-oggetto" class="form-input" placeholder="Descrizione breve del problema">
+        </div>
+        <div>
+          <label class="form-label">Descrizione</label>
+          <textarea id="tkt-f-desc" class="form-input" rows="4" style="resize:vertical;font-family:var(--font)" placeholder="Dettagli del problema..."></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+          <div>
+            <label class="form-label">Canale</label>
+            <select id="tkt-f-canale" class="form-input sel">
+              <option value="Manuale">Manuale</option>
+              <option value="Email">Email</option>
+              <option value="Telefono">Telefono</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Priorità</label>
+            <select id="tkt-f-priorita" class="form-input sel">
+              <option value="Media">Media</option>
+              <option value="Alta">Alta</option>
+              <option value="Bassa">Bassa</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Tecnico</label>
+            <input type="text" id="tkt-f-tecnico" class="form-input" placeholder="Nome tecnico">
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Note interne</label>
+          <textarea id="tkt-f-note" class="form-input" rows="2" style="resize:vertical;font-family:var(--font)" placeholder="Note visibili solo ai tecnici..."></textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+        <button class="btn" onclick="chiudiTktModal()">Annulla</button>
+        <button class="btn btn-primary" onclick="salvaTktModal()" id="tkt-modal-save-btn">Crea Ticket</button>
+      </div>
+    </div>
+  </div>
+
   <div id="view-email" class="email-view">
     <div class="ea-wrap">
 
@@ -2148,6 +2291,12 @@ function showView(view) {
     el.style.display='flex'; el.classList.add('visible');
     return;
   }
+  if (view==='ticket') {
+    const el=document.getElementById('view-ticket');
+    el.style.display='flex'; el.classList.add('visible');
+    if(!_tktData) loadTicket();
+    return;
+  }
 }
 
 /* ======================================
@@ -2572,6 +2721,7 @@ var LOGO_RESOCONTO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAB9AAAAFHCAYA
 
 // Sito SERVICE (AnymaContratti e AnymaRapportini sono su /sites/SERVICE)
 const SP_SERVICE_SITE_ID = 'anymapack.sharepoint.com,97c507fa-86cb-42c2-9f40-31b7d683a78f,dd5af785-ca46-4f9a-9997-2866a1b25ab7';
+const TICKET_LIST_ID = 'b8fab561-8b6d-452a-aa68-ccc89a98c370';
 var _spSiteId   = null;
 var _spClienti  = []; // [{id, name}] - cache elenco clienti
 
@@ -5238,6 +5388,9 @@ function renderResoconto(items, tipo) {
     '<div id="res-table-wrap">'+buildTable()+'</div>';
 }
 
+// -- Carica email ticket da localStorage --
+loadTicketEmailSetting();
+
 // -- Impostazioni: render griglia saldi default --
 // Layout a lista compatta: un blocco per tipo, una riga per pacchetto
 function renderContrDefaultsGrid() {
@@ -5605,5 +5758,317 @@ function _buildPaginaResocontoGlobale(items, cliente, tipo, _lang) {
 
 <!-- MODAL RESOCONTO MENSILE GLOBALE -->
 </div>
+<script>
+/* ============================================================
+   MODULO TICKET ASSISTENZA  (v112)
+   Lista SP: AnymaTicket  listId = TICKET_LIST_ID
+   ============================================================ */
+
+var _tktData   = null;
+var _tktSel    = null;
+var _tktEditId = null;
+
+function getTktEmail(){
+  return localStorage.getItem('anyma_ticket_email')||'';
+}
+
+function saveTicketEmailSetting(){
+  var val=(document.getElementById('settings-ticket-email')||{}).value||'';
+  val=val.trim();
+  if(val) localStorage.setItem('anyma_ticket_email',val);
+  else localStorage.removeItem('anyma_ticket_email');
+  var st=document.getElementById('settings-ticket-email-status');
+  if(st) st.textContent=val?('Configurata: '+val):'Non configurata';
+  var lbl=document.getElementById('tkt-btn-email-lbl');
+  if(lbl) lbl.textContent=val||'service@';
+}
+
+function loadTicketEmailSetting(){
+  var val=getTktEmail();
+  var inp=document.getElementById('settings-ticket-email');
+  if(inp) inp.value=val;
+  var st=document.getElementById('settings-ticket-email-status');
+  if(st) st.textContent=val?('Configurata: '+val):'Non configurata';
+  var lbl=document.getElementById('tkt-btn-email-lbl');
+  if(lbl) lbl.textContent=val||'service@';
+}
+
+function generateTktId() {
+  var d = new Date();
+  var dd = d.toISOString().slice(0,10).replace(/-/g,'');
+  var rnd = Math.floor(1000 + Math.random()*9000);
+  return 'TKT_' + dd + '_' + rnd;
+}
+
+function tktStatoColor(s) {
+  var m = {'Nuovo':'#e74c3c','In lavorazione':'#e67e22','Attesa cliente':'#8e44ad','Risolto':'#27ae60','Chiuso':'#7f8c8d'};
+  return m[s]||'#7f8c8d';
+}
+
+function tktPriorColor(p) {
+  return p==='Alta'?'#e74c3c': p==='Bassa'?'#27ae60':'#e67e22';
+}
+
+async function loadTicket() {
+  var dot=document.getElementById('tkt-dot'), stxt=document.getElementById('tkt-status-txt');
+  if(dot) dot.style.background='#e67e22';
+  if(stxt) stxt.textContent='Caricamento...';
+  var tok; try{tok=await anGetToken();}catch(e){tok=null;}
+  if(!tok){if(stxt) stxt.textContent='Autenticazione richiesta';return;}
+  if(!_spSiteId){
+    try{
+      var sr=await fetch(GRAPH_BASE+'/sites/'+SP_SITE_HOSTNAME+':'+SP_SITE_PATH,{headers:{'Authorization':'Bearer '+tok,'Accept':'application/json'}});
+      _spSiteId=(await sr.json()).id;
+    }catch(e){if(stxt) stxt.textContent='Errore siteId';return;}
+  }
+  try{
+    var url=GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+TICKET_LIST_ID+'/items?$expand=fields&$top=200&$orderby=fields/DataApertura desc';
+    var r=await fetch(url,{headers:{'Authorization':'Bearer '+tok,'Accept':'application/json'}});
+    var data=await r.json();
+    _tktData=(data.value||[]).map(it=>it.fields);
+    if(dot) dot.style.background='#27ae60';
+    if(stxt) stxt.textContent='Connesso ('+_tktData.length+' ticket)';
+    var cntEl=document.getElementById('cnt-ticket');
+    if(cntEl) cntEl.textContent=_tktData.length>0?_tktData.length:'-';
+    renderTicket();
+  }catch(e){
+    if(dot) dot.style.background='#e74c3c';
+    if(stxt) stxt.textContent='Errore caricamento';
+    console.error(e);
+  }
+}
+
+function renderTicket() {
+  var list=document.getElementById('tkt-list');
+  if(!list||!_tktData) return;
+  var filtroStato=(document.getElementById('tkt-filtro-stato')||{}).value||'';
+  var filtroPrior=(document.getElementById('tkt-filtro-priorita')||{}).value||'';
+  var search=((document.getElementById('tkt-search')||{}).value||'').toLowerCase();
+  var filtered=_tktData.filter(function(t){
+    if(filtroStato && t.Stato!==filtroStato) return false;
+    if(filtroPrior && t.Priorita!==filtroPrior) return false;
+    if(search){var hay=(t.Title||'')+(t.Cliente||'')+(t.Oggetto||''); if(hay.toLowerCase().indexOf(search)<0) return false;}
+    return true;
+  });
+  var cnt=document.getElementById('tkt-list-count');
+  if(cnt) cnt.textContent=filtered.length+' ticket';
+  list.innerHTML=filtered.map(function(t){
+    var sc=tktStatoColor(t.Stato||''), pc=tktPriorColor(t.Priorita||'Media');
+    var dataStr=t.DataApertura?new Date(t.DataApertura).toLocaleDateString('it-IT'):'';
+    var isSel=_tktSel && _tktSel.id===t.id;
+    return '<div class="list-item'+(isSel?' active':'')+'" onclick="selezionaTicket(\''+t.id+'\')" style="padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">'+
+      '<div style="font-size:10px;font-weight:700;color:var(--accent);font-family:monospace">'+(t.Title||'')+'</div>'+
+      '<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:'+sc+'22;color:'+sc+';white-space:nowrap">'+(t.Stato||'')+'</span></div>'+
+      '<div style="font-size:12px;font-weight:600;color:var(--text);margin:3px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(t.Oggetto||'')+'</div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center">'+
+      '<span style="font-size:11px;color:var(--text2)">'+(t.Cliente||'')+'</span>'+
+      '<div style="display:flex;gap:5px;align-items:center">'+
+      '<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;background:'+pc+'22;color:'+pc+'">'+(t.Priorita||'')+'</span>'+
+      '<span style="font-size:10px;color:var(--text3)">'+dataStr+'</span></div></div></div>';
+  }).join('');
+}
+
+function selezionaTicket(id) {
+  if(!_tktData) return;
+  var t=_tktData.find(function(x){return x.id===id;});
+  if(!t) return;
+  _tktSel=t;
+  renderTicket();
+  renderTktDetail(t);
+}
+
+function renderTktDetail(t) {
+  var empty=document.getElementById('tkt-empty'), detail=document.getElementById('tkt-detail');
+  if(!detail) return;
+  if(empty) empty.style.display='none';
+  detail.style.display='block';
+  var sc=tktStatoColor(t.Stato||''), pc=tktPriorColor(t.Priorita||'Media');
+  var dataStr=t.DataApertura?new Date(t.DataApertura).toLocaleString('it-IT'):'';
+  var dataChiStr=t.DataChiusura?new Date(t.DataChiusura).toLocaleString('it-IT'):'-';
+  var stati=['Nuovo','In lavorazione','Attesa cliente','Risolto','Chiuso'];
+  var statiBtns=stati.map(function(s){
+    var c=tktStatoColor(s);
+    return '<button onclick="cambiaStatoTicket(\''+t.id+'\',\''+s+'\')" style="padding:5px 12px;border-radius:20px;border:1px solid '+c+'55;background:'+(t.Stato===s?c+'22':'var(--bg3)')+';color:'+(t.Stato===s?c:'var(--text2)')+';font-size:11px;font-weight:600;cursor:pointer">'+s+'</button>';
+  }).join('');
+  var descHtml=t.Descrizione?'<div style="margin-bottom:16px"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:8px">Descrizione</div><div style="font-size:13px;color:var(--text);line-height:1.6;padding:14px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);white-space:pre-wrap">'+(t.Descrizione||'').replace(/</g,'&lt;')+'</div></div>':'';
+  var noteHtml=t.NoteInterne?'<div style="margin-bottom:16px"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:8px">Note Interne</div><div style="font-size:13px;color:var(--text2);line-height:1.6;padding:14px;background:rgba(255,165,0,.06);border-radius:8px;border:1px solid rgba(255,165,0,.2);white-space:pre-wrap">'+(t.NoteInterne||'').replace(/</g,'&lt;')+'</div></div>':'';
+  detail.innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:10px">'+
+    '<div><div style="font-size:11px;color:var(--text3);font-family:monospace;margin-bottom:4px">'+(t.Title||'')+'</div>'+
+    '<h2 style="font-size:18px;font-weight:700;color:var(--text);margin:0 0 6px">'+(t.Oggetto||'')+'</h2>'+
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
+    '<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:'+sc+'22;color:'+sc+'">'+(t.Stato||'')+'</span>'+
+    '<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:'+pc+'22;color:'+pc+'">'+(t.Priorita||'')+'</span>'+
+    '<span style="font-size:11px;color:var(--text3)">Canale: '+(t.Canale||'-')+'</span></div></div>'+
+    '<div style="display:flex;gap:8px">'+
+    '<button class="btn btn-sm btn-primary" onclick="apriModificaTicket(\''+t.id+'\')">Modifica</button>'+
+    (t.Stato!=='Chiuso'?'<button class="btn btn-sm" onclick="chiudiTicket(\''+t.id+'\')">Chiudi ticket</button>':'')+
+    '</div></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;padding:16px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)">'+
+    '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:4px">Cliente</div><div style="font-size:13px;color:var(--text)">'+(t.Cliente||'-')+'</div></div>'+
+    '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:4px">Email</div><div style="font-size:13px;color:var(--text)">'+(t.EmailMittente||'-')+'</div></div>'+
+    '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:4px">Tecnico</div><div style="font-size:13px;color:var(--text)">'+(t.Tecnico||'-')+'</div></div>'+
+    '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:4px">Apertura</div><div style="font-size:13px;color:var(--text)">'+dataStr+'</div></div>'+
+    '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:4px">Chiusura</div><div style="font-size:13px;color:var(--text)">'+dataChiStr+'</div></div>'+
+    '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:4px">RT Collegato</div><div style="font-size:13px;color:var(--text)">'+(t.RTCollegato||'-')+'</div></div>'+
+    '</div>'+descHtml+noteHtml+
+    '<div style="margin-top:16px;padding:14px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)">'+
+    '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:10px">Cambia stato rapido</div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">'+statiBtns+'</div></div>';
+}
+
+async function cambiaStatoTicket(id, nuovoStato) {
+  var tok; try{tok=await anGetToken();}catch(e){tok=null;}
+  if(!tok||!_spSiteId){showToast('Token non disponibile','err');return;}
+  var t=_tktData&&_tktData.find(function(x){return x.id===id;});
+  if(!t) return;
+  var body={Stato:nuovoStato};
+  if(nuovoStato==='Chiuso') body.DataChiusura=new Date().toISOString();
+  try{
+    var r=await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+TICKET_LIST_ID+'/items/'+id+'/fields',
+      {method:'PATCH',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok) throw new Error(r.status);
+    Object.assign(t,body);
+    renderTicket(); renderTktDetail(t);
+    showToast('Stato aggiornato: '+nuovoStato);
+  }catch(e){showToast('Errore aggiornamento stato','err');}
+}
+
+function chiudiTicket(id){cambiaStatoTicket(id,'Chiuso');}
+
+function apriNuovoTicket(){
+  _tktEditId=null;
+  document.getElementById('tkt-modal-title').textContent='Nuovo Ticket';
+  document.getElementById('tkt-modal-save-btn').textContent='Crea Ticket';
+  ['tkt-f-cliente','tkt-f-email','tkt-f-oggetto','tkt-f-desc','tkt-f-tecnico','tkt-f-note'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('tkt-f-canale').value='Manuale';
+  document.getElementById('tkt-f-priorita').value='Media';
+  document.getElementById('tkt-modal').style.display='flex';
+}
+
+function apriModificaTicket(id){
+  var t=_tktData&&_tktData.find(function(x){return x.id===id;});
+  if(!t) return;
+  _tktEditId=id;
+  document.getElementById('tkt-modal-title').textContent='Modifica '+t.Title;
+  document.getElementById('tkt-modal-save-btn').textContent='Salva modifiche';
+  document.getElementById('tkt-f-cliente').value=t.Cliente||'';
+  document.getElementById('tkt-f-email').value=t.EmailMittente||'';
+  document.getElementById('tkt-f-oggetto').value=t.Oggetto||'';
+  document.getElementById('tkt-f-desc').value=t.Descrizione||'';
+  document.getElementById('tkt-f-canale').value=t.Canale||'Manuale';
+  document.getElementById('tkt-f-priorita').value=t.Priorita||'Media';
+  document.getElementById('tkt-f-tecnico').value=t.Tecnico||'';
+  document.getElementById('tkt-f-note').value=t.NoteInterne||'';
+  document.getElementById('tkt-modal').style.display='flex';
+}
+
+function chiudiTktModal(){document.getElementById('tkt-modal').style.display='none';}
+
+async function salvaTktModal(){
+  var cliente=document.getElementById('tkt-f-cliente').value.trim();
+  var oggetto=document.getElementById('tkt-f-oggetto').value.trim();
+  if(!cliente||!oggetto){showToast('Cliente e Oggetto obbligatori','wrn');return;}
+  var tok; try{tok=await anGetToken();}catch(e){tok=null;}
+  if(!tok){showToast('Token non disponibile','err');return;}
+  if(!_spSiteId){
+    try{var sr=await fetch(GRAPH_BASE+'/sites/'+SP_SITE_HOSTNAME+':'+SP_SITE_PATH,{headers:{'Authorization':'Bearer '+tok,'Accept':'application/json'}});_spSiteId=(await sr.json()).id;}
+    catch(e){showToast('Errore siteId','err');return;}
+  }
+  var btn=document.getElementById('tkt-modal-save-btn');
+  btn.disabled=true; btn.textContent='Salvataggio...';
+  var fields={
+    Cliente:cliente, EmailMittente:document.getElementById('tkt-f-email').value.trim(),
+    Oggetto:oggetto, Descrizione:document.getElementById('tkt-f-desc').value.trim(),
+    Canale:document.getElementById('tkt-f-canale').value,
+    Priorita:document.getElementById('tkt-f-priorita').value,
+    Tecnico:document.getElementById('tkt-f-tecnico').value.trim(),
+    NoteInterne:document.getElementById('tkt-f-note').value.trim()
+  };
+  try{
+    var url, method;
+    if(_tktEditId){
+      url=GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+TICKET_LIST_ID+'/items/'+_tktEditId+'/fields'; method='PATCH';
+    } else {
+      fields.Title=generateTktId(); fields.Stato='Nuovo'; fields.DataApertura=new Date().toISOString();
+      url=GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+TICKET_LIST_ID+'/items'; method='POST';
+    }
+    var r=await fetch(url,{method:method,headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'},
+      body:method==='POST'?JSON.stringify({fields:fields}):JSON.stringify(fields)});
+    if(!r.ok) throw new Error(r.status);
+    var saved=await r.json();
+    if(!_tktEditId && fields.EmailMittente && fields.Canale==='Email')
+      inviaRispostaAutomatica(fields.EmailMittente, fields.Title, fields.Oggetto, cliente);
+    chiudiTktModal();
+    showToast(_tktEditId?'Ticket aggiornato':'Ticket creato: '+fields.Title);
+    await loadTicket();
+    var newId=saved.fields?String(saved.fields.id):(_tktEditId||null);
+    if(!newId && saved.id) newId=String(saved.id);
+    if(newId) setTimeout(function(){selezionaTicket(newId);},300);
+  }catch(e){showToast('Errore salvataggio: '+e.message,'err');}
+  finally{btn.disabled=false; btn.textContent=_tktEditId?'Salva modifiche':'Crea Ticket';}
+}
+
+async function inviaRispostaAutomatica(emailDest, tktId, oggetto, cliente) {
+  var tok; try{tok=await anGetToken();}catch(e){return;}
+  if(!tok) return;
+  var tktEmail=getTktEmail();
+  var soggetto='['+tktId+'] '+oggetto;
+  var corpo='Gentile '+cliente+',<br><br>La sua richiesta e\' stata registrata con il numero ticket <strong>'+tktId+'</strong>.<br><br>Il nostro team la contatter&agrave; al pi&ugrave; presto.<br><br>Cordiali saluti,<br>ANYMA SRL - Assistenza Tecnica';
+  try{
+    var _sendUrl=tktEmail?(GRAPH_BASE+'/users/'+encodeURIComponent(tktEmail)+'/sendMail'):(GRAPH_BASE+'/me/sendMail');
+    await fetch(_sendUrl,{method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body:JSON.stringify({message:{subject:soggetto,body:{contentType:'HTML',content:corpo},toRecipients:[{emailAddress:{address:emailDest}}]},saveToSentItems:true})});
+  }catch(e){console.warn('Email automatica fallita:',e);}
+}
+
+async function leggiEmailTicket() {
+  var tok; try{tok=await anGetToken();}catch(e){tok=null;}
+  if(!tok){showToast('Autenticazione richiesta','err');return;}
+  showToast('Lettura email in corso...');
+  try{
+    var tktEmail=getTktEmail();
+    var tktMailPath=tktEmail?('/users/'+encodeURIComponent(tktEmail)+'/mailFolders/Inbox/messages'):('/me/mailFolders/Inbox/messages');
+    var r=await fetch(GRAPH_BASE+tktMailPath+'?$filter=isRead eq false&$top=20&$select=id,subject,from,body,receivedDateTime',
+      {headers:{'Authorization':'Bearer '+tok,'Accept':'application/json'}});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    var data=await r.json(); var emails=data.value||[];
+    if(!emails.length){showToast('Nessuna email non letta');return;}
+    if(!_spSiteId){
+      var sr=await fetch(GRAPH_BASE+'/sites/'+SP_SITE_HOSTNAME+':'+SP_SITE_PATH,{headers:{'Authorization':'Bearer '+tok,'Accept':'application/json'}});
+      _spSiteId=(await sr.json()).id;
+    }
+    var creati=0;
+    for(var i=0;i<emails.length;i++){
+      var em=emails[i];
+      var msgId=em.id;
+      var exists=_tktData&&_tktData.find(function(t){return t.EmailMessageId===msgId;});
+      if(exists) continue;
+      var mittente=(em.from&&em.from.emailAddress&&em.from.emailAddress.address)||'';
+      var nome=(em.from&&em.from.emailAddress&&em.from.emailAddress.name)||mittente;
+      var soggetto2=em.subject||'(nessun oggetto)';
+      var corpo2=(em.body&&em.body.content||'').replace(/<[^>]*>/g,' ').replace(/  +/g,' ').trim().slice(0,500);
+      var tktId=generateTktId();
+      var fields={Title:tktId,Cliente:nome,EmailMittente:mittente,Oggetto:soggetto2,
+        Descrizione:corpo2,Canale:'Email',Priorita:'Media',Stato:'Nuovo',
+        DataApertura:em.receivedDateTime||new Date().toISOString(),EmailMessageId:msgId};
+      var rPost=await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+TICKET_LIST_ID+'/items',
+        {method:'POST',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({fields:fields})});
+      if(rPost.ok){
+        creati++;
+        inviaRispostaAutomatica(mittente,tktId,soggetto2,nome);
+        var _markUrl=tktEmail?(GRAPH_BASE+'/users/'+encodeURIComponent(tktEmail)+'/messages/'+msgId):(GRAPH_BASE+'/me/messages/'+msgId);
+        fetch(_markUrl,{method:'PATCH',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify({isRead:true})}).catch(function(){});
+      }
+    }
+    if(creati>0){showToast(creati+' ticket creati da email'); await loadTicket();}
+    else showToast('Nessun nuovo ticket ('+emails.length+' email elaborate)');
+  }catch(e){showToast('Errore: '+e.message,'err');console.error(e);}
+}
+
+</script>
+
 </body>
 </html>
