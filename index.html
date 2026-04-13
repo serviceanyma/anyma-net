@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v113';</script>
+<script>const APP_VERSION = 'v114';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -5784,7 +5784,7 @@ function _buildPaginaResocontoGlobale(items, cliente, tipo, _lang) {
 </div>
 <script>
 /* ============================================================
-   MODULO TICKET ASSISTENZA  (v112)
+   MODULO TICKET ASSISTENZA  (v113)
    Lista SP: AnymaTicket  listId = TICKET_LIST_ID
    ============================================================ */
 
@@ -5846,10 +5846,17 @@ async function loadTicket() {
     }catch(e){if(stxt) stxt.textContent='Errore siteId';return;}
   }
   try{
-    var url=GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+TICKET_LIST_ID+'/items?$expand=fields&$top=200&$orderby=fields/DataApertura desc';
+    var url=GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+TICKET_LIST_ID+'/items?$expand=fields&$top=200';
     var r=await fetch(url,{headers:{'Authorization':'Bearer '+tok,'Accept':'application/json'}});
     var data=await r.json();
-    _tktData=(data.value||[]).map(it=>it.fields);
+    _tktData=(data.value||[]).map(function(it){
+      var f=it.fields||{};
+      f._spId=it.id;  // id numerico SP es. "5"
+      return f;
+    }).sort(function(a,b){
+      var da=a.DataApertura||'', db=b.DataApertura||'';
+      return da<db?1:da>db?-1:0;
+    });
     if(dot) dot.style.background='#27ae60';
     if(stxt) stxt.textContent='Connesso ('+_tktData.length+' ticket)';
     var cntEl=document.getElementById('cnt-ticket');
@@ -5945,7 +5952,7 @@ function renderTktDetail(t) {
 async function cambiaStatoTicket(id, nuovoStato) {
   var tok; try{tok=await anGetToken();}catch(e){tok=null;}
   if(!tok||!_spSiteId){showToast('Token non disponibile','err');return;}
-  var t=_tktData&&_tktData.find(function(x){return x.id===id;});
+  var t=_tktData&&_tktData.find(function(x){return (x._spId||x.id)===id;});
   if(!t) return;
   var body={Stato:nuovoStato};
   if(nuovoStato==='Chiuso') body.DataChiusura=new Date().toISOString();
@@ -5972,7 +5979,7 @@ function apriNuovoTicket(){
 }
 
 function apriModificaTicket(id){
-  var t=_tktData&&_tktData.find(function(x){return x.id===id;});
+  var t=_tktData&&_tktData.find(function(x){return (x._spId||x.id)===id;});
   if(!t) return;
   _tktEditId=id;
   document.getElementById('tkt-modal-title').textContent='Modifica '+t.Title;
@@ -6027,8 +6034,8 @@ async function salvaTktModal(){
     chiudiTktModal();
     showToast(_tktEditId?'Ticket aggiornato':'Ticket creato: '+fields.Title);
     await loadTicket();
-    var newId=saved.fields?String(saved.fields.id):(_tktEditId||null);
-    if(!newId && saved.id) newId=String(saved.id);
+    var newId=_tktEditId||null;
+    if(!newId) newId=saved.id?String(saved.id):(saved.fields?String(saved.fields.id):null);
     if(newId) setTimeout(function(){selezionaTicket(newId);},300);
   }catch(e){showToast('Errore salvataggio: '+e.message,'err');}
   finally{btn.disabled=false; btn.innerHTML=_tktEditId?'Salva modifiche':'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M13 2L6 9l-3-3"/></svg> Crea Ticket';}
@@ -6068,7 +6075,7 @@ async function leggiEmailTicket() {
     for(var i=0;i<emails.length;i++){
       var em=emails[i];
       var msgId=em.id;
-      var exists=_tktData&&_tktData.find(function(t){return t.EmailMessageId===msgId;});
+      var exists=_tktData&&_tktData.find(function(t){return t.EmailMessageId===msgId||t.EmailMessageId0===msgId;});
       if(exists) continue;
       var mittente=(em.from&&em.from.emailAddress&&em.from.emailAddress.address)||'';
       var nome=(em.from&&em.from.emailAddress&&em.from.emailAddress.name)||mittente;
