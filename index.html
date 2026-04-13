@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v112';</script>
+<script>const APP_VERSION = 'v113';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1455,61 +1455,85 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
   </div><!-- /#view-ticket -->
 
   <!-- MODALE Nuovo/Modifica Ticket -->
-  <div id="tkt-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;align-items:center;justify-content:center">
-    <div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:28px 32px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-        <h2 style="font-size:16px;font-weight:700;color:var(--text);margin:0" id="tkt-modal-title">Nuovo Ticket</h2>
-        <button onclick="chiudiTktModal()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px">✕</button>
+  <div class="proj-modal-overlay hidden" id="tkt-modal" onclick="if(event.target===this)chiudiTktModal()">
+    <div class="proj-modal" style="max-width:560px" onclick="event.stopPropagation()">
+      <div class="pm-hdr">
+        <div>
+          <div class="pm-client" id="tkt-modal-subtitle">Assistenza</div>
+          <div class="pm-title" id="tkt-modal-title">Nuovo Ticket</div>
+        </div>
+        <button class="pm-close" onclick="chiudiTktModal()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+        </button>
       </div>
-      <div style="display:flex;flex-direction:column;gap:14px">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div>
-            <label class="form-label">Cliente *</label>
-            <input type="text" id="tkt-f-cliente" class="form-input" placeholder="Nome cliente">
-          </div>
-          <div>
-            <label class="form-label">Email mittente</label>
-            <input type="email" id="tkt-f-email" class="form-input" placeholder="cliente@example.com">
-          </div>
+
+      <div style="display:flex;flex-direction:column;gap:11px">
+
+        <!-- Cliente con autocomplete -->
+        <div style="position:relative">
+          <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Cliente *</label>
+          <input type="text" id="tkt-f-cliente" class="filter-input" style="width:100%;box-sizing:border-box"
+            placeholder="Cerca cliente..." autocomplete="off"
+            oninput="tktCliAutocomplete(this.value)" onblur="setTimeout(()=>tktCliHideList(),200)">
+          <div id="tkt-cli-list" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg);border:1px solid var(--border2);border-radius:8px;max-height:180px;overflow-y:auto;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.35)"></div>
         </div>
+
+        <!-- Email mittente -->
         <div>
-          <label class="form-label">Oggetto *</label>
-          <input type="text" id="tkt-f-oggetto" class="form-input" placeholder="Descrizione breve del problema">
+          <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Email mittente</label>
+          <input type="email" id="tkt-f-email" class="filter-input" style="width:100%;box-sizing:border-box" placeholder="cliente@example.com">
         </div>
+
+        <!-- Oggetto -->
         <div>
-          <label class="form-label">Descrizione</label>
-          <textarea id="tkt-f-desc" class="form-input" rows="4" style="resize:vertical;font-family:var(--font)" placeholder="Dettagli del problema..."></textarea>
+          <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Oggetto *</label>
+          <input type="text" id="tkt-f-oggetto" class="filter-input" style="width:100%;box-sizing:border-box" placeholder="Descrizione breve del problema">
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+
+        <!-- Descrizione -->
+        <div>
+          <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Descrizione</label>
+          <textarea id="tkt-f-desc" class="filter-input" rows="3" style="width:100%;resize:vertical;font-family:var(--font);box-sizing:border-box" placeholder="Dettagli del problema..."></textarea>
+        </div>
+
+        <!-- Canale / Priorità / Tecnico -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
           <div>
-            <label class="form-label">Canale</label>
-            <select id="tkt-f-canale" class="form-input sel">
+            <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Canale</label>
+            <select id="tkt-f-canale" class="sel" style="width:100%">
               <option value="Manuale">Manuale</option>
               <option value="Email">Email</option>
               <option value="Telefono">Telefono</option>
             </select>
           </div>
           <div>
-            <label class="form-label">Priorità</label>
-            <select id="tkt-f-priorita" class="form-input sel">
+            <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Priorità</label>
+            <select id="tkt-f-priorita" class="sel" style="width:100%">
               <option value="Media">Media</option>
               <option value="Alta">Alta</option>
               <option value="Bassa">Bassa</option>
             </select>
           </div>
           <div>
-            <label class="form-label">Tecnico</label>
-            <input type="text" id="tkt-f-tecnico" class="form-input" placeholder="Nome tecnico">
+            <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Tecnico</label>
+            <input type="text" id="tkt-f-tecnico" class="filter-input" style="width:100%;box-sizing:border-box" placeholder="Nome tecnico">
           </div>
         </div>
+
+        <!-- Note interne -->
         <div>
-          <label class="form-label">Note interne</label>
-          <textarea id="tkt-f-note" class="form-input" rows="2" style="resize:vertical;font-family:var(--font)" placeholder="Note visibili solo ai tecnici..."></textarea>
+          <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Note interne</label>
+          <textarea id="tkt-f-note" class="filter-input" rows="2" style="width:100%;resize:vertical;font-family:var(--font);box-sizing:border-box" placeholder="Note visibili solo ai tecnici..."></textarea>
         </div>
-      </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
-        <button class="btn" onclick="chiudiTktModal()">Annulla</button>
-        <button class="btn btn-primary" onclick="salvaTktModal()" id="tkt-modal-save-btn">Crea Ticket</button>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+          <button class="btn" onclick="chiudiTktModal()">Annulla</button>
+          <button class="btn btn-primary" id="tkt-modal-save-btn" onclick="salvaTktModal()">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M13 2L6 9l-3-3"/></svg>
+            Crea Ticket
+          </button>
+        </div>
+        <div id="tkt-modal-err" style="font-size:11px;color:var(--red);display:none"></div>
       </div>
     </div>
   </div>
@@ -5822,7 +5846,7 @@ async function loadTicket() {
     }catch(e){if(stxt) stxt.textContent='Errore siteId';return;}
   }
   try{
-    var url=GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+TICKET_LIST_ID+'/items?$expand=fields&$top=200&$orderby=fields/DataApertura desc';
+    var url=GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+TICKET_LIST_ID+'/items?$expand=fields&$top=200&$orderby=fields/DataApertura desc';
     var r=await fetch(url,{headers:{'Authorization':'Bearer '+tok,'Accept':'application/json'}});
     var data=await r.json();
     _tktData=(data.value||[]).map(it=>it.fields);
@@ -5926,7 +5950,7 @@ async function cambiaStatoTicket(id, nuovoStato) {
   var body={Stato:nuovoStato};
   if(nuovoStato==='Chiuso') body.DataChiusura=new Date().toISOString();
   try{
-    var r=await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+TICKET_LIST_ID+'/items/'+id+'/fields',
+    var r=await fetch(GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+TICKET_LIST_ID+'/items/'+id+'/fields',
       {method:'PATCH',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body)});
     if(!r.ok) throw new Error(r.status);
     Object.assign(t,body);
@@ -5944,7 +5968,7 @@ function apriNuovoTicket(){
   ['tkt-f-cliente','tkt-f-email','tkt-f-oggetto','tkt-f-desc','tkt-f-tecnico','tkt-f-note'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('tkt-f-canale').value='Manuale';
   document.getElementById('tkt-f-priorita').value='Media';
-  document.getElementById('tkt-modal').style.display='flex';
+  document.getElementById('tkt-modal').classList.remove('hidden');
 }
 
 function apriModificaTicket(id){
@@ -5961,10 +5985,10 @@ function apriModificaTicket(id){
   document.getElementById('tkt-f-priorita').value=t.Priorita||'Media';
   document.getElementById('tkt-f-tecnico').value=t.Tecnico||'';
   document.getElementById('tkt-f-note').value=t.NoteInterne||'';
-  document.getElementById('tkt-modal').style.display='flex';
+  document.getElementById('tkt-modal').classList.remove('hidden');
 }
 
-function chiudiTktModal(){document.getElementById('tkt-modal').style.display='none';}
+function chiudiTktModal(){document.getElementById('tkt-modal').classList.add('hidden'); document.getElementById('tkt-modal-err').style.display='none';}
 
 async function salvaTktModal(){
   var cliente=document.getElementById('tkt-f-cliente').value.trim();
@@ -5989,10 +6013,10 @@ async function salvaTktModal(){
   try{
     var url, method;
     if(_tktEditId){
-      url=GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+TICKET_LIST_ID+'/items/'+_tktEditId+'/fields'; method='PATCH';
+      url=GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+TICKET_LIST_ID+'/items/'+_tktEditId+'/fields'; method='PATCH';
     } else {
       fields.Title=generateTktId(); fields.Stato='Nuovo'; fields.DataApertura=new Date().toISOString();
-      url=GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+TICKET_LIST_ID+'/items'; method='POST';
+      url=GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+TICKET_LIST_ID+'/items'; method='POST';
     }
     var r=await fetch(url,{method:method,headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'},
       body:method==='POST'?JSON.stringify({fields:fields}):JSON.stringify(fields)});
@@ -6007,7 +6031,7 @@ async function salvaTktModal(){
     if(!newId && saved.id) newId=String(saved.id);
     if(newId) setTimeout(function(){selezionaTicket(newId);},300);
   }catch(e){showToast('Errore salvataggio: '+e.message,'err');}
-  finally{btn.disabled=false; btn.textContent=_tktEditId?'Salva modifiche':'Crea Ticket';}
+  finally{btn.disabled=false; btn.innerHTML=_tktEditId?'Salva modifiche':'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M13 2L6 9l-3-3"/></svg> Crea Ticket';}
 }
 
 async function inviaRispostaAutomatica(emailDest, tktId, oggetto, cliente) {
@@ -6054,7 +6078,7 @@ async function leggiEmailTicket() {
       var fields={Title:tktId,Cliente:nome,EmailMittente:mittente,Oggetto:soggetto2,
         Descrizione:corpo2,Canale:'Email',Priorita:'Media',Stato:'Nuovo',
         DataApertura:em.receivedDateTime||new Date().toISOString(),EmailMessageId:msgId};
-      var rPost=await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+TICKET_LIST_ID+'/items',
+      var rPost=await fetch(GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+TICKET_LIST_ID+'/items',
         {method:'POST',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({fields:fields})});
       if(rPost.ok){
         creati++;
@@ -6067,6 +6091,66 @@ async function leggiEmailTicket() {
     else showToast('Nessun nuovo ticket ('+emails.length+' email elaborate)');
   }catch(e){showToast('Errore: '+e.message,'err');console.error(e);}
 }
+
+</script>
+
+<script>
+/* ---- AUTOCOMPLETE CLIENTI TICKET ---- */
+var _tktClienti = null;  // cache clienti per autocomplete
+
+async function tktCaricaClienti() {
+  if(_tktClienti) return;
+  var tok; try{tok=await anGetToken();}catch(e){return;}
+  if(!tok) return;
+  if(!_spSiteId) {
+    try{var sr=await fetch(GRAPH_BASE+'/sites/'+SP_SITE_HOSTNAME+':'+SP_SITE_PATH,{headers:{'Authorization':'Bearer '+tok,'Accept':'application/json'}});_spSiteId=(await sr.json()).id;}catch(e){return;}
+  }
+  try{
+    var r=await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_CLIENT_LIST_ID+'/items?expand=fields(select=Title)&$top=500',
+      {headers:{'Authorization':'Bearer '+tok,'Accept':'application/json'}});
+    var data=await r.json();
+    _tktClienti=(data.value||[]).map(function(i){return (i.fields||{}).Title||'';}).filter(Boolean).sort();
+  }catch(e){console.warn('tktCaricaClienti error',e);}
+}
+
+function tktCliAutocomplete(val) {
+  var list=document.getElementById('tkt-cli-list');
+  if(!list) return;
+  if(!val||val.length<1){list.style.display='none';return;}
+  if(!_tktClienti){tktCaricaClienti();list.style.display='none';return;}
+  var q=val.toLowerCase();
+  var matches=_tktClienti.filter(function(n){return n.toLowerCase().indexOf(q)>=0;}).slice(0,10);
+  if(!matches.length){list.style.display='none';return;}
+  list.innerHTML=matches.map(function(n){
+    return '<div style="padding:8px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border);color:var(--text)" '+
+      'onmousedown="tktCliSelect(\''+n.replace(/'/g,"\\'")+'\')" '+
+      'onmouseover="this.style.background=\'var(--bg3)\'" onmouseout="this.style.background=\'\'">'+n+'</div>';
+  }).join('');
+  list.style.display='block';
+}
+
+function tktCliSelect(nome) {
+  document.getElementById('tkt-f-cliente').value=nome;
+  document.getElementById('tkt-cli-list').style.display='none';
+}
+
+function tktCliHideList() {
+  var list=document.getElementById('tkt-cli-list');
+  if(list) list.style.display='none';
+}
+
+/* ---- FIX APRI MODALE (precarica clienti) ---- */
+var _origApriNuovoTicket = apriNuovoTicket;
+apriNuovoTicket = function() {
+  _origApriNuovoTicket();
+  tktCaricaClienti();
+};
+
+var _origApriModificaTicket = apriModificaTicket;
+apriModificaTicket = function(id) {
+  _origApriModificaTicket(id);
+  tktCaricaClienti();
+};
 
 </script>
 
