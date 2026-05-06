@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v116';</script>
+<script>const APP_VERSION = 'v117';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -165,7 +165,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 */
 .split-grid{
   display:grid;
-  grid-template-columns:270px 1fr;
+  grid-template-columns:270px 270px 1fr;
   gap:0;
   flex:1;          /* occupa tutto lo spazio verticale rimasto */
   min-height:0;    /* indispensabile per far funzionare flex:1 in un contesto flex */
@@ -840,15 +840,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
   <div id="view-interventi" class="content-view">
     <div class="stats-grid" id="int-stats"></div>
     <div class="year-tabs" id="int-years"></div>
-    <div class="chart-row" id="int-charts">
-      <div class="chart-panel"><h3>RT per cliente (top 5)</h3><div class="chart-wrap"><canvas id="chartRT"></canvas></div></div>
-      <div class="chart-preview-col" id="int-preview-top">
-        <div class="preview-col-empty" id="int-preview-top-empty">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg>
-          Seleziona un file per visualizzarlo
-        </div>
-      </div>
-    </div>
+
     <div class="toolbar">
       <input type="text" class="filter-input" id="int-search" placeholder="Cerca cliente..." oninput="renderInterventi()">
       <select class="sel" id="int-type" onchange="renderInterventi()">
@@ -892,7 +884,13 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           <div class="file-list" id="int-file-list"></div>
         </div>
       </div>
-      <!-- Col 3: rimossa (preview spostata in alto) -->
+      <!-- Col 3: anteprima PDF -->
+      <div class="preview-col" id="int-preview-top">
+        <div class="preview-col-empty" id="int-preview-top-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg>
+          Seleziona un file per visualizzarlo
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2505,10 +2503,7 @@ async function openIntPreview(i) {
 }
 
 function renderIntCharts(filtered){
-  const top=filtered.map(c=>{let f=c.files.filter(x=>!isPre(x.name));if(state.intYear!=='all')f=f.filter(x=>getYear(x.name)===state.intYear);return{name:c.name.split(' ')[0],rt:f.filter(x=>getType(x.name)==='RT').length};}).filter(c=>c.rt>0).sort((a,b)=>b.rt-a.rt).slice(0,5);
-  if(charts.rt) charts.rt.destroy();
-  const c1=document.getElementById('chartRT').getContext('2d');
-  charts.rt=new Chart(c1,{type:'bar',data:{labels:top.map(c=>c.name),datasets:[{data:top.map(c=>c.rt),backgroundColor:'rgba(192,57,43,.7)',borderColor:'rgba(192,57,43,1)',borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9498a8',font:{size:11},autoSkip:false,maxRotation:20},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#9498a8',font:{size:11},stepSize:1},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}});
+  // grafici rimossi in v117
 }
 
 /* ======================================
