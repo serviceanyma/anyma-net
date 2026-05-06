@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v117';</script>
+<script>const APP_VERSION = 'v118';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -898,10 +898,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
   <div id="view-admin-generic" class="content-view">
     <div class="stats-grid" id="adm-stats"></div>
     <div class="year-tabs" id="adm-years"></div>
-    <div class="chart-row" id="adm-charts">
-      <div class="chart-panel"><h3 id="adm-chart1-label">Documenti per soggetto (top 10)</h3><div class="chart-wrap"><canvas id="chartAdmTop"></canvas></div></div>
-      <div class="chart-panel"><h3 id="adm-chart2-label">Distribuzione Clienti / Fornitori</h3><div class="chart-wrap"><canvas id="chartAdmSub"></canvas></div></div>
-    </div>
+
     <div class="toolbar">
       <input type="text" class="filter-input" id="adm-search" placeholder="Cerca..." oninput="renderAdmin()">
       <select class="sel" id="adm-sub" onchange="renderAdmin()">
@@ -2571,86 +2568,7 @@ function renderAdmin(){
 }
 
 function renderAdmCharts(items) {
-  // Aggrega per nome azienda → somma file
-  const byEntity={};
-  items.forEach(i=>{
-    byEntity[i.name]=(byEntity[i.name]||0)+i.files.length;
-  });
-  const sorted=Object.entries(byEntity).sort((a,b)=>b[1]-a[1]);
-  const top10=sorted.slice(0,10);
-
-  // Aggrega per sub (Clienti/Fornitori)
-  const bySub={};
-  items.forEach(i=>{
-    const k=i.sub||'Altro';
-    bySub[k]=(bySub[k]||0)+i.files.length;
-  });
-  const subLabels=Object.keys(bySub);
-  const subData=subLabels.map(k=>bySub[k]);
-  const subColors=['rgba(192,57,43,.8)','rgba(62,207,142,.8)','rgba(167,139,250,.8)','rgba(245,166,35,.8)'];
-
-  // Label grafico 1
-  const cfg=Object.values(ADM_CATS).find(c=>c.key===state.currentAdmCat);
-  const lbl=cfg?cfg.label:'Documenti';
-  const l1=document.getElementById('adm-chart1-label');
-  if(l1) l1.textContent=lbl+' per soggetto (top 10)';
-
-  if(charts.admTop) charts.admTop.destroy();
-  if(charts.admSub) charts.admSub.destroy();
-
-  const c1=document.getElementById('chartAdmTop');
-  if(c1) {
-    charts.admTop=new Chart(c1.getContext('2d'),{
-      type:'bar',
-      data:{
-        labels:top10.map(e=>e[0].split(' ')[0]),
-        datasets:[{
-          data:top10.map(e=>e[1]),
-          backgroundColor:'rgba(192,57,43,.7)',
-          borderColor:'rgba(192,57,43,1)',
-          borderWidth:1,borderRadius:4
-        }]
-      },
-      options:{
-        responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false}},
-        scales:{
-          x:{ticks:{color:'#9498a8',font:{size:10},autoSkip:false,maxRotation:30},grid:{color:'rgba(255,255,255,.04)'}},
-          y:{ticks:{color:'#9498a8',font:{size:10},stepSize:1},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}
-        }
-      }
-    });
-  }
-
-  const c2=document.getElementById('chartAdmSub');
-  if(c2) {
-    // Se non hasSub → distribuzione per anno invece
-    const cfg2=Object.values(ADM_CATS).find(c=>c.key===state.currentAdmCat);
-    let labels2=subLabels, data2=subData, colors2=subColors;
-    let label2='Distribuzione Clienti / Fornitori';
-    if(!cfg2?.hasSub) {
-      // distribuzione per anno
-      const byY={};
-      items.forEach(i=>{byY[i.year]=(byY[i.year]||0)+i.files.length;});
-      const ySorted=Object.keys(byY).sort().reverse();
-      labels2=ySorted; data2=ySorted.map(y=>byY[y]);
-      colors2=['rgba(62,207,142,.8)','rgba(192,57,43,.8)','rgba(245,166,35,.8)','rgba(167,139,250,.8)','rgba(240,92,92,.8)'];
-      label2='Distribuzione per anno';
-    }
-    const l2=document.getElementById('adm-chart2-label');
-    if(l2) l2.textContent=label2;
-    charts.admSub=new Chart(c2.getContext('2d'),{
-      type:'doughnut',
-      data:{
-        labels:labels2,
-        datasets:[{data:data2,backgroundColor:colors2.slice(0,labels2.length),borderColor:Array(labels2.length).fill('#0f1117'),borderWidth:3}]
-      },
-      options:{
-        responsive:true,maintainAspectRatio:false,cutout:'65%',
-        plugins:{legend:{position:'bottom',labels:{color:'#9498a8',font:{size:10},padding:8,boxWidth:9,boxHeight:9}}}
-      }
-    });
-  }
+  // grafici rimossi in v118
 }
 
 function selectAdmItem(idx) {
