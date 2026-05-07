@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v118';</script>
+<script>const APP_VERSION = 'v119';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -123,6 +123,91 @@ main{
    Stats/toolbar/grafici sono flex-shrink:0 (non si restringono).
    split-grid prende il resto con flex:1 + min-height:0.
 */
+/* ═══ STATO PROGETTI v119 ═══ */
+.sp-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0;margin-bottom:10px}
+.sp-view-tabs{display:flex;gap:4px}
+.sp-vtab{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.sp-vtab:hover{color:var(--text);background:var(--bg4)}
+.sp-vtab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.sp-filter-chip{padding:4px 10px;border-radius:14px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;transition:all .12s}
+.sp-filter-chip:hover{color:var(--text)}
+.sp-filter-chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.sp-filter-chip.prio-alta.active{background:#dc2626;border-color:#dc2626}
+.sp-filter-chip.prio-media.active{background:#f59e0b;border-color:#f59e0b}
+.sp-filter-chip.prio-bassa.active{background:#3b82f6;border-color:#3b82f6}
+
+/* KANBAN */
+.sp-kanban{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;flex:1;min-height:0;overflow:auto;padding-bottom:6px}
+.sp-kcol{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;display:flex;flex-direction:column;min-height:200px}
+.sp-kcol-hdr{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:8px;padding-bottom:8px;border-bottom:2px solid var(--border)}
+.sp-kcol-hdr.k-prev{border-bottom-color:#3b82f6}
+.sp-kcol-hdr.k-corso{border-bottom-color:#f59e0b}
+.sp-kcol-hdr.k-attesa{border-bottom-color:#a855f7}
+.sp-kcol-hdr.k-fatto{border-bottom-color:#10b981}
+.sp-kcol-cnt{background:rgba(255,255,255,.06);padding:1px 7px;border-radius:10px;font-size:10px}
+.sp-kcards{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.sp-card{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 10px;cursor:pointer;transition:all .12s;border-left:3px solid var(--border2)}
+.sp-card:hover{background:var(--bg4);border-color:var(--border2)}
+.sp-card.prio-alta{border-left-color:#dc2626}
+.sp-card.prio-media{border-left-color:#f59e0b}
+.sp-card.prio-bassa{border-left-color:#3b82f6}
+.sp-card-title{font-size:12px;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sp-card-cli{font-size:10px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.sp-card-meta{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:10px;color:var(--text3)}
+.sp-card-due{display:flex;align-items:center;gap:3px}
+.sp-card-due.overdue{color:#dc2626;font-weight:700}
+.sp-card-due.soon{color:#f59e0b;font-weight:600}
+.sp-card-pct{display:flex;align-items:center;gap:5px;flex:1}
+.sp-pct-bar{flex:1;height:4px;background:var(--bg2);border-radius:2px;overflow:hidden}
+.sp-pct-fill{height:100%;background:var(--accent);transition:width .3s}
+.sp-pct-fill.green{background:#10b981}
+.sp-pct-fill.yellow{background:#f59e0b}
+.sp-pct-num{font-size:9px;color:var(--text2);font-weight:600;min-width:26px;text-align:right}
+
+/* LISTA */
+.sp-list-wrap{flex:1;min-height:0;overflow:auto;background:var(--bg2);border:1px solid var(--border);border-radius:8px}
+.sp-list{width:100%;border-collapse:collapse;font-size:12px}
+.sp-list thead{position:sticky;top:0;background:var(--bg3);z-index:2}
+.sp-list th{padding:9px 10px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;font-weight:700;border-bottom:2px solid var(--border);white-space:nowrap}
+.sp-list td{padding:8px 10px;color:var(--text);border-bottom:1px solid var(--border);vertical-align:middle}
+.sp-list tbody tr{cursor:pointer;transition:background .1s}
+.sp-list tbody tr:hover{background:var(--bg3)}
+.sp-list tbody tr.prio-alta td:first-child{border-left:3px solid #dc2626}
+.sp-list tbody tr.prio-media td:first-child{border-left:3px solid #f59e0b}
+.sp-list tbody tr.prio-bassa td:first-child{border-left:3px solid #3b82f6}
+.sp-prio-badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+.sp-prio-badge.alta{background:rgba(220,38,38,.15);color:#ef4444}
+.sp-prio-badge.media{background:rgba(245,158,11,.15);color:#fbbf24}
+.sp-prio-badge.bassa{background:rgba(59,130,246,.15);color:#60a5fa}
+.sp-stato-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase}
+.sp-stato-badge.s-prev{background:rgba(59,130,246,.15);color:#60a5fa}
+.sp-stato-badge.s-corso{background:rgba(245,158,11,.15);color:#fbbf24}
+.sp-stato-badge.s-attesa{background:rgba(168,85,247,.15);color:#c084fc}
+.sp-stato-badge.s-fatto{background:rgba(16,185,129,.15);color:#34d399}
+
+/* SIDE PANEL */
+.sp-side-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150;display:none;backdrop-filter:blur(2px)}
+.sp-side-overlay.open{display:block}
+.sp-side-panel{position:fixed;top:0;right:0;bottom:0;width:480px;max-width:95vw;background:var(--bg2);border-left:1px solid var(--border2);z-index:160;transform:translateX(100%);transition:transform .25s ease;display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(0,0,0,.4)}
+.sp-side-panel.open{transform:translateX(0)}
+.sp-side-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.sp-side-hdr h3{font-size:13px;font-weight:700;color:var(--text);margin:0}
+.sp-side-close{background:transparent;border:none;color:var(--text3);cursor:pointer;padding:4px;border-radius:4px}
+.sp-side-close:hover{background:var(--bg3);color:var(--text)}
+.sp-side-body{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:13px}
+.sp-side-foot{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:space-between;flex-shrink:0;background:var(--bg2)}
+.sp-fld{display:flex;flex-direction:column;gap:5px}
+.sp-fld-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sp-fld label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+.sp-fld input,.sp-fld select,.sp-fld textarea{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:7px 10px;font-family:var(--font);font-size:12px;outline:none;transition:border-color .15s}
+.sp-fld input:focus,.sp-fld select:focus,.sp-fld textarea:focus{border-color:var(--accent)}
+.sp-fld textarea{min-height:80px;resize:vertical;font-family:var(--font)}
+.sp-pct-input{display:flex;align-items:center;gap:8px}
+.sp-pct-input input[type=range]{flex:1}
+.sp-pct-input input[type=number]{width:60px}
+.sp-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);font-size:13px;gap:10px;padding:40px}
+/* ═══ FINE STATO PROGETTI ═══ */
+
 .content-view{
   display:none;
   flex-direction:column;
@@ -616,6 +701,11 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
     Progetti
     <span class="badge-count" id="cnt-progetti">-</span>
   </div>
+  <div class="nav-item" id="nav-stato-progetti" onclick="showView('stato-progetti')">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12M2 8h12M2 13h12"/><circle cx="4" cy="3" r="1.2" fill="currentColor"/><circle cx="6" cy="8" r="1.2" fill="currentColor"/><circle cx="10" cy="13" r="1.2" fill="currentColor"/></svg>
+    Stato Progetti
+    <span class="badge-count" id="cnt-stato-progetti">-</span>
+  </div>
   <div class="nav-item" id="nav-ordini-sp" onclick="showView('ordini-sp')">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M1 6h14M5 6v7M11 6v7"/></svg>
     Ordini Fornitori
@@ -1051,6 +1141,169 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
     </div>
   </div>
 
+
+  <!-- VIEW: STATO PROGETTI (v119) -->
+  <div id="view-stato-progetti" class="content-view">
+    <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;gap:8px">
+
+      <!-- Toolbar -->
+      <div class="sp-toolbar">
+        <button class="btn btn-sm" id="sp-btn-load" onclick="spLoadProgetti()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5M13.5 2.5v3.5h-3.5"/></svg>
+          Aggiorna
+        </button>
+        <button class="btn btn-sm btn-primary" onclick="spOpenPanel(null)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>
+          Nuovo
+        </button>
+        <span class="tag-count" id="sp-count">-</span>
+
+        <input type="text" class="filter-input" id="sp-search" placeholder="Cerca titolo o cliente..." oninput="spRender()" style="max-width:220px">
+
+        <div class="sp-view-tabs" style="margin-left:auto">
+          <button class="sp-vtab active" data-vw="kanban" onclick="spSetView('kanban')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><rect x="1" y="1" width="4" height="14" rx="1"/><rect x="6" y="1" width="4" height="10" rx="1"/><rect x="11" y="1" width="4" height="12" rx="1"/></svg>
+            Kanban
+          </button>
+          <button class="sp-vtab" data-vw="lista" onclick="spSetView('lista')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><line x1="3" y1="4" x2="13" y2="4"/><line x1="3" y1="8" x2="13" y2="8"/><line x1="3" y1="12" x2="13" y2="12"/></svg>
+            Lista
+          </button>
+        </div>
+      </div>
+
+      <!-- Filtri rapidi -->
+      <div class="sp-toolbar" style="margin-bottom:0">
+        <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;font-weight:600">Priorità:</span>
+        <span class="sp-filter-chip" data-prio="" onclick="spSetPrioFilter(this,'')">Tutte</span>
+        <span class="sp-filter-chip prio-alta" data-prio="alta" onclick="spSetPrioFilter(this,'alta')">Alta</span>
+        <span class="sp-filter-chip prio-media" data-prio="media" onclick="spSetPrioFilter(this,'media')">Media</span>
+        <span class="sp-filter-chip prio-bassa" data-prio="bassa" onclick="spSetPrioFilter(this,'bassa')">Bassa</span>
+
+        <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;font-weight:600;margin-left:14px">Stato:</span>
+        <span class="sp-filter-chip active" data-stato="" onclick="spSetStatoFilter(this,'')">Tutti</span>
+        <span class="sp-filter-chip" data-stato="Non iniziato" onclick="spSetStatoFilter(this,'Non iniziato')">Non iniziato</span>
+        <span class="sp-filter-chip" data-stato="In corso" onclick="spSetStatoFilter(this,'In corso')">In corso</span>
+        <span class="sp-filter-chip" data-stato="In attesa" onclick="spSetStatoFilter(this,'In attesa')">In attesa</span>
+        <span class="sp-filter-chip" data-stato="Completato" onclick="spSetStatoFilter(this,'Completato')">Completato</span>
+      </div>
+
+      <!-- Vista Kanban -->
+      <div class="sp-kanban" id="sp-kanban-view" style="display:none"></div>
+
+      <!-- Vista Lista -->
+      <div class="sp-list-wrap" id="sp-lista-view" style="display:none">
+        <table class="sp-list">
+          <thead>
+            <tr>
+              <th style="width:36px"></th>
+              <th>Titolo</th>
+              <th>Cliente</th>
+              <th>Tipo</th>
+              <th>Stato</th>
+              <th>Priorità</th>
+              <th>%</th>
+              <th>Scadenza</th>
+              <th>Ore</th>
+            </tr>
+          </thead>
+          <tbody id="sp-lista-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Empty -->
+      <div class="sp-empty" id="sp-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="42" height="42"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg>
+        Premi <b style="color:var(--text2)">Aggiorna</b> per caricare i progetti da SharePoint
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDE PANEL EDIT -->
+  <div class="sp-side-overlay" id="sp-side-overlay" onclick="spClosePanel()"></div>
+  <div class="sp-side-panel" id="sp-side-panel">
+    <div class="sp-side-hdr">
+      <h3 id="sp-side-title">Nuovo progetto</h3>
+      <button class="sp-side-close" onclick="spClosePanel()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>
+      </button>
+    </div>
+    <div class="sp-side-body">
+      <div class="sp-fld">
+        <label>Titolo / Descrizione *</label>
+        <input type="text" id="sp-f-title" placeholder="Es: Linea confezionatrice DEVIA">
+      </div>
+      <div class="sp-fld">
+        <label>Cliente</label>
+        <select id="sp-f-client"><option value="">— nessuno —</option></select>
+      </div>
+      <div class="sp-fld-row">
+        <div class="sp-fld">
+          <label>Tipo / Categoria</label>
+          <input type="text" id="sp-f-cat" placeholder="Es: Sviluppo, Commissioning, Service...">
+        </div>
+        <div class="sp-fld">
+          <label>Stato</label>
+          <select id="sp-f-stato">
+            <option value="Non iniziato">Non iniziato</option>
+            <option value="In corso">In corso</option>
+            <option value="In attesa">In attesa</option>
+            <option value="Completato">Completato</option>
+          </select>
+        </div>
+      </div>
+      <div class="sp-fld-row">
+        <div class="sp-fld">
+          <label>Priorità</label>
+          <select id="sp-f-prio">
+            <option value="">— nessuna —</option>
+            <option value="alta">Alta</option>
+            <option value="media">Media</option>
+            <option value="bassa">Bassa</option>
+          </select>
+        </div>
+        <div class="sp-fld">
+          <label>Ore stimate</label>
+          <input type="number" id="sp-f-ore" min="0" step="0.5" placeholder="0">
+        </div>
+      </div>
+      <div class="sp-fld-row">
+        <div class="sp-fld">
+          <label>Data inizio</label>
+          <input type="date" id="sp-f-start">
+        </div>
+        <div class="sp-fld">
+          <label>Data scadenza</label>
+          <input type="date" id="sp-f-due">
+        </div>
+      </div>
+      <div class="sp-fld">
+        <label>% Avanzamento</label>
+        <div class="sp-pct-input">
+          <input type="range" id="sp-f-pct-rg" min="0" max="100" step="5" value="0" oninput="document.getElementById('sp-f-pct').value=this.value">
+          <input type="number" id="sp-f-pct" min="0" max="100" step="5" value="0" oninput="document.getElementById('sp-f-pct-rg').value=this.value">
+          <span style="font-size:11px;color:var(--text3)">%</span>
+        </div>
+      </div>
+      <div class="sp-fld">
+        <label>Note</label>
+        <textarea id="sp-f-note" placeholder="Note libere..."></textarea>
+      </div>
+    </div>
+    <div class="sp-side-foot">
+      <button class="btn btn-sm" id="sp-btn-del" onclick="spDelete()" style="color:#dc2626">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M5 4V2.5A.5.5 0 0 1 5.5 2h5a.5.5 0 0 1 .5.5V4M6 7v5M10 7v5M3.5 4l.5 9a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l.5-9"/></svg>
+        Elimina
+      </button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="spClosePanel()">Annulla</button>
+        <button class="btn btn-sm btn-primary" onclick="spSave()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8l3 3 7-7"/></svg>
+          Salva
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- VIEW: ORDINI FORNITORI SHAREPOINT -->
   <div id="view-ordini-sp" class="content-view">
@@ -2298,6 +2551,16 @@ function showView(view) {
     if(state.progetti && state.progetti.length) renderProjView();
     return;
   }
+  if (view==='stato-progetti') {
+    const el=document.getElementById('view-stato-progetti');
+    el.style.display='flex'; el.classList.add('visible');
+    if(SP_STATE.list.length===0){
+      spLoadProgetti().catch(()=>{});
+    } else {
+      spRender();
+    }
+    return;
+  }
   if (view==='contratti') {
     const el=document.getElementById('view-contratti');
     el.style.display='flex'; el.classList.add('visible');
@@ -2803,6 +3066,392 @@ async function loadProgetti() {
     spSetStatus('err', 'Errore di rete - controlla la connessione');
     document.getElementById('btn-sp-load').disabled = false;
     console.error('SP loadProgetti:', e);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// STATO PROGETTI v119 — gestione progetti CRUD su SP
+// Riusa SP_LIST_ID e _spSiteId già definiti
+// Tag in Notes: [!alta|media|bassa] [%NN] [h:N]
+// ═══════════════════════════════════════════════
+const SP_STATE = {
+  view: 'kanban',
+  prio: '',
+  stato: '',
+  editId: null,
+  list: []
+};
+
+// Parsing tag dalle note
+function spParseNotes(notes){
+  notes = notes || '';
+  const out = {prio:'', pct:0, ore:0, clean:notes};
+  const mP = notes.match(/\[!\s*(alta|media|bassa)\s*\]/i);
+  if(mP){ out.prio=mP[1].toLowerCase(); }
+  const mPct = notes.match(/\[%\s*(\d{1,3})\s*\]/);
+  if(mPct){ out.pct=Math.min(100,Math.max(0,parseInt(mPct[1])||0)); }
+  const mOre = notes.match(/\[h:\s*([\d.]+)\s*\]/);
+  if(mOre){ out.ore=parseFloat(mOre[1])||0; }
+  // clean: rimuove tag
+  out.clean = notes
+    .replace(/\[!\s*(alta|media|bassa)\s*\]/ig,'')
+    .replace(/\[%\s*\d{1,3}\s*\]/g,'')
+    .replace(/\[h:\s*[\d.]+\s*\]/g,'')
+    .trim();
+  return out;
+}
+
+function spBuildNotes(clean, prio, pct, ore){
+  let tags = [];
+  if(prio) tags.push('[!'+prio+']');
+  if(pct) tags.push('[%'+pct+']');
+  if(ore) tags.push('[h:'+ore+']');
+  const tagStr = tags.length ? tags.join(' ')+'\n' : '';
+  return tagStr + (clean||'');
+}
+
+// Carica progetti da SP (riusa logica esistente di loadProgetti ma indipendente)
+async function spLoadProgetti(){
+  const btn = document.getElementById('sp-btn-load');
+  if(btn) btn.disabled = true;
+  try{
+    const tok = typeof anGetToken === 'function' ? await anGetToken() : null;
+    if(!tok){ showToast('Token non disponibile - rieffettua il login'); btn.disabled=false; return; }
+    const headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
+
+    if(!_spSiteId){
+      const sR = await fetch(GRAPH_BASE + '/sites/' + SP_SITE_HOSTNAME + ':' + SP_SITE_PATH, {headers});
+      if(!sR.ok) throw new Error('Site '+sR.status);
+      _spSiteId = (await sR.json()).id;
+    }
+
+    const url = GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_LIST_ID+
+      '/items?expand=fields(select=Title,Client,ClientLookupId,Description,Category0,Progress,StartDate,DueDate,Notes)&$top=500';
+    const r = await fetch(url, {headers});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data = await r.json();
+    const items = (data.value||[]).map(i=>{
+      const f = i.fields||{};
+      const parsed = spParseNotes(f.Notes||'');
+      return {
+        id:        i.id,
+        title:     f.Description || '(senza titolo)',
+        client:    f.Client || '',
+        clientId:  f.ClientLookupId ? parseInt(f.ClientLookupId) : null,
+        cat:       f.Category0 || '',
+        stato:     f.Progress || 'Non iniziato',
+        startDate: f.StartDate ? f.StartDate.split('T')[0] : '',
+        dueDate:   f.DueDate ? f.DueDate.split('T')[0] : '',
+        prio:      parsed.prio,
+        pct:       parsed.pct,
+        ore:       parsed.ore,
+        notes:     parsed.clean,
+        notesRaw:  f.Notes || ''
+      };
+    });
+
+    SP_STATE.list = items;
+    document.getElementById('cnt-stato-progetti').textContent = items.length;
+    document.getElementById('sp-count').textContent = items.length+' progetti';
+
+    // Carica clienti per il select se non già fatti
+    if(_spClienti.length === 0){
+      try{
+        const cR = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_CLIENT_LIST_ID+'/items?expand=fields(select=Title,ID)&$top=500',{headers});
+        const cD = await cR.json();
+        _spClienti = (cD.value||[]).map(i=>({id:parseInt(i.fields.ID),name:i.fields.Title||''})).filter(c=>c.name).sort((a,b)=>a.name.localeCompare(b.name));
+      }catch(e){}
+    }
+
+    spRender();
+    showToast(items.length+' progetti caricati');
+  }catch(e){
+    console.error('spLoadProgetti:',e);
+    showToast('Errore caricamento: '+e.message);
+  }finally{
+    if(btn) btn.disabled = false;
+  }
+}
+
+// Switch vista
+function spSetView(v){
+  SP_STATE.view = v;
+  document.querySelectorAll('.sp-vtab').forEach(t=>t.classList.toggle('active', t.dataset.vw===v));
+  spRender();
+}
+
+function spSetPrioFilter(el, p){
+  SP_STATE.prio = p;
+  document.querySelectorAll('.sp-filter-chip[data-prio]').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  spRender();
+}
+
+function spSetStatoFilter(el, s){
+  SP_STATE.stato = s;
+  document.querySelectorAll('.sp-filter-chip[data-stato]').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  spRender();
+}
+
+// Helper data
+function spDueClass(d){
+  if(!d) return '';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const due = new Date(d);
+  const diff = (due - today) / (1000*60*60*24);
+  if(diff < 0) return 'overdue';
+  if(diff <= 7) return 'soon';
+  return '';
+}
+function spFmtDate(d){
+  if(!d) return '—';
+  const dt = new Date(d);
+  return dt.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'});
+}
+function spStatoCls(s){
+  s=(s||'').toLowerCase();
+  if(s.includes('non')) return 's-prev';
+  if(s.includes('corso')) return 's-corso';
+  if(s.includes('attesa')) return 's-attesa';
+  if(s.includes('comple') || s.includes('fatto') || s.includes('chiuso')) return 's-fatto';
+  return 's-prev';
+}
+function spStatoColCls(s){
+  s=(s||'').toLowerCase();
+  if(s.includes('non')) return 'k-prev';
+  if(s.includes('corso')) return 'k-corso';
+  if(s.includes('attesa')) return 'k-attesa';
+  if(s.includes('comple') || s.includes('fatto') || s.includes('chiuso')) return 'k-fatto';
+  return '';
+}
+function spPctCls(p){
+  if(p>=100) return 'green';
+  if(p>=50) return 'yellow';
+  return '';
+}
+
+// Filtra
+function spFiltered(){
+  const q = (document.getElementById('sp-search')?.value||'').toLowerCase();
+  return SP_STATE.list.filter(p=>{
+    if(SP_STATE.prio && p.prio!==SP_STATE.prio) return false;
+    if(SP_STATE.stato && p.stato!==SP_STATE.stato) return false;
+    if(q){
+      const hay = (p.title+' '+p.client+' '+p.cat+' '+p.notes).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+// Render principale
+function spRender(){
+  const list = spFiltered();
+  document.getElementById('sp-count').textContent = list.length+' progetti';
+
+  const empty = document.getElementById('sp-empty');
+  const kView = document.getElementById('sp-kanban-view');
+  const lView = document.getElementById('sp-lista-view');
+
+  if(SP_STATE.list.length === 0){
+    empty.style.display=''; kView.style.display='none'; lView.style.display='none';
+    return;
+  }
+  empty.style.display='none';
+
+  if(SP_STATE.view==='kanban'){
+    kView.style.display=''; lView.style.display='none';
+    spRenderKanban(list);
+  } else {
+    kView.style.display='none'; lView.style.display='';
+    spRenderLista(list);
+  }
+}
+
+function spRenderKanban(list){
+  const cols = ['Non iniziato','In corso','In attesa','Completato'];
+  const html = cols.map(col=>{
+    const items = list.filter(p=>p.stato===col);
+    return `<div class="sp-kcol">
+      <div class="sp-kcol-hdr ${spStatoColCls(col)}">
+        <span>${col}</span>
+        <span class="sp-kcol-cnt">${items.length}</span>
+      </div>
+      <div class="sp-kcards">
+        ${items.map(p=>spCardHtml(p)).join('') || '<div style="font-size:11px;color:var(--text3);text-align:center;padding:14px 0">—</div>'}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('sp-kanban-view').innerHTML = html;
+}
+
+function spCardHtml(p){
+  const dueCls = spDueClass(p.dueDate);
+  const pctCls = spPctCls(p.pct);
+  return `<div class="sp-card ${p.prio?'prio-'+p.prio:''}" onclick="spOpenPanel('${p.id}')">
+    <div class="sp-card-title">${spEsc(p.title)}</div>
+    ${p.client ? `<div class="sp-card-cli">${spEsc(p.client)}</div>` : ''}
+    <div class="sp-card-meta">
+      <div class="sp-card-pct">
+        <div class="sp-pct-bar"><div class="sp-pct-fill ${pctCls}" style="width:${p.pct}%"></div></div>
+        <span class="sp-pct-num">${p.pct}%</span>
+      </div>
+      ${p.dueDate ? `<div class="sp-card-due ${dueCls}">📅 ${spFmtDate(p.dueDate)}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function spRenderLista(list){
+  const sorted = list.slice().sort((a,b)=>{
+    const prioOrd = {alta:0,media:1,bassa:2,'':3};
+    if(a.prio !== b.prio) return prioOrd[a.prio]-prioOrd[b.prio];
+    if(a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+    if(a.dueDate) return -1;
+    if(b.dueDate) return 1;
+    return 0;
+  });
+  const html = sorted.map(p=>{
+    const pctCls = spPctCls(p.pct);
+    const dueCls = spDueClass(p.dueDate);
+    return `<tr class="${p.prio?'prio-'+p.prio:''}" onclick="spOpenPanel('${p.id}')">
+      <td></td>
+      <td><b>${spEsc(p.title)}</b></td>
+      <td style="color:var(--text2)">${spEsc(p.client)||'—'}</td>
+      <td style="color:var(--text2)">${spEsc(p.cat)||'—'}</td>
+      <td><span class="sp-stato-badge ${spStatoCls(p.stato)}">${p.stato}</span></td>
+      <td>${p.prio?'<span class="sp-prio-badge '+p.prio+'">'+p.prio+'</span>':'—'}</td>
+      <td><div class="sp-card-pct"><div class="sp-pct-bar" style="min-width:50px"><div class="sp-pct-fill ${pctCls}" style="width:${p.pct}%"></div></div><span class="sp-pct-num">${p.pct}%</span></div></td>
+      <td class="${dueCls?'sp-card-due '+dueCls:''}">${spFmtDate(p.dueDate)}</td>
+      <td style="color:var(--text2)">${p.ore?p.ore+'h':'—'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('sp-lista-body').innerHTML = html || '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:30px">Nessun progetto</td></tr>';
+}
+
+function spEsc(s){
+  if(!s) return '';
+  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// SIDE PANEL
+function spOpenPanel(id){
+  SP_STATE.editId = id;
+  const isNew = !id;
+  document.getElementById('sp-side-title').textContent = isNew ? 'Nuovo progetto' : 'Modifica progetto';
+  document.getElementById('sp-btn-del').style.display = isNew ? 'none' : '';
+
+  // Popola select clienti
+  const selCli = document.getElementById('sp-f-client');
+  selCli.innerHTML = '<option value="">— nessuno —</option>' +
+    _spClienti.map(c=>`<option value="${c.id}" data-name="${spEsc(c.name)}">${spEsc(c.name)}</option>`).join('');
+
+  let p;
+  if(isNew){
+    p = {title:'',client:'',clientId:null,cat:'',stato:'Non iniziato',startDate:'',dueDate:'',prio:'',pct:0,ore:0,notes:''};
+  } else {
+    p = SP_STATE.list.find(x=>x.id===id) || {};
+  }
+
+  document.getElementById('sp-f-title').value = p.title||'';
+  selCli.value = p.clientId||'';
+  document.getElementById('sp-f-cat').value = p.cat||'';
+  document.getElementById('sp-f-stato').value = p.stato||'Non iniziato';
+  document.getElementById('sp-f-prio').value = p.prio||'';
+  document.getElementById('sp-f-ore').value = p.ore||'';
+  document.getElementById('sp-f-start').value = p.startDate||'';
+  document.getElementById('sp-f-due').value = p.dueDate||'';
+  document.getElementById('sp-f-pct').value = p.pct||0;
+  document.getElementById('sp-f-pct-rg').value = p.pct||0;
+  document.getElementById('sp-f-note').value = p.notes||'';
+
+  document.getElementById('sp-side-overlay').classList.add('open');
+  document.getElementById('sp-side-panel').classList.add('open');
+}
+
+function spClosePanel(){
+  document.getElementById('sp-side-overlay').classList.remove('open');
+  document.getElementById('sp-side-panel').classList.remove('open');
+  SP_STATE.editId = null;
+}
+
+async function spSave(){
+  const title = document.getElementById('sp-f-title').value.trim();
+  if(!title){ showToast('Inserisci un titolo'); return; }
+
+  const selCli = document.getElementById('sp-f-client');
+  const clientId = selCli.value ? parseInt(selCli.value) : null;
+  const clientName = clientId ? selCli.options[selCli.selectedIndex].dataset.name : '';
+  const cat = document.getElementById('sp-f-cat').value.trim();
+  const stato = document.getElementById('sp-f-stato').value;
+  const prio = document.getElementById('sp-f-prio').value;
+  const ore = parseFloat(document.getElementById('sp-f-ore').value)||0;
+  const start = document.getElementById('sp-f-start').value;
+  const due = document.getElementById('sp-f-due').value;
+  const pct = parseInt(document.getElementById('sp-f-pct').value)||0;
+  const noteClean = document.getElementById('sp-f-note').value.trim();
+  const notes = spBuildNotes(noteClean, prio, pct, ore);
+
+  const fields = {
+    Description: title,
+    Category0: cat || null,
+    Progress: stato,
+    StartDate: start || null,
+    DueDate: due || null,
+    Notes: notes
+  };
+  if(clientId){
+    fields.ClientLookupId = clientId;
+  } else {
+    fields.ClientLookupId = null;
+  }
+
+  try{
+    const tok = await anGetToken();
+    const headers = {'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'};
+
+    let url, method;
+    if(SP_STATE.editId){
+      url = GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_LIST_ID+'/items/'+SP_STATE.editId+'/fields';
+      method = 'PATCH';
+    } else {
+      url = GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_LIST_ID+'/items';
+      method = 'POST';
+    }
+
+    const body = SP_STATE.editId ? JSON.stringify(fields) : JSON.stringify({fields:fields});
+    const r = await fetch(url, {method, headers, body});
+    if(!r.ok){
+      const txt = await r.text();
+      console.error('spSave:',r.status,txt);
+      showToast('Errore salvataggio: HTTP '+r.status);
+      return;
+    }
+
+    showToast(SP_STATE.editId ? 'Progetto aggiornato' : 'Progetto creato');
+    spClosePanel();
+    await spLoadProgetti();
+  }catch(e){
+    console.error('spSave:',e);
+    showToast('Errore: '+e.message);
+  }
+}
+
+async function spDelete(){
+  if(!SP_STATE.editId) return;
+  if(!confirm('Eliminare definitivamente questo progetto?')) return;
+  try{
+    const tok = await anGetToken();
+    const headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
+    const url = GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_LIST_ID+'/items/'+SP_STATE.editId;
+    const r = await fetch(url, {method:'DELETE', headers});
+    if(!r.ok){ showToast('Errore: HTTP '+r.status); return; }
+    showToast('Progetto eliminato');
+    spClosePanel();
+    await spLoadProgetti();
+  }catch(e){
+    console.error('spDelete:',e);
+    showToast('Errore: '+e.message);
   }
 }
 
