@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v120';</script>
+<script>const APP_VERSION = 'v123';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -180,6 +180,15 @@ main{
 .sp-th-sort.active{color:var(--accent)}
 .sp-sort-ind{display:inline-block;margin-left:3px;font-size:9px;opacity:.6}
 .sp-th-sort.active .sp-sort-ind{opacity:1}
+.sp-group-row{background:rgba(192,57,43,.08);cursor:pointer;user-select:none}
+.sp-group-row:hover{background:rgba(192,57,43,.14)}
+.sp-group-row td{padding:8px 10px !important;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;font-size:11px;border-top:2px solid var(--border)}
+.sp-group-arrow{display:inline-block;margin-right:6px;font-size:9px;transition:transform .15s}
+.sp-group-row.collapsed .sp-group-arrow{transform:rotate(-90deg)}
+.sp-group-cnt{display:inline-block;background:rgba(255,255,255,.1);padding:1px 7px;border-radius:10px;font-size:10px;margin-left:8px;color:var(--text2)}
+.sp-toolbar-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-family:var(--font);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.sp-toolbar-btn:hover{color:var(--text);background:var(--bg4)}
+.sp-toolbar-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
 .sp-prio-badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
 .sp-prio-badge.alta{background:rgba(220,38,38,.15);color:#ef4444}
 .sp-prio-badge.media{background:rgba(245,158,11,.15);color:#fbbf24}
@@ -1165,7 +1174,11 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 
         <input type="text" class="filter-input" id="sp-search" placeholder="Cerca titolo o cliente..." oninput="spRender()" style="max-width:220px">
 
-        <div class="sp-view-tabs" style="margin-left:auto">
+        <button class="sp-toolbar-btn" id="sp-btn-group" onclick="spToggleGroupClient()" style="margin-left:auto" title="Raggruppa per cliente (solo vista Lista)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><path d="M2 4h12M2 8h8M2 12h12"/><circle cx="13" cy="8" r="1.5" fill="currentColor"/></svg>
+          Raggruppa
+        </button>
+        <div class="sp-view-tabs">
           <button class="sp-vtab active" data-vw="kanban" onclick="spSetView('kanban')">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><rect x="1" y="1" width="4" height="14" rx="1"/><rect x="6" y="1" width="4" height="10" rx="1"/><rect x="11" y="1" width="4" height="12" rx="1"/></svg>
             Kanban
@@ -1201,9 +1214,8 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         <table class="sp-list">
           <thead>
             <tr>
-              <th style="width:36px"></th>
+              <th class="sp-th-sort" onclick="spToggleSort('client')" data-col="client" style="width:160px">Cliente <span class="sp-sort-ind"></span></th>
               <th class="sp-th-sort" onclick="spToggleSort('title')" data-col="title">Titolo <span class="sp-sort-ind"></span></th>
-              <th class="sp-th-sort" onclick="spToggleSort('client')" data-col="client">Cliente <span class="sp-sort-ind"></span></th>
               <th class="sp-th-sort" onclick="spToggleSort('cat')" data-col="cat">Tipo <span class="sp-sort-ind"></span></th>
               <th class="sp-th-sort" onclick="spToggleSort('stato')" data-col="stato">Stato <span class="sp-sort-ind"></span></th>
               <th class="sp-th-sort" onclick="spToggleSort('prio')" data-col="prio">Priorità <span class="sp-sort-ind"></span></th>
@@ -3085,9 +3097,25 @@ const SP_STATE = {
   stato: '',
   editId: null,
   list: [],
-  sortCol: 'prio',  // colonna ordinamento default
-  sortDir: 'asc'    // 'asc' | 'desc'
+  sortCol: 'prio',         // colonna ordinamento default
+  sortDir: 'asc',          // 'asc' | 'desc'
+  groupByClient: false,    // raggruppamento per cliente (solo vista Lista)
+  collapsedGroups: {}      // {clientName: true} per gruppi compressi
 };
+
+function spToggleGroupClient(){
+  SP_STATE.groupByClient = !SP_STATE.groupByClient;
+  const btn = document.getElementById('sp-btn-group');
+  if(btn){
+    btn.classList.toggle('active', SP_STATE.groupByClient);
+  }
+  spRender();
+}
+
+function spToggleGroup(clientName){
+  SP_STATE.collapsedGroups[clientName] = !SP_STATE.collapsedGroups[clientName];
+  spRender();
+}
 
 function spToggleSort(col){
   if(SP_STATE.sortCol === col){
@@ -3331,13 +3359,12 @@ function spRenderLista(list){
   const prioOrd = {alta:0,media:1,bassa:2,'':3};
   const statoOrd = {'Non iniziato':0,'In corso':1,'In attesa':2,'Completato':3};
 
-  const sorted = list.slice().sort((a,b)=>{
+  function cmp(a,b){
     let av = a[col], bv = b[col];
     if(col === 'prio'){ av = prioOrd[a.prio]; bv = prioOrd[b.prio]; }
     else if(col === 'stato'){ av = statoOrd[a.stato]??99; bv = statoOrd[b.stato]??99; }
     else if(col === 'pct' || col === 'ore'){ av = parseFloat(a[col])||0; bv = parseFloat(b[col])||0; }
     else if(col === 'dueDate'){
-      // valori vuoti vanno in fondo a prescindere dalla direzione
       if(!a.dueDate && !b.dueDate) return 0;
       if(!a.dueDate) return 1;
       if(!b.dueDate) return -1;
@@ -3347,7 +3374,7 @@ function spRenderLista(list){
     if(av < bv) return -1 * mul;
     if(av > bv) return 1 * mul;
     return 0;
-  });
+  }
 
   // Aggiorna indicatori header
   document.querySelectorAll('.sp-th-sort').forEach(th=>{
@@ -3359,13 +3386,13 @@ function spRenderLista(list){
       if(ind) ind.textContent = dir === 'asc' ? '▲' : '▼';
     }
   });
-  const html = sorted.map(p=>{
+
+  const rowHtml = (p)=>{
     const pctCls = spPctCls(p.pct);
     const dueCls = spDueClass(p.dueDate);
     return `<tr class="${p.prio?'prio-'+p.prio:''}" onclick="spOpenPanel('${p.id}')">
-      <td></td>
+      <td style="color:var(--text2);font-weight:600">${spEsc(p.client)||'—'}</td>
       <td><b>${spEsc(p.title)}</b></td>
-      <td style="color:var(--text2)">${spEsc(p.client)||'—'}</td>
       <td style="color:var(--text2)">${spEsc(p.cat)||'—'}</td>
       <td><span class="sp-stato-badge ${spStatoCls(p.stato)}">${p.stato}</span></td>
       <td>${p.prio?'<span class="sp-prio-badge '+p.prio+'">'+p.prio+'</span>':'—'}</td>
@@ -3373,8 +3400,39 @@ function spRenderLista(list){
       <td class="${dueCls?'sp-card-due '+dueCls:''}">${spFmtDate(p.dueDate)}</td>
       <td style="color:var(--text2)">${p.ore?p.ore+'h':'—'}</td>
     </tr>`;
-  }).join('');
-  document.getElementById('sp-lista-body').innerHTML = html || '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:30px">Nessun progetto</td></tr>';
+  };
+
+  let html = '';
+
+  if(SP_STATE.groupByClient){
+    // Raggruppamento per cliente
+    const groups = {};
+    list.forEach(p=>{
+      const k = p.client || '(senza cliente)';
+      if(!groups[k]) groups[k] = [];
+      groups[k].push(p);
+    });
+    const groupNames = Object.keys(groups).sort((a,b)=> a.localeCompare(b));
+    groupNames.forEach(name=>{
+      const items = groups[name].slice().sort(cmp);
+      const collapsed = !!SP_STATE.collapsedGroups[name];
+      html += `<tr class="sp-group-row ${collapsed?'collapsed':''}" onclick="spToggleGroup('${name.replace(/'/g,"\\'")}')">
+        <td colspan="8">
+          <span class="sp-group-arrow">▼</span>
+          ${spEsc(name)}
+          <span class="sp-group-cnt">${items.length}</span>
+        </td>
+      </tr>`;
+      if(!collapsed){
+        html += items.map(rowHtml).join('');
+      }
+    });
+  } else {
+    const sorted = list.slice().sort(cmp);
+    html = sorted.map(rowHtml).join('');
+  }
+
+  document.getElementById('sp-lista-body').innerHTML = html || '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:30px">Nessun progetto</td></tr>';
 }
 
 function spEsc(s){
@@ -4436,13 +4494,12 @@ async function loadOrdiniF() {
 
     // Build column chips
     buildOrdfColChips();
-    // Assicura che la content-view sia visibile (showView la nasconde con display:none)
+    // Render solo se la view è già visibile (evita sovrapposizioni al primo login background-load)
     var vEl = document.getElementById('view-ordini-sp');
-    if(vEl && vEl.style.display === 'none') {
-      vEl.style.display = 'flex';
-      vEl.classList.add('visible');
+    if(vEl && vEl.classList.contains('visible')) {
+      renderOrdfView();
     }
-    renderOrdfView();
+    // Se l'utente non è sulla view ora, renderOrdfView() verrà chiamato da showView() quando ci entra
 
   } catch(e) {
     ordfSetStatus('err', 'Errore: '+e.message);
@@ -6056,8 +6113,12 @@ function renderResoconto(items, tipo) {
     '<div id="res-table-wrap">'+buildTable()+'</div>';
 }
 
-// -- Carica email ticket da localStorage --
-loadTicketEmailSetting();
+// -- Carica email ticket da localStorage (after all scripts loaded) --
+window.addEventListener('DOMContentLoaded', function(){
+  if(typeof loadTicketEmailSetting === 'function'){
+    try { loadTicketEmailSetting(); } catch(e){ console.warn('loadTicketEmailSetting:', e); }
+  }
+});
 
 // -- Impostazioni: render griglia saldi default --
 // Layout a lista compatta: un blocco per tipo, una riga per pacchetto
