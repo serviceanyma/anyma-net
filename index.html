@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v119';</script>
+<script>const APP_VERSION = 'v120';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -175,6 +175,11 @@ main{
 .sp-list tbody tr.prio-alta td:first-child{border-left:3px solid #dc2626}
 .sp-list tbody tr.prio-media td:first-child{border-left:3px solid #f59e0b}
 .sp-list tbody tr.prio-bassa td:first-child{border-left:3px solid #3b82f6}
+.sp-th-sort{cursor:pointer;user-select:none;transition:color .12s}
+.sp-th-sort:hover{color:var(--text)}
+.sp-th-sort.active{color:var(--accent)}
+.sp-sort-ind{display:inline-block;margin-left:3px;font-size:9px;opacity:.6}
+.sp-th-sort.active .sp-sort-ind{opacity:1}
 .sp-prio-badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
 .sp-prio-badge.alta{background:rgba(220,38,38,.15);color:#ef4444}
 .sp-prio-badge.media{background:rgba(245,158,11,.15);color:#fbbf24}
@@ -1197,14 +1202,14 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           <thead>
             <tr>
               <th style="width:36px"></th>
-              <th>Titolo</th>
-              <th>Cliente</th>
-              <th>Tipo</th>
-              <th>Stato</th>
-              <th>Priorità</th>
-              <th>%</th>
-              <th>Scadenza</th>
-              <th>Ore</th>
+              <th class="sp-th-sort" onclick="spToggleSort('title')" data-col="title">Titolo <span class="sp-sort-ind"></span></th>
+              <th class="sp-th-sort" onclick="spToggleSort('client')" data-col="client">Cliente <span class="sp-sort-ind"></span></th>
+              <th class="sp-th-sort" onclick="spToggleSort('cat')" data-col="cat">Tipo <span class="sp-sort-ind"></span></th>
+              <th class="sp-th-sort" onclick="spToggleSort('stato')" data-col="stato">Stato <span class="sp-sort-ind"></span></th>
+              <th class="sp-th-sort" onclick="spToggleSort('prio')" data-col="prio">Priorità <span class="sp-sort-ind"></span></th>
+              <th class="sp-th-sort" onclick="spToggleSort('pct')" data-col="pct">% <span class="sp-sort-ind"></span></th>
+              <th class="sp-th-sort" onclick="spToggleSort('dueDate')" data-col="dueDate">Scadenza <span class="sp-sort-ind"></span></th>
+              <th class="sp-th-sort" onclick="spToggleSort('ore')" data-col="ore">Ore <span class="sp-sort-ind"></span></th>
             </tr>
           </thead>
           <tbody id="sp-lista-body"></tbody>
@@ -3079,8 +3084,20 @@ const SP_STATE = {
   prio: '',
   stato: '',
   editId: null,
-  list: []
+  list: [],
+  sortCol: 'prio',  // colonna ordinamento default
+  sortDir: 'asc'    // 'asc' | 'desc'
 };
+
+function spToggleSort(col){
+  if(SP_STATE.sortCol === col){
+    SP_STATE.sortDir = SP_STATE.sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    SP_STATE.sortCol = col;
+    SP_STATE.sortDir = 'asc';
+  }
+  spRender();
+}
 
 // Parsing tag dalle note
 function spParseNotes(notes){
@@ -3154,13 +3171,18 @@ async function spLoadProgetti(){
     document.getElementById('cnt-stato-progetti').textContent = items.length;
     document.getElementById('sp-count').textContent = items.length+' progetti';
 
-    // Carica clienti per il select se non già fatti
+    // Carica clienti per il select (await per assicurarsi siano disponibili al primo Nuovo)
     if(_spClienti.length === 0){
       try{
         const cR = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_CLIENT_LIST_ID+'/items?expand=fields(select=Title,ID)&$top=500',{headers});
-        const cD = await cR.json();
-        _spClienti = (cD.value||[]).map(i=>({id:parseInt(i.fields.ID),name:i.fields.Title||''})).filter(c=>c.name).sort((a,b)=>a.name.localeCompare(b.name));
-      }catch(e){}
+        if(cR.ok){
+          const cD = await cR.json();
+          _spClienti = (cD.value||[]).map(i=>({id:parseInt(i.fields.ID),name:i.fields.Title||''})).filter(c=>c.name).sort((a,b)=>a.name.localeCompare(b.name));
+          console.log('Caricati '+_spClienti.length+' clienti');
+        } else {
+          console.warn('Errore caricamento clienti: HTTP '+cR.status);
+        }
+      }catch(e){ console.error('Errore fetch clienti:',e); }
     }
 
     spRender();
@@ -3303,13 +3325,39 @@ function spCardHtml(p){
 }
 
 function spRenderLista(list){
+  const col = SP_STATE.sortCol;
+  const dir = SP_STATE.sortDir;
+  const mul = dir === 'asc' ? 1 : -1;
+  const prioOrd = {alta:0,media:1,bassa:2,'':3};
+  const statoOrd = {'Non iniziato':0,'In corso':1,'In attesa':2,'Completato':3};
+
   const sorted = list.slice().sort((a,b)=>{
-    const prioOrd = {alta:0,media:1,bassa:2,'':3};
-    if(a.prio !== b.prio) return prioOrd[a.prio]-prioOrd[b.prio];
-    if(a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
-    if(a.dueDate) return -1;
-    if(b.dueDate) return 1;
+    let av = a[col], bv = b[col];
+    if(col === 'prio'){ av = prioOrd[a.prio]; bv = prioOrd[b.prio]; }
+    else if(col === 'stato'){ av = statoOrd[a.stato]??99; bv = statoOrd[b.stato]??99; }
+    else if(col === 'pct' || col === 'ore'){ av = parseFloat(a[col])||0; bv = parseFloat(b[col])||0; }
+    else if(col === 'dueDate'){
+      // valori vuoti vanno in fondo a prescindere dalla direzione
+      if(!a.dueDate && !b.dueDate) return 0;
+      if(!a.dueDate) return 1;
+      if(!b.dueDate) return -1;
+      return (a.dueDate < b.dueDate ? -1 : 1) * mul;
+    }
+    else { av = (av||'').toString().toLowerCase(); bv = (bv||'').toString().toLowerCase(); }
+    if(av < bv) return -1 * mul;
+    if(av > bv) return 1 * mul;
     return 0;
+  });
+
+  // Aggiorna indicatori header
+  document.querySelectorAll('.sp-th-sort').forEach(th=>{
+    th.classList.remove('active');
+    const ind = th.querySelector('.sp-sort-ind');
+    if(ind) ind.textContent = '';
+    if(th.dataset.col === col){
+      th.classList.add('active');
+      if(ind) ind.textContent = dir === 'asc' ? '▲' : '▼';
+    }
   });
   const html = sorted.map(p=>{
     const pctCls = spPctCls(p.pct);
@@ -3335,11 +3383,28 @@ function spEsc(s){
 }
 
 // SIDE PANEL
-function spOpenPanel(id){
+async function spOpenPanel(id){
   SP_STATE.editId = id;
   const isNew = !id;
   document.getElementById('sp-side-title').textContent = isNew ? 'Nuovo progetto' : 'Modifica progetto';
   document.getElementById('sp-btn-del').style.display = isNew ? 'none' : '';
+
+  // Se i clienti non sono ancora caricati, prova a caricarli ora
+  if(_spClienti.length === 0){
+    try{
+      const tok = await anGetToken();
+      const headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
+      if(!_spSiteId){
+        const sR = await fetch(GRAPH_BASE + '/sites/' + SP_SITE_HOSTNAME + ':' + SP_SITE_PATH, {headers});
+        if(sR.ok) _spSiteId = (await sR.json()).id;
+      }
+      const cR = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_CLIENT_LIST_ID+'/items?expand=fields(select=Title,ID)&$top=500',{headers});
+      if(cR.ok){
+        const cD = await cR.json();
+        _spClienti = (cD.value||[]).map(i=>({id:parseInt(i.fields.ID),name:i.fields.Title||''})).filter(c=>c.name).sort((a,b)=>a.name.localeCompare(b.name));
+      }
+    }catch(e){ console.error('Caricamento clienti on-demand:',e); }
+  }
 
   // Popola select clienti
   const selCli = document.getElementById('sp-f-client');
@@ -3400,11 +3465,11 @@ async function spSave(){
     DueDate: due || null,
     Notes: notes
   };
+  // ClientLookupId: SP rifiuta null su lookup non-required → se nessun cliente, non lo invio affatto
   if(clientId){
     fields.ClientLookupId = clientId;
-  } else {
-    fields.ClientLookupId = null;
   }
+  // Su PATCH per rimuovere il cliente serve ClientLookupId vuoto: sotto gestiamo dopo il fetch
 
   try{
     const tok = await anGetToken();
