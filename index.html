@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v125';</script>
+<script>const APP_VERSION = 'v126';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -3562,12 +3562,13 @@ function spClosePanel(){
 }
 
 async function spSave(){
+  console.group('🟢 spSave - Salvataggio progetto');
   const title = document.getElementById('sp-f-title').value.trim();
-  if(!title){ showToast('Inserisci un titolo'); return; }
+  if(!title){ showToast('Inserisci un titolo'); console.groupEnd(); return; }
 
   const selCli = document.getElementById('sp-f-client');
   const clientId = selCli.value ? parseInt(selCli.value) : null;
-  const clientName = clientId ? selCli.options[selCli.selectedIndex].dataset.name : '';
+  const clientName = clientId && selCli.selectedIndex>=0 ? selCli.options[selCli.selectedIndex].dataset.name : '';
   const cat = document.getElementById('sp-f-cat').value.trim();
   const stato = document.getElementById('sp-f-stato').value;
   const prio = document.getElementById('sp-f-prio').value;
@@ -3578,49 +3579,83 @@ async function spSave(){
   const noteClean = document.getElementById('sp-f-note').value.trim();
   const notes = spBuildNotes(noteClean, prio, pct, ore);
 
-  // Costruzione fields esattamente come saveProjForm (pattern noto funzionante)
+  console.log('Cliente selezionato:', {clientId, clientName, selValue: selCli.value, _spClientiCount: _spClienti.length});
+
+  // Costruzione fields
   const fields = {
+    Title: title,            // SP usa Title come campo principale
     Description: title,
     Category0: cat || null,
     Progress: stato,
     Notes: notes
   };
-  // ClientLookupId DEVE essere parseInt e incluso solo se valido (replico saveProjForm)
-  if(clientId){
-    fields.ClientLookupId = parseInt(clientId);
+
+  // ClientLookupId per il campo lookup (replica saveProjForm)
+  if(clientId && !isNaN(clientId)){
+    fields.ClientLookupId = clientId;
+    console.log('✓ ClientLookupId aggiunto:', clientId, '(tipo:', typeof clientId, ')');
+  } else {
+    console.warn('⚠ Nessun cliente selezionato o ID non valido:', selCli.value);
   }
-  // Date in formato ISO con T00:00:00Z (come saveProjForm)
+
   if(start) fields.StartDate = start + 'T00:00:00Z';
   if(due)   fields.DueDate   = due   + 'T00:00:00Z';
 
+  console.log('Body fields completo:', JSON.parse(JSON.stringify(fields)));
+
   try{
     const tok = await anGetToken();
+    if(!tok){
+      showToast('Token scaduto - rieffettua il login');
+      console.error('Token mancante');
+      console.groupEnd();
+      return;
+    }
     const headers = {'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'};
 
-    let url, method;
+    // Assicura siteId (replica saveProjForm)
+    if(!_spSiteId){
+      const sR = await fetch(GRAPH_BASE + '/sites/' + SP_SITE_HOSTNAME + ':' + SP_SITE_PATH, {headers:{'Authorization':'Bearer '+tok,'Accept':'application/json'}});
+      if(!sR.ok) throw new Error('Site fetch HTTP '+sR.status);
+      _spSiteId = (await sR.json()).id;
+    }
+
+    let url, method, body;
     if(SP_STATE.editId){
       url = GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_LIST_ID+'/items/'+SP_STATE.editId+'/fields';
       method = 'PATCH';
+      body = JSON.stringify(fields);
     } else {
       url = GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_LIST_ID+'/items';
       method = 'POST';
+      body = JSON.stringify({fields:fields});
     }
 
-    const body = SP_STATE.editId ? JSON.stringify(fields) : JSON.stringify({fields:fields});
+    console.log('Richiesta SP:', {method, url, body: JSON.parse(body)});
+
     const r = await fetch(url, {method, headers, body});
+    const respText = await r.text();
+    let respJson = null;
+    try { respJson = JSON.parse(respText); } catch(e){}
+
+    console.log('Risposta SP:', {status: r.status, ok: r.ok, body: respJson || respText});
+
     if(!r.ok){
-      const errJson = await r.json().catch(()=>({}));
-      const msg = (errJson.error && errJson.error.message) || ('HTTP '+r.status);
-      console.error('spSave:',r.status,errJson);
-      showToast('Errore salvataggio: '+msg);
+      const msg = (respJson?.error?.message) || ('HTTP '+r.status+' - '+respText.substring(0,200));
+      console.error('❌ Errore salvataggio:', msg);
+      showToast('Errore: '+msg);
+      console.groupEnd();
       return;
     }
 
+    console.log('✓ Salvataggio completato');
+    console.groupEnd();
     showToast(SP_STATE.editId ? 'Progetto aggiornato' : 'Progetto creato');
     spClosePanel();
     await spLoadProgetti();
   }catch(e){
-    console.error('spSave:',e);
+    console.error('❌ Eccezione spSave:',e);
+    console.groupEnd();
     showToast('Errore: '+e.message);
   }
 }
