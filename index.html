@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v126';</script>
+<script>const APP_VERSION = 'v127';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -3118,7 +3118,7 @@ async function loadProgetti() {
     // Carica elenco clienti (lookup list) in background per il form
     if(_spClienti.length === 0) {
       fetch(GRAPH_BASE + '/sites/' + _spSiteId + '/lists/' + SP_CLIENT_LIST_ID +
-        '/items?expand=fields(select=Title,ID)&$top=500',
+        '/items?expand=fields(select=Title)&$top=500',
         {headers: headers}
       ).then(r => r.json()).then(d => {
         _spClienti = (d.value || [])
@@ -3265,10 +3265,10 @@ async function spLoadProgetti(){
     // Carica clienti per il select (await per assicurarsi siano disponibili al primo Nuovo)
     if(_spClienti.length === 0){
       try{
-        const cR = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_CLIENT_LIST_ID+'/items?expand=fields(select=Title,ID)&$top=500',{headers});
+        const cR = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_CLIENT_LIST_ID+'/items?expand=fields(select=Title)&$top=500',{headers});
         if(cR.ok){
           const cD = await cR.json();
-          _spClienti = (cD.value||[]).map(i=>({id:parseInt(i.fields.ID),name:i.fields.Title||''})).filter(c=>c.name).sort((a,b)=>a.name.localeCompare(b.name));
+          _spClienti = (cD.value||[]).map(i=>({id:parseInt(i.id)||0,name:(i.fields||{}).Title||''})).filter(c=>c.name && c.id>0).sort((a,b)=>a.name.localeCompare(b.name));
           console.log('Caricati '+_spClienti.length+' clienti');
         } else {
           console.warn('Errore caricamento clienti: HTTP '+cR.status);
@@ -3519,10 +3519,10 @@ async function spOpenPanel(id){
         const sR = await fetch(GRAPH_BASE + '/sites/' + SP_SITE_HOSTNAME + ':' + SP_SITE_PATH, {headers});
         if(sR.ok) _spSiteId = (await sR.json()).id;
       }
-      const cR = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_CLIENT_LIST_ID+'/items?expand=fields(select=Title,ID)&$top=500',{headers});
+      const cR = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_CLIENT_LIST_ID+'/items?expand=fields(select=Title)&$top=500',{headers});
       if(cR.ok){
         const cD = await cR.json();
-        _spClienti = (cD.value||[]).map(i=>({id:parseInt(i.fields.ID),name:i.fields.Title||''})).filter(c=>c.name).sort((a,b)=>a.name.localeCompare(b.name));
+        _spClienti = (cD.value||[]).map(i=>({id:parseInt(i.id)||0,name:(i.fields||{}).Title||''})).filter(c=>c.name && c.id>0).sort((a,b)=>a.name.localeCompare(b.name));
       }
     }catch(e){ console.error('Caricamento clienti on-demand:',e); }
   }
