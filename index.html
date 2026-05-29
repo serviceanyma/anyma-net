@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v127';</script>
+<script>const APP_VERSION = 'v128';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -5168,11 +5168,12 @@ async function loadContratti() {
 
 // -- Genera contratti per clienti mancanti --
 async function generaContratti() {
+  console.group('🟢 generaContratti');
   var rawId = getSpContrId();
-  if(!rawId) { showToast('Configura GUID lista contratti in Impostazioni'); return; }
+  if(!rawId) { showToast('Configura GUID lista contratti in Impostazioni'); console.groupEnd(); return; }
   var listId = decodeURIComponent(rawId).replace(/[{}]/g,'');
   var tok = await anGetToken();
-  if(!tok) { showToast('Token scaduto - rieffettua il login'); return; }
+  if(!tok) { showToast('Token scaduto - rieffettua il login'); console.groupEnd(); return; }
   var headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
   if(!_spSiteId) {
     var sr = await fetch(GRAPH_BASE+'/sites/'+SP_SITE_HOSTNAME+':'+SP_SITE_PATH,{headers});
@@ -5181,14 +5182,17 @@ async function generaContratti() {
   // Carica lista clienti
   var cliResp = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_CLIENT_LIST_ID+
     '/items?expand=fields(select=Title)&$top=500',{headers});
-  if(!cliResp.ok) { showToast('Errore caricamento clienti'); return; }
+  if(!cliResp.ok) { showToast('Errore caricamento clienti'); console.groupEnd(); return; }
   var cliData = await cliResp.json();
   var nomiClienti = (cliData.value||[]).map(function(i){return (i.fields||{}).Title||'';}).filter(Boolean);
-  if(!nomiClienti.length) { showToast('Nessun cliente trovato'); return; }
+  console.log('Clienti trovati in SP:', nomiClienti.length, nomiClienti);
+  if(!nomiClienti.length) { showToast('Nessun cliente trovato'); console.groupEnd(); return; }
   // Set esistenti
   var esistentiSet = new Set(_contrData.map(function(c){return c.cliente+'|'+c.tipo;}));
+  console.log('Contratti già esistenti:', esistentiSet.size);
   var defaults = getContrDefaults();
-  var creati = 0, saltati = 0;
+  var creati = 0, saltati = 0, falliti = 0;
+  var erroriDettaglio = [];
   showToast('⏳ Creazione contratti...');
   for(var n=0; n<nomiClienti.length; n++) {
     var nome = nomiClienti[n];
@@ -5202,23 +5206,42 @@ async function generaContratti() {
         Title: nome,
         TipoContratto: tipo,
         Pacchetto: defPac,
-        // Premium Teleassistenza ha saldo ore; Premium Telefonica = canone (no saldo)
         SaldoMinuti: (defPac!=='Spot'&&defPac!=='Premium') ? (def.saldoMinuti||0) : 0,
         SaldoOre:    (defPac!=='Spot'&&!(defPac==='Premium'&&tipo==='Telefonica')) ? (def.saldoOre||0) : 0,
         Attivo: true,
         Note: 'Creato automaticamente'
       };
       try {
-        await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+listId+'/items',{
+        var resp = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+listId+'/items',{
           method:'POST',
           headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'},
-          body:JSON.stringify({fields})
+          body:JSON.stringify({fields:fields})
         });
-        creati++;
-      } catch(e){}
+        if(resp.ok){
+          creati++;
+        } else {
+          falliti++;
+          var errTxt = await resp.text().catch(()=>'');
+          var errMsg = 'HTTP '+resp.status;
+          try { var errJ = JSON.parse(errTxt); errMsg = errJ.error?.message || errMsg; } catch(e){}
+          erroriDettaglio.push({cliente:nome, tipo:tipo, status:resp.status, msg:errMsg});
+          console.error('❌ Fallito:', nome, tipo, '→', errMsg);
+        }
+      } catch(e){
+        falliti++;
+        erroriDettaglio.push({cliente:nome, tipo:tipo, msg:e.message});
+        console.error('❌ Eccezione:', nome, tipo, e);
+      }
     }
   }
-  showToast('✓ '+creati+' contratti creati, '+saltati+' già esistenti');
+  console.log('Risultato:', {creati, saltati, falliti});
+  if(falliti > 0){
+    console.log('Errori dettaglio:', erroriDettaglio);
+    showToast('⚠ '+creati+' creati, '+saltati+' esistenti, '+falliti+' FALLITI (vedi console F12)');
+  } else {
+    showToast('✓ '+creati+' contratti creati, '+saltati+' già esistenti');
+  }
+  console.groupEnd();
   await loadContratti();
 }
 
