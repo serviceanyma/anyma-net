@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v128';</script>
+<script>const APP_VERSION = 'v129';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -5212,7 +5212,7 @@ async function generaContratti() {
         Note: 'Creato automaticamente'
       };
       try {
-        var resp = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+listId+'/items',{
+        var resp = await fetch(GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+'/items',{
           method:'POST',
           headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'},
           body:JSON.stringify({fields:fields})
