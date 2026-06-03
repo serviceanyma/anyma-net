@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v139';</script>
+<script>const APP_VERSION = 'v140';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1483,50 +1483,94 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 
       <!-- Quotazione -->
       <div class="off-section-title" style="margin-top:14px">Quotazione</div>
+
+      <!-- Fornitura -->
       <div class="off-quot-sez">
-        <div class="off-quot-sez-hdr">Macchina base</div>
+        <div class="off-quot-sez-hdr" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Fornitura / Macchina base</span>
+          <span style="font-size:11px;font-weight:600;color:var(--text2);text-transform:none;letter-spacing:0">Subtotale: <span id="off-sub-base">€ 0,00</span></span>
+        </div>
         <table class="off-quot-table">
-          <thead><tr><th>Descrizione</th><th style="width:140px;text-align:right">Importo</th><th class="off-quot-row-act"></th></tr></thead>
+          <thead><tr><th style="width:50px">N°</th><th>Descrizione</th><th style="width:140px;text-align:right">Importo</th><th class="off-quot-row-act"></th></tr></thead>
           <tbody id="off-q-base"></tbody>
         </table>
-        <div style="padding:6px 14px"><button class="off-add-punto" onclick="offAddQuotRow('base')">+ Aggiungi voce</button></div>
+        <div style="padding:6px 14px"><button class="off-add-punto" onclick="offAddQuotRow('base')">+ Aggiungi voce fornitura</button></div>
       </div>
+
+      <!-- Optional/Accessori -->
       <div class="off-quot-sez">
-        <div class="off-quot-sez-hdr">Opzioni</div>
+        <div class="off-quot-sez-hdr" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Optional / Accessori</span>
+          <span style="font-size:11px;font-weight:600;color:var(--text2);text-transform:none;letter-spacing:0">Subtotale: <span id="off-sub-opz">€ 0,00</span></span>
+        </div>
         <table class="off-quot-table">
-          <thead><tr><th>Descrizione</th><th style="width:140px;text-align:right">Importo</th><th class="off-quot-row-act"></th></tr></thead>
+          <thead><tr><th style="width:50px">N°</th><th>Descrizione</th><th style="width:140px;text-align:right">Importo</th><th class="off-quot-row-act"></th></tr></thead>
           <tbody id="off-q-opz"></tbody>
         </table>
-        <div style="padding:6px 14px"><button class="off-add-punto" onclick="offAddQuotRow('opz')">+ Aggiungi voce</button></div>
+        <div style="padding:6px 14px"><button class="off-add-punto" onclick="offAddQuotRow('opz')">+ Aggiungi optional</button></div>
       </div>
+
+      <!-- Servizi -->
       <div class="off-quot-sez">
-        <div class="off-quot-sez-hdr">Servizi</div>
+        <div class="off-quot-sez-hdr" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Servizi / Installazione</span>
+          <span style="font-size:11px;font-weight:600;color:var(--text2);text-transform:none;letter-spacing:0">Subtotale: <span id="off-sub-srv">€ 0,00</span></span>
+        </div>
         <table class="off-quot-table">
-          <thead><tr><th>Descrizione</th><th style="width:140px;text-align:right">Importo</th><th class="off-quot-row-act"></th></tr></thead>
+          <thead><tr><th style="width:50px">N°</th><th>Descrizione</th><th style="width:140px;text-align:right">Importo</th><th class="off-quot-row-act"></th></tr></thead>
           <tbody id="off-q-srv"></tbody>
         </table>
-        <div style="padding:6px 14px"><button class="off-add-punto" onclick="offAddQuotRow('srv')">+ Aggiungi voce</button></div>
+        <div style="padding:6px 14px"><button class="off-add-punto" onclick="offAddQuotRow('srv')">+ Aggiungi servizio</button></div>
       </div>
-      <div class="off-quot-totale"><span>Totale offerta</span><span id="off-totale-out">€ 0,00</span></div>
+
+      <div class="off-quot-totale"><span>Totale complessivo (IVA esclusa)</span><span id="off-totale-out">€ 0,00</span></div>
 
       <!-- Termini -->
       <div class="off-section-title" style="margin-top:14px">Termini e condizioni</div>
       <div class="off-form-hdr">
         <div class="off-fld">
           <label>Validità (giorni)</label>
-          <input type="number" id="off-f-validita" value="15" min="1">
+          <input type="number" id="off-f-validita" value="60" min="1">
         </div>
         <div class="off-fld off-fld-half">
           <label>Consegna</label>
-          <input type="text" id="off-f-consegna" placeholder="Es: 5 mesi da ordine">
+          <input type="text" id="off-f-consegna" placeholder="Es: 120 giorni lavorativi dalla definizione dell'ordine">
         </div>
         <div class="off-fld">
           <label>Garanzia</label>
-          <input type="text" id="off-f-garanzia" placeholder="Es: 12 mesi da collaudo">
+          <input type="text" id="off-f-garanzia" placeholder="Es: 12 mesi dal collaudo">
+        </div>
+        <div class="off-fld off-fld-half">
+          <label>Prezzi</label>
+          <input type="text" id="off-f-prezzi" placeholder="Es: netti franco nostro stabilimento">
+        </div>
+        <div class="off-fld off-fld-half">
+          <label>Collaudo</label>
+          <input type="text" id="off-f-collaudo" placeholder="Es: presso ns. sede alla presenza di Vs. personale">
+        </div>
+        <div class="off-fld off-fld-full">
+          <label>Installazione</label>
+          <textarea id="off-f-installazione" placeholder="Es: esclusa; se richiesta al costo orario di €70,00..."></textarea>
+        </div>
+        <div class="off-fld">
+          <label>Trasporto</label>
+          <input type="text" id="off-f-trasporto" placeholder="Es: A Vs. carico / escluso">
+        </div>
+        <div class="off-fld">
+          <label>Porto</label>
+          <input type="text" id="off-f-porto" placeholder="Es: franco nostro stabilimento">
+        </div>
+        <div class="off-fld">
+          <label>Imballo</label>
+          <input type="text" id="off-f-imballo" placeholder="Es: escluso / incluso">
+        </div>
+        <div class="off-fld">
+          <label>&nbsp;</label>
+          <input type="text" disabled style="visibility:hidden">
         </div>
         <div class="off-fld off-fld-full">
           <label>Termini pagamenti</label>
-          <textarea id="off-f-pagamenti" placeholder="40% all'ordine B.B.&#10;40% avviso merce pronta B.B.&#10;20% al collaudo 30-60gg B.B."></textarea>
+          <textarea id="off-f-pagamenti" placeholder="30% + IVA all'ordine&#10;60% + saldo IVA avviso merce pronta&#10;10% a 60gg data fattura"></textarea>
         </div>
         <div class="off-fld off-fld-full">
           <label>Note interne</label>
@@ -4595,12 +4639,18 @@ async function offNuova(id){
     document.getElementById('off-f-email').value = '';
     document.getElementById('off-f-lingua').value = 'ita';
     document.getElementById('off-f-stato').value = 'Bozza';
-    document.getElementById('off-f-validita').value = 15;
-    offAggiornaContatti(); // popola dropdown contatti (vuoto se nessun cliente)
+    document.getElementById('off-f-validita').value = 60;
     document.getElementById('off-f-consegna').value = '';
     document.getElementById('off-f-garanzia').value = '';
+    document.getElementById('off-f-prezzi').value = 'netti franco nostro stabilimento';
+    document.getElementById('off-f-collaudo').value = '';
+    document.getElementById('off-f-installazione').value = '';
+    document.getElementById('off-f-trasporto').value = '';
+    document.getElementById('off-f-porto').value = '';
+    document.getElementById('off-f-imballo').value = '';
     document.getElementById('off-f-pagamenti').value = '';
     document.getElementById('off-f-note').value = '';
+    offAggiornaContatti();
     // Almeno una sezione iniziale
     OFF_WIZ.macrogruppi = [{ id: offUid(), title: 'Oggetto', items: [{id:offUid(), text:''}] }];
   }
@@ -4622,7 +4672,7 @@ function offPopolaForm(o){
   document.getElementById('off-f-email').value = o.emailRif||'';
   document.getElementById('off-f-lingua').value = o.lingua||'ita';
   document.getElementById('off-f-stato').value = o.stato||'Bozza';
-  document.getElementById('off-f-validita').value = o.validita||15;
+  document.getElementById('off-f-validita').value = o.validita||60;
   document.getElementById('off-f-consegna').value = o.consegna||'';
   document.getElementById('off-f-garanzia').value = o.garanzia||'';
   document.getElementById('off-f-pagamenti').value = o.pagamenti||'';
@@ -4631,6 +4681,15 @@ function offPopolaForm(o){
   // Parse JSON contenuto
   let contenuto = {};
   try { contenuto = JSON.parse(o.contenuto||'{}'); } catch(e){ console.warn('JSON parse error',e); }
+
+  // Carica termini estesi da contenuto.termini (nuova struttura v140)
+  const term = contenuto.termini || {};
+  document.getElementById('off-f-prezzi').value = term.prezzi || 'netti franco nostro stabilimento';
+  document.getElementById('off-f-collaudo').value = term.collaudo || '';
+  document.getElementById('off-f-installazione').value = term.installazione || '';
+  document.getElementById('off-f-trasporto').value = term.trasporto || '';
+  document.getElementById('off-f-porto').value = term.porto || '';
+  document.getElementById('off-f-imballo').value = term.imballo || '';
 
   OFF_WIZ.macrogruppi = (contenuto.macrogruppi||[]).map(mg=>({
     id: offUid(),
@@ -4755,16 +4814,19 @@ function offUpdItemText(mgId, itId, val){
 
 // ── Render quotazione ──
 function offRenderQuotazione(){
+  const sezPrefix = { base:1, opz:2, srv:3 };
   ['base','opz','srv'].forEach(sez=>{
     const tbody = document.getElementById('off-q-'+sez);
     if(!tbody) return;
-    tbody.innerHTML = OFF_WIZ.quotazione[sez].map(r=>`
-      <tr data-rowid="${r.id}">
+    tbody.innerHTML = OFF_WIZ.quotazione[sez].map((r,idx)=>{
+      const numProg = sezPrefix[sez] + '.' + idx;
+      return `<tr data-rowid="${r.id}">
+        <td style="font-weight:700;color:var(--accent);text-align:center">${numProg}</td>
         <td><input type="text" value="${offEsc(r.desc)}" oninput="offUpdQuotRow('${sez}','${r.id}','desc',this.value)" placeholder="Descrizione voce"></td>
         <td><input type="number" class="off-importo" value="${r.importo||0}" step="0.01" min="0" oninput="offUpdQuotRow('${sez}','${r.id}','importo',this.value)"></td>
         <td class="off-quot-row-act"><button onclick="offDelQuotRow('${sez}','${r.id}')" title="Rimuovi">✕</button></td>
-      </tr>
-    `).join('');
+      </tr>`;
+    }).join('');
   });
 }
 
@@ -4790,8 +4852,15 @@ function offUpdQuotRow(sez, rId, field, val){
 
 function offCalcTotale(){
   let tot = 0;
+  const subs = { base:0, opz:0, srv:0 };
   ['base','opz','srv'].forEach(sez=>{
-    OFF_WIZ.quotazione[sez].forEach(r=>{ tot += parseFloat(r.importo)||0; });
+    OFF_WIZ.quotazione[sez].forEach(r=>{
+      const imp = parseFloat(r.importo)||0;
+      subs[sez] += imp;
+      tot += imp;
+    });
+    const subEl = document.getElementById('off-sub-'+sez);
+    if(subEl) subEl.textContent = offFmtMoney(subs[sez]);
   });
   document.getElementById('off-totale-out').textContent = offFmtMoney(tot);
   return tot;
@@ -4827,9 +4896,9 @@ async function offSalva(genPdf){
   const data = document.getElementById('off-f-data').value;
   const totale = offCalcTotale();
 
-  // Costruisci JSON contenuto
+  // Costruisci JSON contenuto (v140 + termini estesi)
   const contenuto = {
-    version: 1,
+    version: 2,
     macrogruppi: OFF_WIZ.macrogruppi.map(mg=>({
       title: mg.title,
       items: mg.items.map(it=>it.text).filter(t=>t!=null)
@@ -4838,6 +4907,14 @@ async function offSalva(genPdf){
       base: OFF_WIZ.quotazione.base.map(r=>({desc:r.desc, importo:r.importo})),
       opz:  OFF_WIZ.quotazione.opz.map(r=>({desc:r.desc, importo:r.importo})),
       srv:  OFF_WIZ.quotazione.srv.map(r=>({desc:r.desc, importo:r.importo}))
+    },
+    termini: {
+      prezzi:       document.getElementById('off-f-prezzi').value.trim() || '',
+      collaudo:     document.getElementById('off-f-collaudo').value.trim() || '',
+      installazione: document.getElementById('off-f-installazione').value.trim() || '',
+      trasporto:    document.getElementById('off-f-trasporto').value.trim() || '',
+      porto:        document.getElementById('off-f-porto').value.trim() || '',
+      imballo:      document.getElementById('off-f-imballo').value.trim() || ''
     }
   };
 
@@ -4978,12 +5055,18 @@ async function offCreaDaTemplate(tmplId){
   document.getElementById('off-f-email').value = '';
   document.getElementById('off-f-lingua').value = 'ita';
   document.getElementById('off-f-stato').value = 'Bozza';
-  document.getElementById('off-f-validita').value = tmpl.data.validita || 15;
+  document.getElementById('off-f-validita').value = tmpl.data.validita || 60;
   document.getElementById('off-f-consegna').value = tmpl.data.consegna || '';
   document.getElementById('off-f-garanzia').value = tmpl.data.garanzia || '';
+  document.getElementById('off-f-prezzi').value = tmpl.data.prezzi || 'netti franco nostro stabilimento';
+  document.getElementById('off-f-collaudo').value = tmpl.data.collaudo || '';
+  document.getElementById('off-f-installazione').value = tmpl.data.installazione || '';
+  document.getElementById('off-f-trasporto').value = tmpl.data.trasporto || '';
+  document.getElementById('off-f-porto').value = tmpl.data.porto || '';
+  document.getElementById('off-f-imballo').value = tmpl.data.imballo || '';
   document.getElementById('off-f-pagamenti').value = tmpl.data.pagamenti || '';
   document.getElementById('off-f-note').value = '';
-  offAggiornaContatti(); // popola dropdown contatti (vuoto se nessun cliente)
+  offAggiornaContatti();
 
   OFF_WIZ.macrogruppi = (tmpl.data.macrogruppi||[]).map(mg=>({
     id: offUid(),
