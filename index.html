@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v130';</script>
+<script>const APP_VERSION = 'v131';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1418,6 +1418,10 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         <button class="btn btn-sm" id="btn-resoconto-globale" onclick="apriModalResocontoGlobale()" style="display:none;background:rgba(139,26,26,.15);color:#c0392b;border-color:rgba(139,26,26,.3)">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><rect x="2" y="2" width="12" height="12" rx="1.5"/><line x1="5" y1="5" x2="11" y2="5"/><line x1="5" y1="8" x2="11" y2="8"/><line x1="5" y1="11" x2="9" y2="11"/></svg>
           Resoconto mensile
+        </button>
+        <button class="btn btn-sm" id="btn-resoconto-cliente" onclick="apriModalResocontoCliente()" style="display:none;background:rgba(139,26,26,.15);color:#c0392b;border-color:rgba(139,26,26,.3)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><circle cx="8" cy="5" r="2.5"/><path d="M3 14c0-2.8 2.2-5 5-5s5 2.2 5 5"/></svg>
+          Resoconto cliente
         </button>
         <span class="tag-count" id="contr-count" style="display:none"></span>
         <input type="text" class="filter-input" id="contr-search" placeholder="Cerca cliente..." oninput="renderContratti()" style="display:none;max-width:200px">
@@ -5153,6 +5157,7 @@ async function loadContratti() {
     document.getElementById('btn-contr-load').textContent = '↻ Aggiorna';
     document.getElementById('btn-contr-gen').style.display = '';
     document.getElementById('btn-resoconto-globale').style.display = '';
+    document.getElementById('btn-resoconto-cliente').style.display = '';
     document.getElementById('contr-count').style.display = '';
     document.getElementById('contr-search').style.display = '';
     document.getElementById('contr-sort-sel').style.display = '';
@@ -6343,6 +6348,156 @@ function chiudiModalResocontoGlobale() {
   if(modal) modal.style.display = 'none';
 }
 
+// ════════════════════════════════════════
+// RESOCONTO CLIENTE (singolo cliente, periodo mensile/annuale, multi-tipo)
+// ════════════════════════════════════════
+function apriModalResocontoCliente() {
+  var modal = document.getElementById('modal-res-cliente');
+  if(!modal) return;
+
+  // Popola lista clienti dai contratti
+  var selCli = document.getElementById('rc-cliente');
+  var nomiClienti = Array.from(new Set(_contrData.map(function(c){return c.cliente;}))).filter(Boolean).sort(function(a,b){return a.localeCompare(b,'it');});
+  selCli.innerHTML = '<option value="">— seleziona —</option>' +
+    nomiClienti.map(function(n){return '<option value="'+escHtml(n)+'">'+escHtml(n)+'</option>';}).join('');
+
+  // Popola anni
+  var annoSel = document.getElementById('rc-anno');
+  var curY = new Date().getFullYear();
+  annoSel.innerHTML = '';
+  for(var y=curY; y>=curY-4; y--) {
+    var o=document.createElement('option'); o.value=String(y); o.textContent=String(y);
+    annoSel.appendChild(o);
+  }
+  annoSel.value = String(curY);
+  document.getElementById('rc-mese').value = String(new Date().getMonth()+1).padStart(2,'0');
+  document.getElementById('rc-status').textContent = '';
+  // Reset checkbox
+  document.getElementById('rc-t-tel').checked = true;
+  document.getElementById('rc-t-teleass').checked = true;
+  document.getElementById('rc-t-onsite').checked = true;
+  // Periodo default mensile
+  var radios = document.querySelectorAll('input[name="rc-periodo"]');
+  radios[0].checked = true;
+  rcAggiornaCampi();
+  modal.style.display = 'flex';
+}
+
+function chiudiModalResocontoCliente() {
+  var modal = document.getElementById('modal-res-cliente');
+  if(modal) modal.style.display = 'none';
+}
+
+function rcAggiornaCampi() {
+  var periodo = document.querySelector('input[name="rc-periodo"]:checked').value;
+  var meseWrap = document.getElementById('rc-mese-wrap');
+  if(periodo === 'annuale') {
+    meseWrap.style.display = 'none';
+  } else {
+    meseWrap.style.display = '';
+  }
+}
+
+async function generaResocontoCliente() {
+  var cliente = document.getElementById('rc-cliente').value;
+  var periodo = document.querySelector('input[name="rc-periodo"]:checked').value;
+  var mese    = document.getElementById('rc-mese').value;
+  var anno    = document.getElementById('rc-anno').value;
+  var lingua  = document.getElementById('rc-lingua').value;
+  var tipiSel = [];
+  if(document.getElementById('rc-t-tel').checked)     tipiSel.push('Telefonica');
+  if(document.getElementById('rc-t-teleass').checked) tipiSel.push('Teleassistenza');
+  if(document.getElementById('rc-t-onsite').checked)  tipiSel.push('On-Site');
+
+  var btnGen = document.getElementById('btn-rc-genera');
+  var status = document.getElementById('rc-status');
+
+  if(!cliente) { status.textContent = 'Seleziona un cliente.'; return; }
+  if(!tipiSel.length) { status.textContent = 'Seleziona almeno un tipo di intervento.'; return; }
+
+  btnGen.disabled = true; btnGen.textContent = 'Caricamento...';
+  status.textContent = '';
+
+  try {
+    var tok = await anGetToken();
+    if(!tok) throw new Error('Token scaduto');
+    var headers = {'Authorization':'Bearer '+tok,'Accept':'application/json','Prefer':'HonorNonIndexedQueriesWarningMayFailRandomly'};
+    var rapListId = getSpRappId();
+    if(!rapListId) throw new Error('Configura GUID lista AnymaRapportini in Impostazioni');
+
+    // Carica tutti i rapportini del cliente per i tipi selezionati
+    // Strategia: una query per ogni tipo, poi merge
+    var allItemsByTipo = {};
+    for(var ti=0; ti<tipiSel.length; ti++) {
+      var tipo = tipiSel[ti];
+      var filterStr = tipo==='On-Site'
+        ? "fields/TipoServizio ne 'Telefonica' and fields/TipoServizio ne 'Teleassistenza'"
+        : "fields/TipoServizio eq '"+tipo+"'";
+      // Aggiungo filtro cliente per ridurre payload (Cliente è un campo testo nella lista RT)
+      filterStr += " and fields/Cliente eq '"+cliente.replace(/'/g,"''")+"'";
+      var url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+rapListId+
+        '/items?expand=fields(select=Title,DataIntervento,Cliente,TipoServizio,TipoIntervento,Tipo0,OreLavoro,MinutiUsati,Pacchetto,PacchettoContratto,NumContratto,RefNome,Tecnico,Tecnici,NomeTecnico,Referente,TecnicoRT,SaldoPrima,GiornateJSON,SessioniJSON,ChiamateJSON)&$filter='+encodeURIComponent(filterStr)+'&$top=1000';
+      var resp = await fetch(url,{headers:headers});
+      if(!resp.ok) throw new Error(tipo+': HTTP '+resp.status);
+      var items = (await resp.json()).value||[];
+
+      // Filtra per periodo
+      var filtered = items.filter(function(item){
+        var d=(item.fields&&item.fields.DataIntervento)?item.fields.DataIntervento.split('T')[0]:'';
+        if(periodo === 'annuale') return d.startsWith(anno+'-');
+        return d.startsWith(anno+'-'+mese);
+      });
+      // Ordina per Title decrescente (più recenti prima)
+      filtered.sort(function(a,b){return ((b.fields&&b.fields.Title)||'').localeCompare((a.fields&&a.fields.Title)||'');});
+      allItemsByTipo[tipo] = filtered;
+    }
+
+    // Conta totale
+    var totItems = 0;
+    tipiSel.forEach(function(t){ totItems += (allItemsByTipo[t]||[]).length; });
+    if(totItems === 0) {
+      status.textContent = 'Nessun intervento trovato per il periodo selezionato.';
+      btnGen.disabled = false; btnGen.textContent = 'Genera PDF';
+      return;
+    }
+
+    status.textContent = 'Generazione PDF...';
+
+    // Costruisci HTML: una pagina per ogni tipo (anche se vuoto, opzionalmente)
+    var pagesHtml = '';
+    tipiSel.forEach(function(tipo){
+      var items = allItemsByTipo[tipo] || [];
+      if(items.length === 0) return; // salta sezioni vuote per non sporcare
+      pagesHtml += _buildPaginaResocontoGlobale(items, cliente, tipo, lingua);
+    });
+
+    if(!pagesHtml) {
+      status.textContent = 'Nessun intervento trovato.';
+      btnGen.disabled = false; btnGen.textContent = 'Genera PDF';
+      return;
+    }
+
+    // Apri finestra con PDF
+    var periodoLabel = periodo === 'annuale' ? anno : (mese+'/'+anno);
+    var w = window.open('','_blank','width=900,height=700');
+    w.document.write('<html><head><title>Resoconto '+escHtml(cliente)+' '+periodoLabel+'</title>');
+    w.document.write('<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;800;900&display=swap" rel="stylesheet">');
+    w.document.write('<style>'+_getCSSResocontoGlobale()+'</style></head><body>');
+    w.document.write(pagesHtml);
+    w.document.write('</body></html>');
+    w.document.close();
+    setTimeout(function(){w.print();},800);
+
+    chiudiModalResocontoCliente();
+  } catch(e) {
+    status.textContent = 'Errore: '+e.message;
+    console.error('[generaResocontoCliente]',e);
+  }
+  btnGen.disabled=false; btnGen.textContent='Genera PDF';
+}
+
+
+
 async function generaResocontoGlobale() {
   var mese   = document.getElementById('rg-mese').value;
   var anno   = document.getElementById('rg-anno').value;
@@ -6625,6 +6780,93 @@ function _buildPaginaResocontoGlobale(items, cliente, tipo, _lang) {
 
 <!-- MODAL RESOCONTO MENSILE GLOBALE -->
 </div>
+
+<!-- MODAL RESOCONTO CLIENTE -->
+<div id="modal-res-cliente" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:14px;font-weight:700;color:var(--text)">Resoconto per cliente</span>
+      <button onclick="chiudiModalResocontoCliente()" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0 4px">&#x2715;</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <label style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Cliente *</label>
+      <select id="rc-cliente" style="font-size:12px;padding:7px 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)">
+        <option value="">— seleziona —</option>
+      </select>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <label style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Periodo</label>
+      <div style="display:flex;gap:6px">
+        <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;font-size:12px;color:var(--text)">
+          <input type="radio" name="rc-periodo" value="mensile" checked onchange="rcAggiornaCampi()" style="accent-color:#8B1A1A">Mensile
+        </label>
+        <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;font-size:12px;color:var(--text)">
+          <input type="radio" name="rc-periodo" value="annuale" onchange="rcAggiornaCampi()" style="accent-color:#8B1A1A">Annuale
+        </label>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="display:flex;flex-direction:column;gap:4px" id="rc-mese-wrap">
+        <label style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Mese</label>
+        <select id="rc-mese" style="font-size:12px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)">
+          <option value="01">Gennaio</option><option value="02">Febbraio</option>
+          <option value="03">Marzo</option><option value="04">Aprile</option>
+          <option value="05">Maggio</option><option value="06">Giugno</option>
+          <option value="07">Luglio</option><option value="08">Agosto</option>
+          <option value="09">Settembre</option><option value="10">Ottobre</option>
+          <option value="11">Novembre</option><option value="12">Dicembre</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <label style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Anno</label>
+        <select id="rc-anno" style="font-size:12px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)"></select>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <label style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Tipi di intervento da includere *</label>
+      <div style="display:flex;flex-direction:column;gap:6px;padding:10px;background:var(--bg3);border-radius:6px;border:1px solid var(--border)">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text)">
+          <input type="checkbox" id="rc-t-tel" checked style="width:14px;height:14px;accent-color:#8B1A1A">
+          <span style="font-weight:600">Telefonica</span>
+          <span style="font-size:10px;color:var(--text3);margin-left:auto">Assistenza telefonica</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text)">
+          <input type="checkbox" id="rc-t-teleass" checked style="width:14px;height:14px;accent-color:#8B1A1A">
+          <span style="font-weight:600">Teleassistenza</span>
+          <span style="font-size:10px;color:var(--text3);margin-left:auto">Remote</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text)">
+          <input type="checkbox" id="rc-t-onsite" checked style="width:14px;height:14px;accent-color:#8B1A1A">
+          <span style="font-weight:600">On-Site</span>
+          <span style="font-size:10px;color:var(--text3);margin-left:auto">In loco</span>
+        </label>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <label style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Lingua</label>
+      <select id="rc-lingua" style="font-size:12px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)">
+        <option value="ita">Italiano</option>
+        <option value="eng">English</option>
+      </select>
+    </div>
+
+    <div id="rc-status" style="font-size:11px;color:var(--text3);min-height:16px"></div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="chiudiModalResocontoCliente()" class="btn btn-sm">Annulla</button>
+      <button onclick="generaResocontoCliente()" class="btn btn-sm btn-primary" id="btn-rc-genera">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M4 6V2h8v4M2 6h12a1 1 0 0 1 1 1v5H1V7a1 1 0 0 1 1-1zM4 11v3h8v-3"/></svg>
+        Genera PDF
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    MODULO TICKET ASSISTENZA  (v113)
