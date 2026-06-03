@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v140';</script>
+<script>const APP_VERSION = 'v141';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4377,8 +4377,8 @@ const OFF_TEMPLATES = [
       pagamenti: '40% all\'ordine B.B.\n40% avviso merce pronta B.B.\n20% al collaudo 30-60gg B.B.',
       quotazione: {
         base: [{ desc: 'Incartonatrice astucciatrice', importo: 0 }],
-        opz: [],
-        srv: []
+        opz: [{ desc: 'Cambio formato aggiuntivo', importo: 0 }],
+        srv: [{ desc: 'Installazione e collaudo presso cliente', importo: 0 }]
       }
     }
   },
@@ -4423,18 +4423,26 @@ const OFF_TEMPLATES = [
   },
   {
     id: 'vuoto',
-    nome: 'Offerta vuota',
-    descrizione: 'Parti da zero, aggiungi solo i macrogruppi che ti servono',
+    nome: 'Offerta vuota (skeleton)',
+    descrizione: 'Parti con i macrogruppi standard tutti vuoti, da compilare',
     data: {
       oggetto: '',
       macrogruppi: [
-        { title: 'Oggetto', items: [''] }
+        { title: 'Oggetto', items: [''] },
+        { title: 'Dati di progetto', items: [''] },
+        { title: 'Descrizione funzionale', items: [''] },
+        { title: 'Prestazioni garantibili', items: [''] },
+        { title: 'Campo di fornitura', items: [''] },
+        { title: 'Caratteristiche costruttive e sicurezza', items: [''] },
+        { title: 'Documentazione inclusa', items: [''] },
+        { title: 'Esclusioni', items: [''] },
+        { title: 'Opzioni facoltative (non incluse)', items: [''] }
       ],
-      validita: 15,
+      validita: 60,
       consegna: '',
       garanzia: '',
       pagamenti: '',
-      quotazione: { base: [], opz: [], srv: [] }
+      quotazione: { base: [{desc:'', importo:0}], opz: [{desc:'', importo:0}], srv: [{desc:'', importo:0}] }
     }
   }
 ];
@@ -4651,8 +4659,24 @@ async function offNuova(id){
     document.getElementById('off-f-pagamenti').value = '';
     document.getElementById('off-f-note').value = '';
     offAggiornaContatti();
-    // Almeno una sezione iniziale
-    OFF_WIZ.macrogruppi = [{ id: offUid(), title: 'Oggetto', items: [{id:offUid(), text:''}] }];
+    // Macrogruppi predefiniti per nuova offerta (skeleton minimo - editabili)
+    OFF_WIZ.macrogruppi = [
+      { id: offUid(), title: 'Oggetto', items: [{id:offUid(), text:''}] },
+      { id: offUid(), title: 'Dati di progetto', items: [{id:offUid(), text:''}] },
+      { id: offUid(), title: 'Descrizione funzionale', items: [{id:offUid(), text:''}] },
+      { id: offUid(), title: 'Prestazioni garantibili', items: [{id:offUid(), text:''}] },
+      { id: offUid(), title: 'Campo di fornitura', items: [{id:offUid(), text:''}] },
+      { id: offUid(), title: 'Caratteristiche costruttive e sicurezza', items: [{id:offUid(), text:''}] },
+      { id: offUid(), title: 'Documentazione inclusa', items: [{id:offUid(), text:''}] },
+      { id: offUid(), title: 'Esclusioni', items: [{id:offUid(), text:''}] },
+      { id: offUid(), title: 'Opzioni facoltative (non incluse)', items: [{id:offUid(), text:''}] }
+    ];
+    // Righe quotazione pre-popolate (vuote ma visibili)
+    OFF_WIZ.quotazione = {
+      base: [{ id: offUid(), desc: '', importo: 0 }],
+      opz:  [{ id: offUid(), desc: '', importo: 0 }],
+      srv:  [{ id: offUid(), desc: '', importo: 0 }]
+    };
   }
 
   offRenderMacrogruppi();
