@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v133';</script>
+<script>const APP_VERSION = 'v134';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -3838,8 +3838,15 @@ function offStatoCls(s){
 }
 
 async function offLoad(){
+  console.group('🟢 offLoad');
   const listId = getSpOfferteId();
-  if(!listId){ showToast('Configura GUID lista AnymaOfferte in Impostazioni'); return; }
+  console.log('GUID lista offerte:', listId);
+  if(!listId){
+    console.warn('GUID mancante!');
+    showToast('Configura GUID lista AnymaOfferte in Impostazioni');
+    console.groupEnd();
+    return;
+  }
   try{
     const tok = await anGetToken();
     if(!tok){ showToast('Token scaduto - rieffettua il login'); return; }
@@ -3852,8 +3859,16 @@ async function offLoad(){
 
     const url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+
       '/items?expand=fields(select=Title,Cliente,ClienteLookupId,Oggetto,DataOfferta,Riferimento,EmailRiferimento,ValiditaGiorni,Consegna,Garanzia,PagamentiTesto,TotaleImporto,Stato,Lingua,Note,ContenutoJSON)&$top=500';
+    console.log('URL fetch:', url);
     const r = await fetch(url,{headers});
-    if(!r.ok){ showToast('Errore caricamento offerte: HTTP '+r.status); return; }
+    console.log('Risposta:', r.status, r.ok);
+    if(!r.ok){
+      const errTxt = await r.text();
+      console.error('Errore caricamento:', errTxt);
+      showToast('Errore caricamento offerte: HTTP '+r.status);
+      console.groupEnd();
+      return;
+    }
     const data = await r.json();
 
     OFF_STATE.list = (data.value||[]).map(i=>{
@@ -3890,12 +3905,15 @@ async function offLoad(){
       selA.value = cur;
     }
 
+    console.log('Offerte caricate:', OFF_STATE.list.length, OFF_STATE.list);
     document.getElementById('cnt-offerte').textContent = OFF_STATE.list.length;
     offRender();
     showToast(OFF_STATE.list.length+' offerte caricate');
+    console.groupEnd();
   }catch(e){
     console.error('offLoad:',e);
     showToast('Errore: '+e.message);
+    console.groupEnd();
   }
 }
 
@@ -3926,14 +3944,21 @@ function offFiltered(){
 
 function offRender(){
   const list = offFiltered();
+  console.log('offRender: list filtrata=', list.length, 'totale=', OFF_STATE.list.length);
   document.getElementById('off-count').textContent = list.length+' offerte';
 
   const wrap = document.getElementById('off-list-wrap');
   const empty = document.getElementById('off-empty');
 
+  if(!wrap || !empty){
+    console.error('offRender: elementi DOM mancanti!', {wrap:!!wrap, empty:!!empty});
+    return;
+  }
+
   if(OFF_STATE.list.length === 0){
+    console.log('Mostro empty state');
     wrap.style.display='none';
-    empty.style.display='';
+    empty.style.display='flex';  // flex esplicito (era stringa vuota)
     return;
   }
   empty.style.display='none';
