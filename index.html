@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v141';</script>
+<script>const APP_VERSION = 'v142';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -183,9 +183,14 @@ main{
 .off-add-mg:hover{border-color:var(--accent);color:var(--accent);background:rgba(192,57,43,.05)}
 
 /* Quotazione */
-.off-quot-sez{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px}
-.off-quot-sez-hdr{padding:9px 14px;background:var(--bg3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);border-bottom:1px solid var(--border)}
-.off-quot-table{width:100%;border-collapse:collapse}
+.off-quot-sez{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px;display:block}
+.off-quot-sez-hdr{padding:10px 14px;background:var(--bg3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.off-quot-sez-hdr > span:first-child{color:var(--accent);font-size:12px}
+.off-quot-sez-hdr .off-sub-info{font-size:11px;font-weight:600;color:var(--text2);text-transform:none;letter-spacing:0}
+.off-quot-table{width:100%;border-collapse:collapse;display:table}
+.off-quot-table thead,.off-quot-table tbody{display:table-row-group}
+.off-quot-table tr{display:table-row}
+.off-quot-table th,.off-quot-table td{display:table-cell}
 .off-quot-table th{padding:6px 10px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-weight:700;background:var(--bg2);border-bottom:1px solid var(--border)}
 .off-quot-table td{padding:5px 10px;border-bottom:1px solid var(--border)}
 .off-quot-table input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:6px 8px;font-family:var(--font);font-size:12px;outline:none}
@@ -4838,20 +4843,24 @@ function offUpdItemText(mgId, itId, val){
 
 // ── Render quotazione ──
 function offRenderQuotazione(){
+  console.group('🟡 offRenderQuotazione');
+  console.log('Quotazione state:', JSON.parse(JSON.stringify(OFF_WIZ.quotazione)));
   const sezPrefix = { base:1, opz:2, srv:3 };
   ['base','opz','srv'].forEach(sez=>{
     const tbody = document.getElementById('off-q-'+sez);
-    if(!tbody) return;
+    if(!tbody){ console.warn('tbody mancante per sezione:', sez); return; }
+    console.log(`Sezione ${sez}: ${OFF_WIZ.quotazione[sez].length} righe`);
     tbody.innerHTML = OFF_WIZ.quotazione[sez].map((r,idx)=>{
       const numProg = sezPrefix[sez] + '.' + idx;
       return `<tr data-rowid="${r.id}">
-        <td style="font-weight:700;color:var(--accent);text-align:center">${numProg}</td>
-        <td><input type="text" value="${offEsc(r.desc)}" oninput="offUpdQuotRow('${sez}','${r.id}','desc',this.value)" placeholder="Descrizione voce"></td>
-        <td><input type="number" class="off-importo" value="${r.importo||0}" step="0.01" min="0" oninput="offUpdQuotRow('${sez}','${r.id}','importo',this.value)"></td>
-        <td class="off-quot-row-act"><button onclick="offDelQuotRow('${sez}','${r.id}')" title="Rimuovi">✕</button></td>
+        <td style="font-weight:700;color:var(--accent);text-align:center;padding:6px 8px;background:var(--bg3)">${numProg}</td>
+        <td style="padding:5px 8px"><input type="text" value="${offEsc(r.desc)}" oninput="offUpdQuotRow('${sez}','${r.id}','desc',this.value)" placeholder="Descrizione voce" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:6px 8px;font-size:12px;outline:none"></td>
+        <td style="padding:5px 8px"><input type="number" class="off-importo" value="${r.importo||0}" step="0.01" min="0" oninput="offUpdQuotRow('${sez}','${r.id}','importo',this.value)" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:6px 8px;font-size:12px;outline:none;text-align:right;font-family:var(--mono);font-weight:600"></td>
+        <td class="off-quot-row-act" style="padding:5px 8px;text-align:center"><button onclick="offDelQuotRow('${sez}','${r.id}')" title="Rimuovi" style="background:transparent;border:none;color:var(--text3);cursor:pointer;padding:4px 6px;border-radius:3px;font-size:12px">✕</button></td>
       </tr>`;
     }).join('');
   });
+  console.groupEnd();
 }
 
 function offAddQuotRow(sez){
