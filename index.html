@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v137';</script>
+<script>const APP_VERSION = 'v138';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -4799,14 +4799,30 @@ function offCalcTotale(){
 
 // ── Salvataggio ──
 async function offSalva(genPdf){
+  console.group('🟢 offSalva');
   const titolo = document.getElementById('off-f-numero').value.trim();
   const oggetto = document.getElementById('off-f-oggetto').value.trim();
   const selCli = document.getElementById('off-f-cliente');
   const clienteId = selCli.value ? parseInt(selCli.value) : null;
+  console.log('Validazione:', {
+    titolo: titolo,
+    oggetto: oggetto,
+    selCliValue: selCli.value,
+    selCliValueType: typeof selCli.value,
+    selCliSelectedIndex: selCli.selectedIndex,
+    clienteId: clienteId,
+    clienteIdType: typeof clienteId,
+    clientiCaricati: _spClienti.length
+  });
 
-  if(!titolo){ showToast('Numero offerta obbligatorio'); return; }
-  if(!oggetto){ showToast('Oggetto obbligatorio'); return; }
-  if(!clienteId){ showToast('Seleziona un cliente'); return; }
+  if(!titolo){ showToast('Numero offerta obbligatorio'); console.groupEnd(); return; }
+  if(!oggetto){ showToast('Oggetto obbligatorio'); console.groupEnd(); return; }
+  if(!clienteId){
+    console.warn('Cliente NaN/null/0 - selCli.value=', JSON.stringify(selCli.value));
+    showToast('Seleziona un cliente');
+    console.groupEnd();
+    return;
+  }
 
   const data = document.getElementById('off-f-data').value;
   const totale = offCalcTotale();
