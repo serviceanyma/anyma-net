@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v136';</script>
+<script>const APP_VERSION = 'v137';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1433,19 +1433,29 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         </div>
         <div class="off-fld off-fld-half">
           <label>Cliente *</label>
-          <select id="off-f-cliente"><option value="">— seleziona —</option></select>
+          <select id="off-f-cliente" onchange="offClienteCambiato()"><option value="">— seleziona —</option></select>
         </div>
         <div class="off-fld off-fld-full">
           <label>Oggetto *</label>
           <input type="text" id="off-f-oggetto" placeholder="Es: Incartonatrice astucciatrice">
         </div>
+        <div class="off-fld off-fld-full" style="grid-column:1 / -1">
+          <label style="display:flex;align-items:center;gap:8px">
+            Contatto cliente
+            <button type="button" id="off-btn-swap-ref" onclick="offToggleModalitaContatto()" style="font-size:10px;padding:2px 8px;background:transparent;border:1px solid var(--border2);border-radius:4px;color:var(--text3);cursor:pointer;margin-left:auto;letter-spacing:.3px">✎ Manuale</button>
+          </label>
+          <select id="off-f-riferimento-sel" onchange="offContattoSelezionato()">
+            <option value="">— seleziona contatto —</option>
+          </select>
+          <input type="text" id="off-f-riferimento" placeholder="Nome contatto" style="display:none;margin-top:6px" readonly>
+        </div>
         <div class="off-fld off-fld-half">
-          <label>Riferimento (nome contatto)</label>
-          <input type="text" id="off-f-riferimento" placeholder="Es: Mario Rossi">
+          <label>Nome riferimento</label>
+          <input type="text" id="off-f-riferimento-show" placeholder="(dal contatto sopra)" readonly style="background:var(--bg)">
         </div>
         <div class="off-fld off-fld-half">
           <label>Email riferimento</label>
-          <input type="email" id="off-f-email" placeholder="mario.rossi@cliente.com">
+          <input type="email" id="off-f-email" placeholder="(dal contatto sopra)" readonly style="background:var(--bg)">
         </div>
         <div class="off-fld">
           <label>Lingua</label>
@@ -3334,6 +3344,10 @@ var LOGO_RESOCONTO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAB9AAAAFHCAYA
 
 // Sito SERVICE (AnymaContratti e AnymaRapportini sono su /sites/SERVICE)
 const SP_SERVICE_SITE_ID = 'anymapack.sharepoint.com,97c507fa-86cb-42c2-9f40-31b7d683a78f,dd5af785-ca46-4f9a-9997-2866a1b25ab7';
+// GUID lista Email (Title=cliente, Referente=nome, Email=email)
+const SP_EMAIL_LIST_ID = 'e1230132-933e-470b-bee6-c16572654dc8';
+// Cache contatti: { 'NOMECLIENTE': [{referente, email}, ...] }
+let _spEmailContatti = null;  // null = non ancora caricati, [] = caricati ma vuoto
 const TICKET_LIST_ID = 'b8fab561-8b6d-452a-aa68-ccc89a98c370';
 var _spSiteId   = null;
 var _spClienti  = []; // [{id, name}] - cache elenco clienti
@@ -4417,6 +4431,137 @@ async function offCaricaClienti(){
   }catch(e){ console.error('offCaricaClienti:',e); }
 }
 
+// ── Carica contatti dalla lista SP Email ──
+async function offCaricaContatti(){
+  if(_spEmailContatti !== null) return; // già caricati (anche se vuoto)
+  try{
+    const tok = await anGetToken();
+    if(!tok){ _spEmailContatti = []; return; }
+    const headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
+    if(!_spSiteId){
+      const sR = await fetch(GRAPH_BASE + '/sites/' + SP_SITE_HOSTNAME + ':' + SP_SITE_PATH, {headers});
+      if(sR.ok) _spSiteId = (await sR.json()).id;
+    }
+    const url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+SP_EMAIL_LIST_ID+
+      '/items?expand=fields(select=Title,Referente,Email)&$top=2000';
+    const r = await fetch(url,{headers});
+    if(!r.ok){ console.warn('offCaricaContatti: HTTP '+r.status); _spEmailContatti = []; return; }
+    const data = await r.json();
+    // Raggruppa per cliente (Title) in maiuscolo per match case-insensitive
+    const map = {};
+    (data.value||[]).forEach(i=>{
+      const f = i.fields||{};
+      const cli = (f.Title||'').trim();
+      const ref = (f.Referente||'').trim();
+      const eml = (f.Email||'').trim();
+      if(!cli || (!ref && !eml)) return;
+      const k = cli.toUpperCase();
+      if(!map[k]) map[k] = [];
+      map[k].push({ referente: ref, email: eml });
+    });
+    _spEmailContatti = map;
+    console.log('Contatti Email caricati: clienti =', Object.keys(map).length);
+  }catch(e){
+    console.error('offCaricaContatti:',e);
+    _spEmailContatti = [];
+  }
+}
+
+// ── Aggiorna dropdown contatti in base al cliente selezionato ──
+function offAggiornaContatti(){
+  const selCli = document.getElementById('off-f-cliente');
+  const selRef = document.getElementById('off-f-riferimento-sel');
+  if(!selCli || !selRef) return;
+
+  const cliName = selCli.value ? (selCli.options[selCli.selectedIndex].dataset.name||'') : '';
+  const contatti = (cliName && _spEmailContatti) ? (_spEmailContatti[cliName.toUpperCase()] || []) : [];
+
+  let opts = '<option value="">— seleziona contatto —</option>';
+  contatti.forEach((c,idx)=>{
+    const label = c.referente ? (c.referente + (c.email ? ' <' + c.email + '>' : '')) : (c.email || '(senza nome)');
+    opts += `<option value="${idx}" data-ref="${offEsc(c.referente)}" data-eml="${offEsc(c.email)}">${offEsc(label)}</option>`;
+  });
+  opts += '<option value="__manual">+ Inserisci manualmente</option>';
+  selRef.innerHTML = opts;
+
+  // Reset campi
+  if(contatti.length === 0){
+    // Nessun contatto disponibile: passa direttamente a manuale
+    offModalitaManuale(true);
+  } else {
+    // Mostra dropdown e nascondi input manuali (modalità lista)
+    offModalitaManuale(false);
+  }
+}
+
+// ── Switch modalità (dropdown vs manuale) ──
+function offModalitaManuale(manuale){
+  const selRef = document.getElementById('off-f-riferimento-sel');
+  const inpRef = document.getElementById('off-f-riferimento');
+  const inpRefShow = document.getElementById('off-f-riferimento-show');
+  const inpEml = document.getElementById('off-f-email');
+  const btnSwap = document.getElementById('off-btn-swap-ref');
+  if(!selRef || !inpRef) return;
+  if(manuale){
+    selRef.style.display = 'none';
+    inpRef.style.display = '';
+    if(inpRefShow){ inpRefShow.style.display = 'none'; }
+    inpEml.removeAttribute('readonly');
+    inpEml.style.background = '';
+    inpRef.removeAttribute('readonly');
+    if(btnSwap) btnSwap.textContent = '↺ Dalla lista';
+  } else {
+    selRef.style.display = '';
+    inpRef.style.display = 'none';
+    if(inpRefShow){ inpRefShow.style.display = ''; }
+    inpRef.setAttribute('readonly','readonly');
+    inpEml.setAttribute('readonly','readonly');
+    inpEml.style.background = 'var(--bg)';
+    if(btnSwap) btnSwap.textContent = '✎ Manuale';
+  }
+  // Quando si va in manuale, sincronizza il campo "show" col valore reale
+  if(manuale && inpRefShow){ inpRefShow.style.display = ''; }
+}
+
+// Hook: cliente cambiato → ricarica dropdown contatti
+function offClienteCambiato(){
+  offAggiornaContatti();
+}
+
+// ── Quando l'utente sceglie un contatto dal dropdown ──
+function offContattoSelezionato(){
+  const selRef = document.getElementById('off-f-riferimento-sel');
+  const inpRef = document.getElementById('off-f-riferimento');
+  const inpRefShow = document.getElementById('off-f-riferimento-show');
+  const inpEml = document.getElementById('off-f-email');
+  if(!selRef.value){
+    inpRef.value=''; if(inpRefShow) inpRefShow.value=''; inpEml.value='';
+    return;
+  }
+  if(selRef.value === '__manual'){
+    offModalitaManuale(true);
+    inpRef.value=''; if(inpRefShow) inpRefShow.value=''; inpEml.value='';
+    inpRef.focus();
+    return;
+  }
+  const opt = selRef.options[selRef.selectedIndex];
+  inpRef.value = opt.dataset.ref || '';
+  if(inpRefShow) inpRefShow.value = opt.dataset.ref || '';
+  inpEml.value = opt.dataset.eml || '';
+}
+
+function offToggleModalitaContatto(){
+  const inpRef = document.getElementById('off-f-riferimento');
+  const isManuale = inpRef.style.display !== 'none';
+  if(isManuale){
+    // Torna a dropdown
+    offModalitaManuale(false);
+    offAggiornaContatti();
+  } else {
+    offModalitaManuale(true);
+  }
+}
+
 // ── Apri wizard (nuovo o modifica) ──
 async function offNuova(id){
   OFF_WIZ.macrogruppi = [];
@@ -4424,6 +4569,7 @@ async function offNuova(id){
   OFF_STATE.editId = id || null;
 
   await offCaricaClienti();
+  await offCaricaContatti();
   const selCli = document.getElementById('off-f-cliente');
   selCli.innerHTML = '<option value="">— seleziona —</option>' +
     _spClienti.map(c=>`<option value="${c.id}" data-name="${offEsc(c.name)}">${offEsc(c.name)}</option>`).join('');
@@ -4436,6 +4582,9 @@ async function offNuova(id){
     const o = OFF_STATE.list.find(x=>x.id===id);
     if(!o){ showToast('Offerta non trovata'); return; }
     offPopolaForm(o);
+    // Per offerte esistenti il riferimento/email sono già salvati nei campi: vado in modalità manuale
+    offModalitaManuale(true);
+    document.getElementById('off-f-riferimento-show').value = o.riferimento || '';
   } else {
     // Reset
     document.getElementById('off-f-numero').value = offGeneraNumero();
@@ -4447,6 +4596,7 @@ async function offNuova(id){
     document.getElementById('off-f-lingua').value = 'ita';
     document.getElementById('off-f-stato').value = 'Bozza';
     document.getElementById('off-f-validita').value = 15;
+    offAggiornaContatti(); // popola dropdown contatti (vuoto se nessun cliente)
     document.getElementById('off-f-consegna').value = '';
     document.getElementById('off-f-garanzia').value = '';
     document.getElementById('off-f-pagamenti').value = '';
@@ -4744,6 +4894,7 @@ async function offDuplica(id){
   if(!o){ showToast('Offerta non trovata'); return; }
   OFF_STATE.editId = null;
   await offCaricaClienti();
+  await offCaricaContatti();
 
   const selCli = document.getElementById('off-f-cliente');
   selCli.innerHTML = '<option value="">— seleziona —</option>' +
@@ -4757,6 +4908,8 @@ async function offDuplica(id){
   document.getElementById('off-f-numero').value = offGeneraNumero();
   document.getElementById('off-f-data').value = new Date().toISOString().split('T')[0];
   document.getElementById('off-f-stato').value = 'Bozza';
+  offModalitaManuale(true);
+  document.getElementById('off-f-riferimento-show').value = o.riferimento || '';
 
   offRenderMacrogruppi();
   offRenderQuotazione();
@@ -4791,6 +4944,7 @@ async function offCreaDaTemplate(tmplId){
 
   OFF_STATE.editId = null;
   await offCaricaClienti();
+  await offCaricaContatti();
 
   const selCli = document.getElementById('off-f-cliente');
   selCli.innerHTML = '<option value="">— seleziona —</option>' +
@@ -4813,6 +4967,7 @@ async function offCreaDaTemplate(tmplId){
   document.getElementById('off-f-garanzia').value = tmpl.data.garanzia || '';
   document.getElementById('off-f-pagamenti').value = tmpl.data.pagamenti || '';
   document.getElementById('off-f-note').value = '';
+  offAggiornaContatti(); // popola dropdown contatti (vuoto se nessun cliente)
 
   OFF_WIZ.macrogruppi = (tmpl.data.macrogruppi||[]).map(mg=>({
     id: offUid(),
