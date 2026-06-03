@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v138';</script>
+<script>const APP_VERSION = 'v139';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -3469,8 +3469,8 @@ async function loadProgetti() {
         {headers: headers}
       ).then(r => r.json()).then(d => {
         _spClienti = (d.value || [])
-          .map(i => ({id: parseInt(i.fields.ID), name: i.fields.Title || ''}))
-          .filter(c => c.name)
+          .map(i => ({id: parseInt(i.id) || 0, name: (i.fields||{}).Title || ''}))
+          .filter(c => c.name && c.id > 0)
           .sort((a,b) => a.name.localeCompare(b.name));
       }).catch(() => {});
     }
