@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v131';</script>
+<script>const APP_VERSION = 'v132';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -733,6 +733,11 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
     Contratti SP
     <span class="badge-count" id="cnt-contratti">-</span>
   </div>
+  <div class="nav-item" id="nav-offerte" onclick="showView('offerte')">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 1h7l3 3v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"/><polyline points="10 1 10 4 13 4"/><line x1="5" y1="8" x2="11" y2="8"/><line x1="5" y1="11" x2="11" y2="11"/></svg>
+    Genera Offerta
+    <span class="badge-count" id="cnt-offerte">-</span>
+  </div>
 
   <div class="nav-sep"></div>
   <div class="nav-section-label">Assistenza</div>
@@ -876,6 +881,22 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
             style="width:100%;margin-top:7px;font-size:11px;padding:5px 8px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);outline:none;box-sizing:border-box"
             oninput="saveSpSetting('sp_contr_id',this.value,this)">
           <div id="settings-sp-contr-id-status" style="font-size:11px;margin-top:4px;color:var(--text3)">Non salvato</div>
+        </div>
+      </div>
+
+      <!-- Card Lista AnymaOfferte -->
+      <div class="settings-card">
+        <div class="settings-card-icon" style="background:rgba(192,57,43,.15);flex-shrink:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="1.5" width="18" height="18"><path d="M21 14H3M21 6H3M3 18h12M16 18l2 2 4-4"/></svg>
+        </div>
+        <div class="settings-card-info" style="flex:1;min-width:0">
+          <div class="settings-card-title">SharePoint - Lista AnymaOfferte (GUID)</div>
+          <div class="settings-card-path">ID lista Offerte da SharePoint</div>
+          <input type="text" id="settings-sp-offerte-id"
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            style="width:100%;margin-top:7px;font-size:11px;padding:5px 8px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);outline:none;box-sizing:border-box"
+            oninput="saveSpSetting('sp_offerte_id',this.value,this)">
+          <div id="settings-sp-offerte-id-status" style="font-size:11px;margin-top:4px;color:var(--text3)">Non salvato</div>
         </div>
       </div>
 
@@ -2635,6 +2656,16 @@ function showView(view) {
     if(state.progetti && state.progetti.length) renderProjView();
     return;
   }
+  if (view==='offerte') {
+    const el=document.getElementById('view-offerte');
+    el.style.display='flex'; el.classList.add('visible');
+    if(OFF_STATE.list.length===0){
+      offLoad().catch(()=>{});
+    } else {
+      offRender();
+    }
+    return;
+  }
   if (view==='stato-progetti') {
     const el=document.getElementById('view-stato-progetti');
     el.style.display='flex'; el.classList.add('visible');
@@ -3028,6 +3059,7 @@ function getContrDefault(tipo, pac) {
   return (d[tipo]&&d[tipo][pac]) || {saldoMinuti:0, saldoOre:0, pacchetto:'Spot'};
 }
 function getSpContrId() { return localStorage.getItem('anyma_sp_contr_id')||''; }
+function getSpOfferteId() { return localStorage.getItem('anyma_sp_offerte_id')||''; }
 function getSpRappId()  { return decodeURIComponent(localStorage.getItem('anyma_sp_rapp_id')||'').replace(/[{}]/g,''); }
 
 const FASI = ['Preventivo','Materiale','Intervento','Sviluppo','Spedizione','Pagamento'];
@@ -3680,6 +3712,220 @@ async function spDelete(){
     console.error('spDelete:',e);
     showToast('Errore: '+e.message);
   }
+}
+
+// ════════════════════════════════════════════════════════════════
+// GENERA OFFERTA — v132
+// Lista SP AnymaOfferte: Title, Cliente(lookup), Oggetto, DataOfferta,
+// Riferimento, EmailRiferimento, ValiditaGiorni, Consegna, Garanzia,
+// PagamentiTesto, TotaleImporto(valuta), Stato(choice), Lingua(choice),
+// Note, ContenutoJSON (tutta la struttura macrogruppi/punti/quotazione)
+// ════════════════════════════════════════════════════════════════
+const OFF_STATE = {
+  list: [],
+  sortCol: 'data',
+  sortDir: 'desc',
+  editId: null
+};
+
+function offFmtDate(d){
+  if(!d) return '—';
+  const dt = new Date(d);
+  return dt.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+function offFmtMoney(n){
+  if(n==null||isNaN(n)) return '—';
+  return '€ '+Number(n).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function offEsc(s){
+  if(s==null) return '';
+  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function offStatoCls(s){
+  s=(s||'').toLowerCase();
+  if(s.includes('bozza')) return 's-prev';
+  if(s.includes('invia')) return 's-corso';
+  if(s.includes('accett')) return 's-fatto';
+  if(s.includes('rifiu')) return 's-attesa';
+  return 's-prev';
+}
+
+async function offLoad(){
+  const listId = getSpOfferteId();
+  if(!listId){ showToast('Configura GUID lista AnymaOfferte in Impostazioni'); return; }
+  try{
+    const tok = await anGetToken();
+    if(!tok){ showToast('Token scaduto - rieffettua il login'); return; }
+    const headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
+
+    if(!_spSiteId){
+      const sR = await fetch(GRAPH_BASE+'/sites/'+SP_SITE_HOSTNAME+':'+SP_SITE_PATH,{headers});
+      if(sR.ok) _spSiteId = (await sR.json()).id;
+    }
+
+    const url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+
+      '/items?expand=fields(select=Title,Cliente,ClienteLookupId,Oggetto,DataOfferta,Riferimento,EmailRiferimento,ValiditaGiorni,Consegna,Garanzia,PagamentiTesto,TotaleImporto,Stato,Lingua,Note,ContenutoJSON)&$top=500';
+    const r = await fetch(url,{headers});
+    if(!r.ok){ showToast('Errore caricamento offerte: HTTP '+r.status); return; }
+    const data = await r.json();
+
+    OFF_STATE.list = (data.value||[]).map(i=>{
+      const f = i.fields||{};
+      return {
+        id:         i.id,
+        numero:     f.Title || '',
+        cliente:    f.Cliente || '',
+        clienteId:  f.ClienteLookupId ? parseInt(f.ClienteLookupId) : null,
+        oggetto:    f.Oggetto || '',
+        data:       f.DataOfferta ? f.DataOfferta.split('T')[0] : '',
+        riferimento:f.Riferimento || '',
+        emailRif:   f.EmailRiferimento || '',
+        validita:   f.ValiditaGiorni || 15,
+        consegna:   f.Consegna || '',
+        garanzia:   f.Garanzia || '',
+        pagamenti:  f.PagamentiTesto || '',
+        totale:     f.TotaleImporto != null ? parseFloat(f.TotaleImporto) : null,
+        stato:      f.Stato || 'Bozza',
+        lingua:     f.Lingua || 'ita',
+        note:       f.Note || '',
+        contenuto:  f.ContenutoJSON || ''
+      };
+    });
+
+    // Popola filtro anni
+    const anni = new Set();
+    OFF_STATE.list.forEach(o=>{ if(o.data) anni.add(o.data.substring(0,4)); });
+    const selA = document.getElementById('off-anno-filter');
+    if(selA){
+      const cur = selA.value;
+      selA.innerHTML = '<option value="">Tutti gli anni</option>' +
+        Array.from(anni).sort().reverse().map(a=>`<option value="${a}">${a}</option>`).join('');
+      selA.value = cur;
+    }
+
+    document.getElementById('cnt-offerte').textContent = OFF_STATE.list.length;
+    offRender();
+    showToast(OFF_STATE.list.length+' offerte caricate');
+  }catch(e){
+    console.error('offLoad:',e);
+    showToast('Errore: '+e.message);
+  }
+}
+
+function offToggleSort(col){
+  if(OFF_STATE.sortCol === col){
+    OFF_STATE.sortDir = OFF_STATE.sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    OFF_STATE.sortCol = col;
+    OFF_STATE.sortDir = 'asc';
+  }
+  offRender();
+}
+
+function offFiltered(){
+  const q = (document.getElementById('off-search')?.value||'').toLowerCase();
+  const stato = document.getElementById('off-stato-filter')?.value || '';
+  const anno = document.getElementById('off-anno-filter')?.value || '';
+  return OFF_STATE.list.filter(o=>{
+    if(stato && o.stato !== stato) return false;
+    if(anno && !o.data.startsWith(anno)) return false;
+    if(q){
+      const hay = (o.numero+' '+o.cliente+' '+o.oggetto+' '+o.riferimento).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function offRender(){
+  const list = offFiltered();
+  document.getElementById('off-count').textContent = list.length+' offerte';
+
+  const wrap = document.getElementById('off-list-wrap');
+  const empty = document.getElementById('off-empty');
+
+  if(OFF_STATE.list.length === 0){
+    wrap.style.display='none';
+    empty.style.display='';
+    return;
+  }
+  empty.style.display='none';
+  wrap.style.display='';
+
+  const col = OFF_STATE.sortCol;
+  const dir = OFF_STATE.sortDir;
+  const mul = dir === 'asc' ? 1 : -1;
+  const sorted = list.slice().sort((a,b)=>{
+    let av = a[col], bv = b[col];
+    if(col === 'totale'){ av = av||0; bv = bv||0; }
+    else if(col === 'data'){
+      if(!av && !bv) return 0;
+      if(!av) return 1;
+      if(!bv) return -1;
+      return (av < bv ? -1 : 1) * mul;
+    }
+    else { av = (av||'').toString().toLowerCase(); bv = (bv||'').toString().toLowerCase(); }
+    if(av < bv) return -1 * mul;
+    if(av > bv) return 1 * mul;
+    return 0;
+  });
+
+  // Indicatori sort
+  document.querySelectorAll('#view-offerte .sp-th-sort').forEach(th=>{
+    th.classList.remove('active');
+    const ind = th.querySelector('.sp-sort-ind');
+    if(ind) ind.textContent = '';
+    if(th.dataset.col === col){
+      th.classList.add('active');
+      if(ind) ind.textContent = dir === 'asc' ? '▲' : '▼';
+    }
+  });
+
+  const html = sorted.map(o=>{
+    return `<tr>
+      <td style="font-weight:700;color:var(--accent)">${offEsc(o.numero)}</td>
+      <td style="color:var(--text)">${offEsc(o.cliente)||'—'}</td>
+      <td style="color:var(--text2)">${offEsc(o.oggetto)||'—'}</td>
+      <td style="color:var(--text2)">${offFmtDate(o.data)}</td>
+      <td style="text-align:right;font-weight:600;color:var(--text)">${offFmtMoney(o.totale)}</td>
+      <td><span class="sp-stato-badge ${offStatoCls(o.stato)}">${offEsc(o.stato)}</span></td>
+      <td style="text-align:center">
+        <button class="btn btn-sm" onclick="offNuova('${o.id}')" title="Modifica" style="padding:3px 7px">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><path d="M11 2l3 3-9 9H2v-3z"/></svg>
+        </button>
+        <button class="btn btn-sm" onclick="offDuplica('${o.id}')" title="Duplica" style="padding:3px 7px">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><rect x="5" y="5" width="9" height="9" rx="1"/><path d="M2 11V3a1 1 0 0 1 1-1h8"/></svg>
+        </button>
+        <button class="btn btn-sm" onclick="offGeneraPDF('${o.id}')" title="Genera PDF" style="padding:3px 7px;color:var(--accent)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><path d="M4 6V2h8v4M2 6h12a1 1 0 0 1 1 1v5H1V7a1 1 0 0 1 1-1zM4 11v3h8v-3"/></svg>
+        </button>
+        <button class="btn btn-sm" onclick="offElimina('${o.id}')" title="Elimina" style="padding:3px 7px;color:#dc2626">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><path d="M2 4h12M5 4V2.5A.5.5 0 0 1 5.5 2h5a.5.5 0 0 1 .5.5V4M6 7v5M10 7v5M3.5 4l.5 9a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l.5-9"/></svg>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('off-list-body').innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">Nessuna offerta corrispondente ai filtri</td></tr>';
+}
+
+// Placeholder functions (verranno implementate negli step successivi)
+function offNuova(id){ console.log('TODO offNuova', id); showToast('Wizard offerta - in arrivo nello step 2'); }
+function offDuplica(id){ console.log('TODO offDuplica', id); showToast('Duplica - in arrivo nello step 2'); }
+function offGeneraPDF(id){ console.log('TODO offGeneraPDF', id); showToast('PDF - in arrivo nello step 3'); }
+function offMostraTemplate(){ console.log('TODO offMostraTemplate'); showToast('Template - in arrivo nello step 2'); }
+async function offElimina(id){
+  if(!confirm('Eliminare definitivamente questa offerta?')) return;
+  try{
+    const tok = await anGetToken();
+    const listId = getSpOfferteId();
+    const headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
+    const url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+'/items/'+id;
+    const r = await fetch(url,{method:'DELETE',headers});
+    if(!r.ok){ showToast('Errore: HTTP '+r.status); return; }
+    showToast('Offerta eliminata');
+    await offLoad();
+  }catch(e){ showToast('Errore: '+e.message); }
 }
 
 function setFaseFilter(chip) {
@@ -4399,6 +4645,7 @@ function loadSpSettings() {
     {id:'settings-sp-proj-id', key:'sp_proj_id'},
     {id:'settings-sp-ordf-id', key:'sp_ordf_id'},
     {id:'settings-sp-contr-id', key:'sp_contr_id'},
+    {id:'settings-sp-offerte-id', key:'sp_offerte_id'},
     {id:'settings-sp-rapp-id', key:'sp_rapp_id'},
   ];
   fields.forEach(function(f) {
@@ -6777,6 +7024,68 @@ function _buildPaginaResocontoGlobale(items, cliente, tipo, _lang) {
   </div>
 
 
+
+  <!-- VIEW: GENERA OFFERTA (v132) -->
+  <div id="view-offerte" class="content-view">
+    <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;gap:10px">
+
+      <!-- Toolbar -->
+      <div class="sp-toolbar">
+        <button class="btn btn-sm" onclick="offLoad()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5M13.5 2.5v3.5h-3.5"/></svg>
+          Aggiorna
+        </button>
+        <button class="btn btn-sm btn-primary" onclick="offNuova(null)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>
+          Nuova offerta
+        </button>
+        <button class="btn btn-sm" onclick="offMostraTemplate()" title="Crea da template predefinito">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><line x1="2" y1="6" x2="14" y2="6"/></svg>
+          Da template
+        </button>
+        <span class="tag-count" id="off-count">-</span>
+
+        <input type="text" class="filter-input" id="off-search" placeholder="Cerca cliente, oggetto, n°..." oninput="offRender()" style="max-width:240px">
+
+        <select class="sel" id="off-stato-filter" onchange="offRender()" style="font-size:12px">
+          <option value="">Tutti gli stati</option>
+          <option value="Bozza">Bozza</option>
+          <option value="Inviata">Inviata</option>
+          <option value="Accettata">Accettata</option>
+          <option value="Rifiutata">Rifiutata</option>
+          <option value="Archiviata">Archiviata</option>
+        </select>
+
+        <select class="sel" id="off-anno-filter" onchange="offRender()" style="font-size:12px;margin-left:auto">
+          <option value="">Tutti gli anni</option>
+        </select>
+      </div>
+
+      <!-- Lista offerte -->
+      <div class="sp-list-wrap" id="off-list-wrap" style="display:none">
+        <table class="sp-list">
+          <thead>
+            <tr>
+              <th style="width:110px" class="sp-th-sort" onclick="offToggleSort('numero')" data-col="numero">N° Offerta <span class="sp-sort-ind"></span></th>
+              <th class="sp-th-sort" onclick="offToggleSort('cliente')" data-col="cliente">Cliente <span class="sp-sort-ind"></span></th>
+              <th class="sp-th-sort" onclick="offToggleSort('oggetto')" data-col="oggetto">Oggetto <span class="sp-sort-ind"></span></th>
+              <th style="width:100px" class="sp-th-sort" onclick="offToggleSort('data')" data-col="data">Data <span class="sp-sort-ind"></span></th>
+              <th style="width:120px;text-align:right" class="sp-th-sort" onclick="offToggleSort('totale')" data-col="totale">Totale <span class="sp-sort-ind"></span></th>
+              <th style="width:100px" class="sp-th-sort" onclick="offToggleSort('stato')" data-col="stato">Stato <span class="sp-sort-ind"></span></th>
+              <th style="width:140px;text-align:center">Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="off-list-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Empty state -->
+      <div class="sp-empty" id="off-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="42" height="42"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="13" y2="16"/></svg>
+        Premi <b style="color:var(--text2)">Aggiorna</b> per caricare le offerte da SharePoint
+      </div>
+    </div>
+  </div>
 
 <!-- MODAL RESOCONTO MENSILE GLOBALE -->
 </div>
