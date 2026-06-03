@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v129';</script>
+<script>const APP_VERSION = 'v130';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -6140,7 +6140,22 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   var BV  = 'font-size:17px;font-weight:900;color:'+RED+';line-height:1';
   h += '<div style="display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid #e8d0d0">';
   h += '<div style="'+BOX+'"><span style="'+BL+'">'+L.interventi+'</span><span style="'+BV+'">'+items.length+'</span></div>';
-  h += '<div style="'+BOX+'"><span style="'+BL+'">'+L.consumato+'</span><span style="'+BV+'">'+fmtVal(totMin)+'</span></div>';
+  // CONSUMATO = minuti/ore effettivamente addebitati (scalati dal pacchetto)
+  // Riusa la stessa logica usata per "Tot. Addebitati" nel footer tabella
+  var totConsumatoEffettivo;
+  if(isTel) {
+    // somma minuti arrotondati per RT (5,10,15... per Telefonica)
+    var _tmA = rows.reduce(function(s,r){return s+(r.minArrotondati!==null&&r.minArrotondati!==undefined ? r.minArrotondati : 0);},0);
+    totConsumatoEffettivo = _tmA;  // minuti
+  } else if(isTeleass) {
+    // somma ore scalate con coefficienti notturni
+    var _tmT = rows.reduce(function(s,r){return s+(r.oreScalate!==null&&r.oreScalate!==undefined ? r.oreScalate : 0);},0);
+    totConsumatoEffettivo = _tmT * 60;  // converti ore -> minuti per fmtVal
+  } else {
+    // On-Site: stesso di durataMin
+    totConsumatoEffettivo = rows.reduce(function(s,r){return s+(r.durataMin||0);},0);
+  }
+  h += '<div style="'+BOX+'"><span style="'+BL+'">'+L.consumato+'</span><span style="'+BV+'">'+fmtVal(totConsumatoEffettivo)+'</span></div>';
   if(saldoAtt!==null) {
     var boxBorder = saldoNegativo ? '1px solid #e8a0a0' : '1px solid #d4a0a0';
     var boxBg     = saldoNegativo ? '#fff5f5' : '#fdf0f0';
