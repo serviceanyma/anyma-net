@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v132';</script>
+<script>const APP_VERSION = 'v133';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -123,6 +123,93 @@ main{
    Stats/toolbar/grafici sono flex-shrink:0 (non si restringono).
    split-grid prende il resto con flex:1 + min-height:0.
 */
+/* ═══ WIZARD OFFERTA v132/v133 ═══ */
+.off-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:140;display:none;backdrop-filter:blur(3px)}
+.off-modal-overlay.open{display:block}
+.off-modal{position:fixed;inset:24px;background:var(--bg2);border:1px solid var(--border2);border-radius:14px;z-index:150;display:none;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.off-modal.open{display:flex}
+
+.off-mod-hdr{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--bg3)}
+.off-mod-hdr h3{font-size:14px;font-weight:700;color:var(--text);margin:0}
+.off-mod-hdr-meta{font-size:11px;color:var(--text3);margin-left:14px}
+
+.off-mod-body{flex:1;overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:14px;background:var(--bg)}
+
+.off-mod-foot{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:space-between;flex-shrink:0;background:var(--bg2)}
+
+/* Header form fisso */
+.off-form-hdr{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.off-form-hdr .off-fld-full{grid-column:1 / -1}
+.off-form-hdr .off-fld-half{grid-column:span 2}
+
+.off-fld{display:flex;flex-direction:column;gap:5px}
+.off-fld label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+.off-fld input,.off-fld select,.off-fld textarea{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:7px 10px;font-family:var(--font);font-size:12px;outline:none;transition:border-color .15s}
+.off-fld input:focus,.off-fld select:focus,.off-fld textarea:focus{border-color:var(--accent)}
+.off-fld textarea{min-height:60px;resize:vertical}
+
+/* Macrogruppo collassabile */
+.off-mg{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.off-mg-hdr{padding:12px 14px;background:var(--bg3);display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;border-bottom:1px solid var(--border);transition:background .15s}
+.off-mg-hdr:hover{background:var(--bg4)}
+.off-mg.collapsed .off-mg-hdr{border-bottom:none}
+.off-mg-arrow{font-size:10px;color:var(--text3);transition:transform .15s;width:12px;flex-shrink:0}
+.off-mg.collapsed .off-mg-arrow{transform:rotate(-90deg)}
+.off-mg-title-input{flex:1;background:transparent;border:none;color:var(--text);font-size:13px;font-weight:700;outline:none;padding:0;letter-spacing:.3px}
+.off-mg-title-input:focus{background:var(--bg2);border-radius:4px;padding:2px 6px}
+.off-mg-cnt{background:rgba(255,255,255,.08);padding:2px 8px;border-radius:10px;font-size:10px;color:var(--text2);font-weight:600}
+.off-mg-actions{display:flex;gap:4px;flex-shrink:0}
+.off-mg-act{background:transparent;border:none;color:var(--text3);cursor:pointer;padding:4px 6px;border-radius:4px;transition:all .12s}
+.off-mg-act:hover{background:var(--bg);color:var(--text)}
+.off-mg-act.danger:hover{color:#dc2626}
+.off-mg-body{padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.off-mg.collapsed .off-mg-body{display:none}
+
+/* Punti */
+.off-punto{display:flex;align-items:flex-start;gap:8px;padding:7px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;transition:border-color .12s}
+.off-punto:hover{border-color:var(--border2)}
+.off-punto-handle{color:var(--text3);font-size:13px;line-height:1;padding-top:6px;cursor:grab;user-select:none}
+.off-punto-text{flex:1;background:transparent;border:none;color:var(--text);font-family:var(--font);font-size:12px;line-height:1.4;outline:none;padding:5px;border-radius:4px;resize:vertical;min-height:34px}
+.off-punto-text:focus{background:var(--bg2)}
+.off-punto-actions{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+.off-punto-actions button{background:transparent;border:none;color:var(--text3);cursor:pointer;padding:2px 4px;border-radius:3px;font-size:11px;line-height:1}
+.off-punto-actions button:hover{background:var(--bg);color:var(--text)}
+.off-punto-actions button.danger:hover{color:#dc2626}
+
+.off-add-punto{align-self:flex-start;background:transparent;border:1px dashed var(--border2);color:var(--text3);padding:5px 12px;border-radius:5px;font-size:11px;cursor:pointer;font-weight:600;transition:all .12s}
+.off-add-punto:hover{border-color:var(--accent);color:var(--accent)}
+
+.off-add-mg{align-self:center;background:transparent;border:2px dashed var(--border2);color:var(--text3);padding:10px 20px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;transition:all .15s;margin-top:6px}
+.off-add-mg:hover{border-color:var(--accent);color:var(--accent);background:rgba(192,57,43,.05)}
+
+/* Quotazione */
+.off-quot-sez{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px}
+.off-quot-sez-hdr{padding:9px 14px;background:var(--bg3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);border-bottom:1px solid var(--border)}
+.off-quot-table{width:100%;border-collapse:collapse}
+.off-quot-table th{padding:6px 10px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-weight:700;background:var(--bg2);border-bottom:1px solid var(--border)}
+.off-quot-table td{padding:5px 10px;border-bottom:1px solid var(--border)}
+.off-quot-table input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:6px 8px;font-family:var(--font);font-size:12px;outline:none}
+.off-quot-table input:focus{border-color:var(--accent)}
+.off-quot-table input.off-importo{text-align:right;font-family:var(--mono);font-weight:600}
+.off-quot-row-act{width:30px;text-align:center}
+.off-quot-row-act button{background:transparent;border:none;color:var(--text3);cursor:pointer;padding:3px 5px;border-radius:3px}
+.off-quot-row-act button:hover{color:#dc2626}
+.off-quot-totale{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:linear-gradient(90deg,rgba(192,57,43,.12) 0%,rgba(192,57,43,.04) 100%);border:1px solid var(--accent);border-radius:10px;font-size:14px;font-weight:700;margin-top:10px}
+.off-quot-totale span:first-child{text-transform:uppercase;letter-spacing:.6px;color:var(--text2);font-size:12px}
+.off-quot-totale span:last-child{color:var(--accent);font-family:var(--mono);font-size:18px}
+
+/* Section title */
+.off-section-title{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.7px;margin:6px 0 -4px;padding:0 4px}
+
+/* Template modal */
+.off-tmpl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.off-tmpl-card{padding:14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s}
+.off-tmpl-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.off-tmpl-card h4{font-size:13px;font-weight:700;color:var(--text);margin:0 0 6px;letter-spacing:.3px}
+.off-tmpl-card p{font-size:11px;color:var(--text3);margin:0;line-height:1.4}
+
+/* ═══ FINE WIZARD OFFERTA ═══ */
+
 /* ═══ STATO PROGETTI v119 ═══ */
 .sp-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0;margin-bottom:10px}
 .sp-view-tabs{display:flex;gap:4px}
@@ -3909,11 +3996,610 @@ function offRender(){
   document.getElementById('off-list-body').innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">Nessuna offerta corrispondente ai filtri</td></tr>';
 }
 
-// Placeholder functions (verranno implementate negli step successivi)
-function offNuova(id){ console.log('TODO offNuova', id); showToast('Wizard offerta - in arrivo nello step 2'); }
-function offDuplica(id){ console.log('TODO offDuplica', id); showToast('Duplica - in arrivo nello step 2'); }
-function offGeneraPDF(id){ console.log('TODO offGeneraPDF', id); showToast('PDF - in arrivo nello step 3'); }
-function offMostraTemplate(){ console.log('TODO offMostraTemplate'); showToast('Template - in arrivo nello step 2'); }
+// ════════════════════════════════════════════════════════════════
+// WIZARD OFFERTA — Step 2 (v133)
+// ════════════════════════════════════════════════════════════════
+const OFF_WIZ = {
+  macrogruppi: [],     // [{id, title, items:[{id,text}]}]
+  quotazione: {        // 3 sezioni di righe
+    base: [],          // [{id, desc, importo}]
+    opz: [],
+    srv: []
+  }
+};
+
+// ── TEMPLATE PREDEFINITI ──
+const OFF_TEMPLATES = [
+  {
+    id: 'astucciatrice',
+    nome: 'Incartonatrice / Astucciatrice',
+    descrizione: 'Template per fornitura macchine di astucciatura automatica',
+    data: {
+      oggetto: 'Incartonatrice astucciatrice',
+      macrogruppi: [
+        { title: 'Oggetto', items: [
+          'Fornitura di cartonatrice/astucciatrice automatica per la formazione, riempimento e chiusura di astucci in cartone, destinata alla sostituzione di macchina esistente, con prestazioni allineate ai requisiti di produzione attuali.'
+        ]},
+        { title: 'Dati di progetto', items: [
+          'Formato astuccio: 230 × 275 × 115 mm (dimensioni esterne indicative)',
+          'Cadenza nominale richiesta: 12 scatole/min (1 scatola ogni 5 s)',
+          'Configurazione di riempimento: 6 prodotti per scatola',
+          'Peso unitario prodotto: 500 g',
+          'Peso nominale per scatola: 3.000 g (6 × 500 g)',
+          'Chiusura astuccio: fronte/retro con colla a caldo hot-melt',
+          'Alimentazione prodotti: arrivo singolo prodotto su nastro; formazione automatica gruppo a cura della macchina'
+        ]},
+        { title: 'Descrizione funzionale dell\'impianto', items: [
+          'Alimentazione fustelle da magazzino dedicato',
+          'Prelievo fustella e apertura/formatura dell\'astuccio',
+          'Alimentazione prodotto singolo in ingresso su nastro',
+          'Raggruppamento automatico: composizione gruppi (in sincronia con la cadenza richiesta)',
+          'Inserimento gruppo nell\'astuccio formato (trasferimento/spinta controllata)',
+          'Chiusura fronte/retro mediante applicazione colla hot-melt',
+          'Pressatura/tenuta lembi incollati per garantire stabilità della chiusura',
+          'Uscita scatola chiusa su nastro di scarico'
+        ]},
+        { title: 'Prestazioni garantibili (su basi di progetto)', items: [
+          'Produzione nominale: fino a 12 scatole/min sul formato indicato',
+          'Capacità di carico: gestione di confezioni fino a 3 kg/scatola',
+          'Funzionamento continuo con alimentazione regolare di fustelle e prodotto'
+        ]},
+        { title: 'Campo di fornitura', items: [
+          'Magazzino fustelle con dispositivi di prelievo e separazione',
+          'Sistema di apertura e formatura astuccio con guide e vincoli regolabili',
+          'Nastro ingresso prodotto con guide laterali',
+          'Sistema di formazione gruppi a partire da flusso singolo',
+          'Meccanismo di trasferimento/inserimento sincronizzato con la cadenza macchina',
+          'Chiusura fronte/retro con colla a caldo (fusore, tubazioni riscaldate, pistole/ugelli)',
+          'Stazione di pressatura/tenuta lembi incollati',
+          'Quadro elettrico completo + PLC + HMI Omron',
+          'Nastro di uscita scatole chiuse'
+        ]},
+        { title: 'Caratteristiche costruttive e sicurezza', items: [
+          'Struttura macchina in carpenteria metallica con pannellature e ripari',
+          'Protezioni e interblocchi secondo requisiti di sicurezza applicabili',
+          'Marcatura CE e documentazione di conformità (manuale uso/manutenzione, dichiarazione CE)'
+        ]},
+        { title: 'Documentazione inclusa', items: [
+          'Schemi elettrici e pneumatici',
+          'Manuale di uso e manutenzione',
+          'Dichiarazione CE in conformità alla Direttiva 2006/42/CE e successive variazioni'
+        ]},
+        { title: 'Esclusioni', items: [
+          'IVA',
+          'Attrezzature necessarie all\'esecuzione lavori di montaggio (muletto, scale, piattaforme, ecc.)',
+          'Scarico materiali da automezzi',
+          'Allacciamenti elettrici e pneumatici',
+          'Ogni altro materiale non contemplato nella presente offerta'
+        ]},
+        { title: 'Opzioni facoltative (non incluse)', items: [
+          'Nastro di accumulo in uscita',
+          'Kit formato aggiuntivo',
+          'Teleassistenza e pacchetto ricambi consigliati'
+        ]}
+      ],
+      validita: 30,
+      consegna: '5 mesi da ordine',
+      garanzia: '12 mesi da collaudo presso vostra sede',
+      pagamenti: '40% all\'ordine B.B.\n40% avviso merce pronta B.B.\n20% al collaudo 30-60gg B.B.',
+      quotazione: {
+        base: [{ desc: 'Incartonatrice astucciatrice', importo: 0 }],
+        opz: [],
+        srv: []
+      }
+    }
+  },
+  {
+    id: 'linea-confezionamento',
+    nome: 'Linea di confezionamento',
+    descrizione: 'Template per fornitura linea completa di confezionamento',
+    data: {
+      oggetto: 'Linea di confezionamento',
+      macrogruppi: [
+        { title: 'Oggetto', items: ['Fornitura linea di confezionamento completa per il prodotto del Cliente.'] },
+        { title: 'Dati di progetto', items: ['Formato prodotto: da definire', 'Cadenza richiesta: da definire', 'Tipo confezione: da definire'] },
+        { title: 'Descrizione funzionale', items: ['Alimentazione prodotto', 'Formazione confezione', 'Riempimento', 'Chiusura', 'Etichettatura', 'Uscita prodotto finito'] },
+        { title: 'Campo di fornitura', items: ['Macchina principale', 'Quadro elettrico + PLC + HMI', 'Sistema di sicurezza CE'] },
+        { title: 'Esclusioni', items: ['IVA', 'Allacciamenti elettrici e pneumatici', 'Trasporto'] }
+      ],
+      validita: 30,
+      consegna: '6 mesi da ordine',
+      garanzia: '12 mesi da collaudo',
+      pagamenti: '30% all\'ordine B.B.\n50% avviso merce pronta B.B.\n20% al collaudo 30 gg B.B.',
+      quotazione: { base: [{desc:'Linea di confezionamento', importo:0}], opz: [], srv: [] }
+    }
+  },
+  {
+    id: 'service',
+    nome: 'Contratto di assistenza / Service',
+    descrizione: 'Template per contratti di assistenza e manutenzione',
+    data: {
+      oggetto: 'Contratto di assistenza tecnica',
+      macrogruppi: [
+        { title: 'Oggetto', items: ['Contratto di assistenza tecnica programmata e su chiamata per impianti installati presso il Cliente.'] },
+        { title: 'Servizi inclusi', items: ['Assistenza telefonica in orario lavorativo', 'Teleassistenza con accesso remoto', 'Intervento on-site su chiamata con tempi garantiti', 'Aggiornamenti software', 'Manutenzione programmata annuale'] },
+        { title: 'Modalità di intervento', items: ['Apertura ticket via email o portale', 'Risposta entro 4 ore lavorative', 'Intervento on-site entro 48 ore (su richiesta)'] },
+        { title: 'Esclusioni', items: ['Parti di ricambio (fatturate separatamente)', 'IVA', 'Interventi non riconducibili a difetti di fornitura'] }
+      ],
+      validita: 30,
+      consegna: 'Decorrenza immediata',
+      garanzia: 'Validità contratto: 12 mesi',
+      pagamenti: '100% all\'attivazione del contratto B.B.',
+      quotazione: { base: [{desc:'Canone annuale assistenza', importo:0}], opz: [], srv: [] }
+    }
+  },
+  {
+    id: 'vuoto',
+    nome: 'Offerta vuota',
+    descrizione: 'Parti da zero, aggiungi solo i macrogruppi che ti servono',
+    data: {
+      oggetto: '',
+      macrogruppi: [
+        { title: 'Oggetto', items: [''] }
+      ],
+      validita: 15,
+      consegna: '',
+      garanzia: '',
+      pagamenti: '',
+      quotazione: { base: [], opz: [], srv: [] }
+    }
+  }
+];
+
+// ── Helpers ID univoci ──
+function offUid(){ return 'i'+Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4); }
+
+// ── Numero offerta automatico ──
+function offGeneraNumero(){
+  const anno = new Date().getFullYear();
+  const prefisso = anno + '-';
+  // Trova il massimo progressivo per quest'anno
+  let max = 0;
+  OFF_STATE.list.forEach(o=>{
+    if(o.numero && o.numero.startsWith(prefisso)){
+      const n = parseInt(o.numero.slice(prefisso.length).replace(/[^0-9]/g,''))||0;
+      if(n>max) max = n;
+    }
+  });
+  return prefisso + String(max+1).padStart(4,'0');
+}
+
+// ── Carica clienti se necessario ──
+async function offCaricaClienti(){
+  if(_spClienti.length > 0) return;
+  try{
+    const tok = await anGetToken();
+    const headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
+    if(!_spSiteId){
+      const sR = await fetch(GRAPH_BASE + '/sites/' + SP_SITE_HOSTNAME + ':' + SP_SITE_PATH, {headers});
+      if(sR.ok) _spSiteId = (await sR.json()).id;
+    }
+    const cR = await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+SP_CLIENT_LIST_ID+'/items?expand=fields(select=Title)&$top=500',{headers});
+    if(cR.ok){
+      const cD = await cR.json();
+      _spClienti = (cD.value||[]).map(i=>({id:parseInt(i.id)||0,name:(i.fields||{}).Title||''})).filter(c=>c.name && c.id>0).sort((a,b)=>a.name.localeCompare(b.name));
+    }
+  }catch(e){ console.error('offCaricaClienti:',e); }
+}
+
+// ── Apri wizard (nuovo o modifica) ──
+async function offNuova(id){
+  OFF_WIZ.macrogruppi = [];
+  OFF_WIZ.quotazione = { base:[], opz:[], srv:[] };
+  OFF_STATE.editId = id || null;
+
+  await offCaricaClienti();
+  const selCli = document.getElementById('off-f-cliente');
+  selCli.innerHTML = '<option value="">— seleziona —</option>' +
+    _spClienti.map(c=>`<option value="${c.id}" data-name="${offEsc(c.name)}">${offEsc(c.name)}</option>`).join('');
+
+  document.getElementById('off-wiz-title').textContent = id ? 'Modifica offerta' : 'Nuova offerta';
+  document.getElementById('off-wiz-meta').textContent = id ? '#'+id : '';
+
+  if(id){
+    // Carica da SP_STATE.list (già caricata)
+    const o = OFF_STATE.list.find(x=>x.id===id);
+    if(!o){ showToast('Offerta non trovata'); return; }
+    offPopolaForm(o);
+  } else {
+    // Reset
+    document.getElementById('off-f-numero').value = offGeneraNumero();
+    document.getElementById('off-f-data').value = new Date().toISOString().split('T')[0];
+    document.getElementById('off-f-cliente').value = '';
+    document.getElementById('off-f-oggetto').value = '';
+    document.getElementById('off-f-riferimento').value = '';
+    document.getElementById('off-f-email').value = '';
+    document.getElementById('off-f-lingua').value = 'ita';
+    document.getElementById('off-f-stato').value = 'Bozza';
+    document.getElementById('off-f-validita').value = 15;
+    document.getElementById('off-f-consegna').value = '';
+    document.getElementById('off-f-garanzia').value = '';
+    document.getElementById('off-f-pagamenti').value = '';
+    document.getElementById('off-f-note').value = '';
+    // Almeno una sezione iniziale
+    OFF_WIZ.macrogruppi = [{ id: offUid(), title: 'Oggetto', items: [{id:offUid(), text:''}] }];
+  }
+
+  offRenderMacrogruppi();
+  offRenderQuotazione();
+  offCalcTotale();
+
+  document.getElementById('off-modal-overlay').classList.add('open');
+  document.getElementById('off-modal-wizard').classList.add('open');
+}
+
+function offPopolaForm(o){
+  document.getElementById('off-f-numero').value = o.numero||'';
+  document.getElementById('off-f-data').value = o.data||new Date().toISOString().split('T')[0];
+  document.getElementById('off-f-cliente').value = o.clienteId||'';
+  document.getElementById('off-f-oggetto').value = o.oggetto||'';
+  document.getElementById('off-f-riferimento').value = o.riferimento||'';
+  document.getElementById('off-f-email').value = o.emailRif||'';
+  document.getElementById('off-f-lingua').value = o.lingua||'ita';
+  document.getElementById('off-f-stato').value = o.stato||'Bozza';
+  document.getElementById('off-f-validita').value = o.validita||15;
+  document.getElementById('off-f-consegna').value = o.consegna||'';
+  document.getElementById('off-f-garanzia').value = o.garanzia||'';
+  document.getElementById('off-f-pagamenti').value = o.pagamenti||'';
+  document.getElementById('off-f-note').value = o.note||'';
+
+  // Parse JSON contenuto
+  let contenuto = {};
+  try { contenuto = JSON.parse(o.contenuto||'{}'); } catch(e){ console.warn('JSON parse error',e); }
+
+  OFF_WIZ.macrogruppi = (contenuto.macrogruppi||[]).map(mg=>({
+    id: offUid(),
+    title: mg.title||'',
+    items: (mg.items||[]).map(it=>({ id: offUid(), text: typeof it === 'string' ? it : (it.text||'') }))
+  }));
+  if(OFF_WIZ.macrogruppi.length === 0){
+    OFF_WIZ.macrogruppi = [{ id: offUid(), title: 'Oggetto', items: [{id:offUid(),text:''}] }];
+  }
+  OFF_WIZ.quotazione = {
+    base: (contenuto.quotazione?.base||[]).map(r=>({id:offUid(),desc:r.desc||'',importo:r.importo||0})),
+    opz:  (contenuto.quotazione?.opz ||[]).map(r=>({id:offUid(),desc:r.desc||'',importo:r.importo||0})),
+    srv:  (contenuto.quotazione?.srv ||[]).map(r=>({id:offUid(),desc:r.desc||'',importo:r.importo||0}))
+  };
+}
+
+function offWizardClose(){
+  document.getElementById('off-modal-overlay').classList.remove('open');
+  document.getElementById('off-modal-wizard').classList.remove('open');
+}
+
+// ── Render macrogruppi ──
+function offRenderMacrogruppi(){
+  const box = document.getElementById('off-macrogruppi');
+  if(!box) return;
+  box.innerHTML = OFF_WIZ.macrogruppi.map((mg,idx)=>{
+    const itemsHtml = mg.items.map((it,iidx)=>`
+      <div class="off-punto" data-mgid="${mg.id}" data-itemid="${it.id}">
+        <span class="off-punto-handle">⋮⋮</span>
+        <textarea class="off-punto-text" oninput="offUpdItemText('${mg.id}','${it.id}',this.value)" rows="1" placeholder="Inserisci testo del punto...">${offEsc(it.text)}</textarea>
+        <div class="off-punto-actions">
+          <button onclick="offMoveItem('${mg.id}','${it.id}',-1)" title="Sposta su">▲</button>
+          <button onclick="offMoveItem('${mg.id}','${it.id}',1)" title="Sposta giù">▼</button>
+          <button class="danger" onclick="offDelItem('${mg.id}','${it.id}')" title="Rimuovi">✕</button>
+        </div>
+      </div>`).join('');
+    return `<div class="off-mg" data-mgid="${mg.id}">
+      <div class="off-mg-hdr" onclick="offToggleMg('${mg.id}', event)">
+        <span class="off-mg-arrow">▼</span>
+        <input class="off-mg-title-input" value="${offEsc(mg.title)}" oninput="offUpdMgTitle('${mg.id}',this.value)" onclick="event.stopPropagation()">
+        <span class="off-mg-cnt">${mg.items.length}</span>
+        <div class="off-mg-actions" onclick="event.stopPropagation()">
+          <button class="off-mg-act" onclick="offMoveMg('${mg.id}',-1)" title="Sposta su">▲</button>
+          <button class="off-mg-act" onclick="offMoveMg('${mg.id}',1)" title="Sposta giù">▼</button>
+          <button class="off-mg-act danger" onclick="offDelMg('${mg.id}')" title="Rimuovi sezione">🗑</button>
+        </div>
+      </div>
+      <div class="off-mg-body">
+        ${itemsHtml}
+        <button class="off-add-punto" onclick="offAddItem('${mg.id}')">+ Aggiungi punto</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function offToggleMg(mgId, ev){
+  const el = document.querySelector('.off-mg[data-mgid="'+mgId+'"]');
+  if(el) el.classList.toggle('collapsed');
+}
+
+function offAddMacrogruppo(){
+  OFF_WIZ.macrogruppi.push({ id: offUid(), title: 'Nuova sezione', items: [] });
+  offRenderMacrogruppi();
+}
+
+function offDelMg(mgId){
+  if(!confirm('Rimuovere questa sezione e tutti i suoi punti?')) return;
+  OFF_WIZ.macrogruppi = OFF_WIZ.macrogruppi.filter(m=>m.id!==mgId);
+  offRenderMacrogruppi();
+}
+
+function offMoveMg(mgId, dir){
+  const i = OFF_WIZ.macrogruppi.findIndex(m=>m.id===mgId);
+  if(i<0) return;
+  const ni = i+dir;
+  if(ni<0||ni>=OFF_WIZ.macrogruppi.length) return;
+  [OFF_WIZ.macrogruppi[i],OFF_WIZ.macrogruppi[ni]] = [OFF_WIZ.macrogruppi[ni],OFF_WIZ.macrogruppi[i]];
+  offRenderMacrogruppi();
+}
+
+function offUpdMgTitle(mgId, val){
+  const mg = OFF_WIZ.macrogruppi.find(m=>m.id===mgId);
+  if(mg) mg.title = val;
+}
+
+function offAddItem(mgId){
+  const mg = OFF_WIZ.macrogruppi.find(m=>m.id===mgId);
+  if(!mg) return;
+  mg.items.push({ id: offUid(), text: '' });
+  offRenderMacrogruppi();
+  // Focus sull'ultimo textarea aggiunto
+  setTimeout(()=>{
+    const all = document.querySelectorAll('.off-mg[data-mgid="'+mgId+'"] .off-punto-text');
+    if(all.length) all[all.length-1].focus();
+  },50);
+}
+
+function offDelItem(mgId, itId){
+  const mg = OFF_WIZ.macrogruppi.find(m=>m.id===mgId);
+  if(!mg) return;
+  mg.items = mg.items.filter(it=>it.id!==itId);
+  offRenderMacrogruppi();
+}
+
+function offMoveItem(mgId, itId, dir){
+  const mg = OFF_WIZ.macrogruppi.find(m=>m.id===mgId);
+  if(!mg) return;
+  const i = mg.items.findIndex(it=>it.id===itId);
+  if(i<0) return;
+  const ni = i+dir;
+  if(ni<0||ni>=mg.items.length) return;
+  [mg.items[i],mg.items[ni]] = [mg.items[ni],mg.items[i]];
+  offRenderMacrogruppi();
+}
+
+function offUpdItemText(mgId, itId, val){
+  const mg = OFF_WIZ.macrogruppi.find(m=>m.id===mgId);
+  if(!mg) return;
+  const it = mg.items.find(x=>x.id===itId);
+  if(it) it.text = val;
+}
+
+// ── Render quotazione ──
+function offRenderQuotazione(){
+  ['base','opz','srv'].forEach(sez=>{
+    const tbody = document.getElementById('off-q-'+sez);
+    if(!tbody) return;
+    tbody.innerHTML = OFF_WIZ.quotazione[sez].map(r=>`
+      <tr data-rowid="${r.id}">
+        <td><input type="text" value="${offEsc(r.desc)}" oninput="offUpdQuotRow('${sez}','${r.id}','desc',this.value)" placeholder="Descrizione voce"></td>
+        <td><input type="number" class="off-importo" value="${r.importo||0}" step="0.01" min="0" oninput="offUpdQuotRow('${sez}','${r.id}','importo',this.value)"></td>
+        <td class="off-quot-row-act"><button onclick="offDelQuotRow('${sez}','${r.id}')" title="Rimuovi">✕</button></td>
+      </tr>
+    `).join('');
+  });
+}
+
+function offAddQuotRow(sez){
+  OFF_WIZ.quotazione[sez].push({ id: offUid(), desc:'', importo: 0 });
+  offRenderQuotazione();
+  offCalcTotale();
+}
+
+function offDelQuotRow(sez, rId){
+  OFF_WIZ.quotazione[sez] = OFF_WIZ.quotazione[sez].filter(r=>r.id!==rId);
+  offRenderQuotazione();
+  offCalcTotale();
+}
+
+function offUpdQuotRow(sez, rId, field, val){
+  const r = OFF_WIZ.quotazione[sez].find(x=>x.id===rId);
+  if(!r) return;
+  if(field === 'importo') r.importo = parseFloat(val)||0;
+  else r[field] = val;
+  if(field === 'importo') offCalcTotale();
+}
+
+function offCalcTotale(){
+  let tot = 0;
+  ['base','opz','srv'].forEach(sez=>{
+    OFF_WIZ.quotazione[sez].forEach(r=>{ tot += parseFloat(r.importo)||0; });
+  });
+  document.getElementById('off-totale-out').textContent = offFmtMoney(tot);
+  return tot;
+}
+
+// ── Salvataggio ──
+async function offSalva(genPdf){
+  const titolo = document.getElementById('off-f-numero').value.trim();
+  const oggetto = document.getElementById('off-f-oggetto').value.trim();
+  const selCli = document.getElementById('off-f-cliente');
+  const clienteId = selCli.value ? parseInt(selCli.value) : null;
+
+  if(!titolo){ showToast('Numero offerta obbligatorio'); return; }
+  if(!oggetto){ showToast('Oggetto obbligatorio'); return; }
+  if(!clienteId){ showToast('Seleziona un cliente'); return; }
+
+  const data = document.getElementById('off-f-data').value;
+  const totale = offCalcTotale();
+
+  // Costruisci JSON contenuto
+  const contenuto = {
+    version: 1,
+    macrogruppi: OFF_WIZ.macrogruppi.map(mg=>({
+      title: mg.title,
+      items: mg.items.map(it=>it.text).filter(t=>t!=null)
+    })),
+    quotazione: {
+      base: OFF_WIZ.quotazione.base.map(r=>({desc:r.desc, importo:r.importo})),
+      opz:  OFF_WIZ.quotazione.opz.map(r=>({desc:r.desc, importo:r.importo})),
+      srv:  OFF_WIZ.quotazione.srv.map(r=>({desc:r.desc, importo:r.importo}))
+    }
+  };
+
+  const fields = {
+    Title: titolo,
+    Oggetto: oggetto,
+    ClienteLookupId: clienteId,
+    DataOfferta: data ? data + 'T00:00:00Z' : null,
+    Riferimento: document.getElementById('off-f-riferimento').value.trim() || null,
+    EmailRiferimento: document.getElementById('off-f-email').value.trim() || null,
+    ValiditaGiorni: parseInt(document.getElementById('off-f-validita').value) || 15,
+    Consegna: document.getElementById('off-f-consegna').value.trim() || null,
+    Garanzia: document.getElementById('off-f-garanzia').value.trim() || null,
+    PagamentiTesto: document.getElementById('off-f-pagamenti').value.trim() || null,
+    TotaleImporto: totale,
+    Stato: document.getElementById('off-f-stato').value,
+    Lingua: document.getElementById('off-f-lingua').value,
+    Note: document.getElementById('off-f-note').value.trim() || null,
+    ContenutoJSON: JSON.stringify(contenuto)
+  };
+
+  try{
+    const tok = await anGetToken();
+    if(!tok){ showToast('Token scaduto'); return; }
+    const listId = getSpOfferteId();
+    if(!listId){ showToast('GUID lista AnymaOfferte mancante in Impostazioni'); return; }
+    const headers = {'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'};
+
+    let url, method, body;
+    if(OFF_STATE.editId){
+      url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+'/items/'+OFF_STATE.editId+'/fields';
+      method = 'PATCH';
+      body = JSON.stringify(fields);
+    } else {
+      url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+'/items';
+      method = 'POST';
+      body = JSON.stringify({fields:fields});
+    }
+
+    const r = await fetch(url,{method, headers, body});
+    if(!r.ok){
+      const errTxt = await r.text();
+      let msg = 'HTTP '+r.status;
+      try { msg = JSON.parse(errTxt).error?.message || msg; } catch(e){}
+      console.error('offSalva:',r.status,errTxt);
+      showToast('Errore salvataggio: '+msg);
+      return;
+    }
+
+    const saved = await r.json();
+    const savedId = OFF_STATE.editId || saved.id;
+
+    showToast(OFF_STATE.editId ? 'Offerta aggiornata' : 'Offerta creata');
+    offWizardClose();
+    await offLoad();
+
+    if(genPdf){
+      // Lo step 3 implementerà il PDF
+      showToast('Generazione PDF disponibile nello step 3');
+    }
+  }catch(e){
+    console.error('offSalva:',e);
+    showToast('Errore: '+e.message);
+  }
+}
+
+// ── Duplica offerta ──
+async function offDuplica(id){
+  const o = OFF_STATE.list.find(x=>x.id===id);
+  if(!o){ showToast('Offerta non trovata'); return; }
+  OFF_STATE.editId = null;
+  await offCaricaClienti();
+
+  const selCli = document.getElementById('off-f-cliente');
+  selCli.innerHTML = '<option value="">— seleziona —</option>' +
+    _spClienti.map(c=>`<option value="${c.id}" data-name="${offEsc(c.name)}">${offEsc(c.name)}</option>`).join('');
+
+  document.getElementById('off-wiz-title').textContent = 'Nuova offerta (da duplicazione)';
+  document.getElementById('off-wiz-meta').textContent = 'Copia di '+(o.numero||'');
+
+  // Popola con dati esistenti ma rigenera numero e data
+  offPopolaForm(o);
+  document.getElementById('off-f-numero').value = offGeneraNumero();
+  document.getElementById('off-f-data').value = new Date().toISOString().split('T')[0];
+  document.getElementById('off-f-stato').value = 'Bozza';
+
+  offRenderMacrogruppi();
+  offRenderQuotazione();
+  offCalcTotale();
+
+  document.getElementById('off-modal-overlay').classList.add('open');
+  document.getElementById('off-modal-wizard').classList.add('open');
+}
+
+// ── Template ──
+function offMostraTemplate(){
+  const body = document.getElementById('off-tmpl-body');
+  body.innerHTML = '<div class="off-tmpl-grid">' +
+    OFF_TEMPLATES.map(t=>`<div class="off-tmpl-card" onclick="offCreaDaTemplate('${t.id}')">
+      <h4>${offEsc(t.nome)}</h4>
+      <p>${offEsc(t.descrizione)}</p>
+    </div>`).join('') +
+    '</div>';
+  document.getElementById('off-tmpl-overlay').classList.add('open');
+  document.getElementById('off-tmpl-modal').classList.add('open');
+}
+
+function offTmplClose(){
+  document.getElementById('off-tmpl-overlay').classList.remove('open');
+  document.getElementById('off-tmpl-modal').classList.remove('open');
+}
+
+async function offCreaDaTemplate(tmplId){
+  const tmpl = OFF_TEMPLATES.find(t=>t.id===tmplId);
+  if(!tmpl){ showToast('Template non trovato'); return; }
+  offTmplClose();
+
+  OFF_STATE.editId = null;
+  await offCaricaClienti();
+
+  const selCli = document.getElementById('off-f-cliente');
+  selCli.innerHTML = '<option value="">— seleziona —</option>' +
+    _spClienti.map(c=>`<option value="${c.id}" data-name="${offEsc(c.name)}">${offEsc(c.name)}</option>`).join('');
+
+  document.getElementById('off-wiz-title').textContent = 'Nuova offerta (da template)';
+  document.getElementById('off-wiz-meta').textContent = tmpl.nome;
+
+  // Reset campi base
+  document.getElementById('off-f-numero').value = offGeneraNumero();
+  document.getElementById('off-f-data').value = new Date().toISOString().split('T')[0];
+  document.getElementById('off-f-cliente').value = '';
+  document.getElementById('off-f-oggetto').value = tmpl.data.oggetto || '';
+  document.getElementById('off-f-riferimento').value = '';
+  document.getElementById('off-f-email').value = '';
+  document.getElementById('off-f-lingua').value = 'ita';
+  document.getElementById('off-f-stato').value = 'Bozza';
+  document.getElementById('off-f-validita').value = tmpl.data.validita || 15;
+  document.getElementById('off-f-consegna').value = tmpl.data.consegna || '';
+  document.getElementById('off-f-garanzia').value = tmpl.data.garanzia || '';
+  document.getElementById('off-f-pagamenti').value = tmpl.data.pagamenti || '';
+  document.getElementById('off-f-note').value = '';
+
+  OFF_WIZ.macrogruppi = (tmpl.data.macrogruppi||[]).map(mg=>({
+    id: offUid(),
+    title: mg.title || '',
+    items: (mg.items||[]).map(t=>({id:offUid(), text:t}))
+  }));
+  OFF_WIZ.quotazione = {
+    base: (tmpl.data.quotazione?.base||[]).map(r=>({id:offUid(),desc:r.desc,importo:r.importo})),
+    opz:  (tmpl.data.quotazione?.opz ||[]).map(r=>({id:offUid(),desc:r.desc,importo:r.importo})),
+    srv:  (tmpl.data.quotazione?.srv ||[]).map(r=>({id:offUid(),desc:r.desc,importo:r.importo}))
+  };
+
+  offRenderMacrogruppi();
+  offRenderQuotazione();
+  offCalcTotale();
+
+  document.getElementById('off-modal-overlay').classList.add('open');
+  document.getElementById('off-modal-wizard').classList.add('open');
+}
+
+// Placeholder PDF (step 3)
+function offGeneraPDF(id){ showToast('Generazione PDF disponibile nello step 3'); }
 async function offElimina(id){
   if(!confirm('Eliminare definitivamente questa offerta?')) return;
   try{
@@ -7085,6 +7771,153 @@ function _buildPaginaResocontoGlobale(items, cliente, tipo, _lang) {
         Premi <b style="color:var(--text2)">Aggiorna</b> per caricare le offerte da SharePoint
       </div>
     </div>
+  </div>
+
+  <!-- MODAL WIZARD OFFERTA -->
+  <div class="off-modal-overlay" id="off-modal-overlay" onclick="offWizardClose()"></div>
+  <div class="off-modal" id="off-modal-wizard">
+    <div class="off-mod-hdr">
+      <div style="display:flex;align-items:center;gap:14px">
+        <h3 id="off-wiz-title">Nuova offerta</h3>
+        <span class="off-mod-hdr-meta" id="off-wiz-meta"></span>
+      </div>
+      <button class="sp-side-close" onclick="offWizardClose()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>
+      </button>
+    </div>
+
+    <div class="off-mod-body">
+
+      <!-- Header dati generali -->
+      <div class="off-section-title">Dati offerta</div>
+      <div class="off-form-hdr">
+        <div class="off-fld">
+          <label>N° Offerta *</label>
+          <input type="text" id="off-f-numero" placeholder="2026-0001">
+        </div>
+        <div class="off-fld">
+          <label>Data *</label>
+          <input type="date" id="off-f-data">
+        </div>
+        <div class="off-fld off-fld-half">
+          <label>Cliente *</label>
+          <select id="off-f-cliente"><option value="">— seleziona —</option></select>
+        </div>
+        <div class="off-fld off-fld-full">
+          <label>Oggetto *</label>
+          <input type="text" id="off-f-oggetto" placeholder="Es: Incartonatrice astucciatrice">
+        </div>
+        <div class="off-fld off-fld-half">
+          <label>Riferimento (nome contatto)</label>
+          <input type="text" id="off-f-riferimento" placeholder="Es: Mario Rossi">
+        </div>
+        <div class="off-fld off-fld-half">
+          <label>Email riferimento</label>
+          <input type="email" id="off-f-email" placeholder="mario.rossi@cliente.com">
+        </div>
+        <div class="off-fld">
+          <label>Lingua</label>
+          <select id="off-f-lingua">
+            <option value="ita">Italiano</option>
+            <option value="eng">English</option>
+          </select>
+        </div>
+        <div class="off-fld">
+          <label>Stato</label>
+          <select id="off-f-stato">
+            <option value="Bozza">Bozza</option>
+            <option value="Inviata">Inviata</option>
+            <option value="Accettata">Accettata</option>
+            <option value="Rifiutata">Rifiutata</option>
+            <option value="Archiviata">Archiviata</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Macrogruppi descrittivi -->
+      <div class="off-section-title">Contenuto offerta</div>
+      <div id="off-macrogruppi" style="display:flex;flex-direction:column;gap:10px"></div>
+      <button class="off-add-mg" onclick="offAddMacrogruppo()">+ Aggiungi sezione</button>
+
+      <!-- Quotazione -->
+      <div class="off-section-title" style="margin-top:14px">Quotazione</div>
+      <div class="off-quot-sez">
+        <div class="off-quot-sez-hdr">Macchina base</div>
+        <table class="off-quot-table">
+          <thead><tr><th>Descrizione</th><th style="width:140px;text-align:right">Importo</th><th class="off-quot-row-act"></th></tr></thead>
+          <tbody id="off-q-base"></tbody>
+        </table>
+        <div style="padding:6px 14px"><button class="off-add-punto" onclick="offAddQuotRow('base')">+ Aggiungi voce</button></div>
+      </div>
+      <div class="off-quot-sez">
+        <div class="off-quot-sez-hdr">Opzioni</div>
+        <table class="off-quot-table">
+          <thead><tr><th>Descrizione</th><th style="width:140px;text-align:right">Importo</th><th class="off-quot-row-act"></th></tr></thead>
+          <tbody id="off-q-opz"></tbody>
+        </table>
+        <div style="padding:6px 14px"><button class="off-add-punto" onclick="offAddQuotRow('opz')">+ Aggiungi voce</button></div>
+      </div>
+      <div class="off-quot-sez">
+        <div class="off-quot-sez-hdr">Servizi</div>
+        <table class="off-quot-table">
+          <thead><tr><th>Descrizione</th><th style="width:140px;text-align:right">Importo</th><th class="off-quot-row-act"></th></tr></thead>
+          <tbody id="off-q-srv"></tbody>
+        </table>
+        <div style="padding:6px 14px"><button class="off-add-punto" onclick="offAddQuotRow('srv')">+ Aggiungi voce</button></div>
+      </div>
+      <div class="off-quot-totale"><span>Totale offerta</span><span id="off-totale-out">€ 0,00</span></div>
+
+      <!-- Termini -->
+      <div class="off-section-title" style="margin-top:14px">Termini e condizioni</div>
+      <div class="off-form-hdr">
+        <div class="off-fld">
+          <label>Validità (giorni)</label>
+          <input type="number" id="off-f-validita" value="15" min="1">
+        </div>
+        <div class="off-fld off-fld-half">
+          <label>Consegna</label>
+          <input type="text" id="off-f-consegna" placeholder="Es: 5 mesi da ordine">
+        </div>
+        <div class="off-fld">
+          <label>Garanzia</label>
+          <input type="text" id="off-f-garanzia" placeholder="Es: 12 mesi da collaudo">
+        </div>
+        <div class="off-fld off-fld-full">
+          <label>Termini pagamenti</label>
+          <textarea id="off-f-pagamenti" placeholder="40% all'ordine B.B.&#10;40% avviso merce pronta B.B.&#10;20% al collaudo 30-60gg B.B."></textarea>
+        </div>
+        <div class="off-fld off-fld-full">
+          <label>Note interne</label>
+          <textarea id="off-f-note" placeholder="Note non visibili nel PDF..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="off-mod-foot">
+      <button class="btn btn-sm" onclick="offWizardClose()">Annulla</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="offSalva(false)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><path d="M3 8l3 3 7-7"/></svg>
+          Salva bozza
+        </button>
+        <button class="btn btn-sm btn-primary" onclick="offSalva(true)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><path d="M4 6V2h8v4M2 6h12a1 1 0 0 1 1 1v5H1V7a1 1 0 0 1 1-1zM4 11v3h8v-3"/></svg>
+          Salva e Genera PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL TEMPLATE -->
+  <div class="off-modal-overlay" id="off-tmpl-overlay" onclick="offTmplClose()"></div>
+  <div class="off-modal" id="off-tmpl-modal" style="inset:auto;top:50%;left:50%;transform:translate(-50%,-50%);width:640px;max-width:95vw;height:auto;max-height:80vh">
+    <div class="off-mod-hdr">
+      <h3>Scegli template di partenza</h3>
+      <button class="sp-side-close" onclick="offTmplClose()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>
+      </button>
+    </div>
+    <div class="off-mod-body" id="off-tmpl-body"></div>
   </div>
 
 <!-- MODAL RESOCONTO MENSILE GLOBALE -->
