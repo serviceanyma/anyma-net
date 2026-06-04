@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v150';</script>
+<script>const APP_VERSION = 'v152';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1591,12 +1591,28 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           <input type="text" id="off-f-imballo" placeholder="Es: escluso / incluso">
         </div>
         <div class="off-fld">
-          <label>&nbsp;</label>
-          <input type="text" disabled style="visibility:hidden">
+          <label>Tariffa assistenza</label>
+          <input type="text" id="off-f-tariffa" placeholder="Es: € 1.000,00 per giornata di lavoro e/o viaggio">
+        </div>
+        <div class="off-fld">
+          <label>Vitto e alloggio</label>
+          <input type="text" id="off-f-vittoalloggio" placeholder="Es: a carico del cliente">
         </div>
         <div class="off-fld off-fld-full">
           <label>Termini pagamenti</label>
           <textarea id="off-f-pagamenti" placeholder="30% + IVA all'ordine&#10;60% + saldo IVA avviso merce pronta&#10;10% a 60gg data fattura"></textarea>
+        </div>
+        <div class="off-fld">
+          <label>Legge applicabile</label>
+          <input type="text" id="off-f-legge" placeholder="Es: Legge italiana">
+        </div>
+        <div class="off-fld">
+          <label>Foro competente</label>
+          <input type="text" id="off-f-foro" placeholder="Es: Foro di Vicenza">
+        </div>
+        <div class="off-fld off-fld-full">
+          <label>Condizioni generali</label>
+          <input type="text" id="off-f-condgen" placeholder="Es: Condizioni Generali di Vendita ANYMA · Incoterms 2020">
         </div>
         <div class="off-fld off-fld-full">
           <label>Note interne</label>
@@ -4682,15 +4698,20 @@ async function offNuova(id){
     document.getElementById('off-f-lingua').value = 'ita';
     document.getElementById('off-f-stato').value = 'Bozza';
     document.getElementById('off-f-validita').value = 60;
-    document.getElementById('off-f-consegna').value = '';
-    document.getElementById('off-f-garanzia').value = '';
-    document.getElementById('off-f-prezzi').value = 'netti franco nostro stabilimento';
-    document.getElementById('off-f-collaudo').value = '';
-    document.getElementById('off-f-installazione').value = '';
-    document.getElementById('off-f-trasporto').value = '';
-    document.getElementById('off-f-porto').value = '';
-    document.getElementById('off-f-imballo').value = '';
-    document.getElementById('off-f-pagamenti').value = '';
+    document.getElementById('off-f-consegna').value = "Da definire in fase d'ordine";
+    document.getElementById('off-f-garanzia').value = '12 mesi dalla data di collaudo';
+    document.getElementById('off-f-prezzi').value = 'Netti, franco nostro stabilimento';
+    document.getElementById('off-f-collaudo').value = 'Collaudo funzionale presso ANYMA prima della spedizione';
+    document.getElementById('off-f-installazione').value = 'Inclusa';
+    document.getElementById('off-f-tariffa').value = '€ 1.000,00 per giornata di lavoro e/o viaggio';
+    document.getElementById('off-f-trasporto').value = 'A carico del cliente';
+    document.getElementById('off-f-vittoalloggio').value = 'A carico del cliente';
+    document.getElementById('off-f-porto').value = 'Franco fabbrica (EXW)';
+    document.getElementById('off-f-imballo').value = 'Incluso, idoneo al trasporto';
+    document.getElementById('off-f-pagamenti').value = "40% all'ordine\n40% alla merce pronta\n20% al collaudo (bonifico bancario)";
+    document.getElementById('off-f-legge').value = 'Legge italiana';
+    document.getElementById('off-f-foro').value = 'Foro di Vicenza';
+    document.getElementById('off-f-condgen').value = 'Condizioni Generali di Vendita ANYMA · Incoterms 2020';
     document.getElementById('off-f-note').value = '';
     offAggiornaContatti();
     // Macrogruppi predefiniti per nuova offerta (skeleton minimo - editabili)
@@ -4742,12 +4763,17 @@ function offPopolaForm(o){
 
   // Carica termini estesi da contenuto.termini (nuova struttura v140)
   const term = contenuto.termini || {};
-  document.getElementById('off-f-prezzi').value = term.prezzi || 'netti franco nostro stabilimento';
+  document.getElementById('off-f-prezzi').value = term.prezzi || 'Netti, franco nostro stabilimento';
   document.getElementById('off-f-collaudo').value = term.collaudo || '';
   document.getElementById('off-f-installazione').value = term.installazione || '';
+  document.getElementById('off-f-tariffa').value = term.tariffa || '€ 1.000,00 per giornata di lavoro e/o viaggio';
   document.getElementById('off-f-trasporto').value = term.trasporto || '';
+  document.getElementById('off-f-vittoalloggio').value = term.vittoAlloggio || 'A carico del cliente';
   document.getElementById('off-f-porto').value = term.porto || '';
   document.getElementById('off-f-imballo').value = term.imballo || '';
+  document.getElementById('off-f-legge').value = term.leggeApplicabile || 'Legge italiana';
+  document.getElementById('off-f-foro').value = term.foroCompetente || 'Foro di Vicenza';
+  document.getElementById('off-f-condgen').value = term.condizioniGenerali || 'Condizioni Generali di Vendita ANYMA · Incoterms 2020';
 
   OFF_WIZ.macrogruppi = (contenuto.macrogruppi||[]).map(mg=>({
     id: offUid(),
@@ -4974,9 +5000,14 @@ async function offSalva(genPdf){
       prezzi:       document.getElementById('off-f-prezzi').value.trim() || '',
       collaudo:     document.getElementById('off-f-collaudo').value.trim() || '',
       installazione: document.getElementById('off-f-installazione').value.trim() || '',
+      tariffa:      document.getElementById('off-f-tariffa').value.trim() || '',
       trasporto:    document.getElementById('off-f-trasporto').value.trim() || '',
+      vittoAlloggio: document.getElementById('off-f-vittoalloggio').value.trim() || '',
       porto:        document.getElementById('off-f-porto').value.trim() || '',
-      imballo:      document.getElementById('off-f-imballo').value.trim() || ''
+      imballo:      document.getElementById('off-f-imballo').value.trim() || '',
+      leggeApplicabile:   document.getElementById('off-f-legge').value.trim() || '',
+      foroCompetente:     document.getElementById('off-f-foro').value.trim() || '',
+      condizioniGenerali: document.getElementById('off-f-condgen').value.trim() || ''
     }
   };
 
@@ -5215,7 +5246,7 @@ function _buildOffertaPDF(d){
     totale:'TOTAL', ivaEsc:'(VAT excluded)', termini:'Terms and conditions',
     validita:'Offer validity', consegna:'Delivery', garanzia:'Warranty', prezzi:'Prices', collaudo:'Testing',
     installazione:'Installation', trasporto:'Transport', porto:'Carriage', imballo:'Packaging',
-    pagamenti:'Invoicing and payments', giorni:'days', condizioni:'Conditions', saluti:'Best regards,'
+    pagamenti:'Invoicing and payments', tariffa:'Service rate', vittoAlloggio:'Board & lodging', leggeApplicabile:'Applicable law', foroCompetente:'Jurisdiction', condizioniGenerali:'General conditions', giorni:'days', condizioni:'Conditions', saluti:'Best regards,'
   } : {
     offerta:'OFFERTA', cliente:'Cliente', offertaCol:'Offerta', oggetto:'Oggetto', riferimento:'Riferimento',
     descr:'Descrizione della fornitura:', quotTitle:'Quotazione per la fornitura', descrCol:'Descrizione', importoCol:'Importo',
@@ -5223,7 +5254,7 @@ function _buildOffertaPDF(d){
     totale:'TOTALE', ivaEsc:'(IVA esclusa)', termini:'Termini e condizioni',
     validita:'Validità offerta', consegna:'Consegna', garanzia:'Garanzia', prezzi:'Prezzi', collaudo:'Collaudo',
     installazione:'Installazione', trasporto:'Trasporto', porto:'Porto', imballo:'Imballo',
-    pagamenti:'Fatturazione e pagamenti', giorni:'giorni', condizioni:'Condizioni', saluti:'Cordiali saluti,'
+    pagamenti:'Fatturazione e pagamenti', tariffa:'Tariffa assistenza', vittoAlloggio:'Vitto e alloggio', leggeApplicabile:'Legge applicabile', foroCompetente:'Foro competente', condizioniGenerali:'Condizioni generali', giorni:'giorni', condizioni:'Condizioni', saluti:'Cordiali saluti,'
   };
 
   var logoSrc = (typeof LOGO_RESOCONTO!=='undefined' && LOGO_RESOCONTO) ? LOGO_RESOCONTO : '';
@@ -5370,8 +5401,13 @@ table.doc{width:100%;border-collapse:collapse}
   var tRows = tRow(L.validita, validitaVal)
     + tRow(L.consegna, t.consegna) + tRow(L.garanzia, t.garanzia)
     + tRow(L.prezzi, t.prezzi) + tRow(L.collaudo, t.collaudo) + tRow(L.installazione, t.installazione)
-    + tRow(L.trasporto, t.trasporto) + tRow(L.porto, t.porto) + tRow(L.imballo, t.imballo)
-    + tRow(L.pagamenti, t.pagamenti);
+    + tRow(L.tariffa, t.tariffa)
+    + tRow(L.trasporto, t.trasporto) + tRow(L.vittoAlloggio, t.vittoAlloggio)
+    + tRow(L.porto, t.porto) + tRow(L.imballo, t.imballo)
+    + tRow(L.pagamenti, t.pagamenti)
+    + tRow(L.leggeApplicabile, t.leggeApplicabile)
+    + tRow(L.foroCompetente, t.foroCompetente)
+    + tRow(L.condizioniGenerali, t.condizioniGenerali);
   if(tRows){
     commercial += '<h1 class="dtitle" style="margin-top:7mm">'+L.termini+'</h1><table class="ttbl">'+tRows+'</table>';
   }
