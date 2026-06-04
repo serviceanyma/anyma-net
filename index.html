@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v149';</script>
+<script>const APP_VERSION = 'v150';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -5229,7 +5229,13 @@ function _buildOffertaPDF(d){
   var logoSrc = (typeof LOGO_RESOCONTO!=='undefined' && LOGO_RESOCONTO) ? LOGO_RESOCONTO : '';
   var dataFmt = (d.data && d.data!=='-') ? (function(){var p=(''+d.data).split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:d.data;})() : '';
 
-  function money(n){ n=parseFloat(n||0); return '\u20ac ' + n.toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  // Formattazione importo deterministica (it-IT): € 1.900,00
+  function money(n){
+    n = parseFloat(n||0); var neg = n<0; n = Math.abs(n);
+    var parts = n.toFixed(2).split('.');
+    var intp = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return (neg?'-':'') + '\u20ac ' + intp + ',' + parts[1];
+  }
   function itemLi(t){
     t = (''+t).trim(); if(!t) return '';
     var ci = t.indexOf(':');
@@ -5238,84 +5244,83 @@ function _buildOffertaPDF(d){
   }
 
   var css = `
-@page{size:A4 portrait;margin:22mm 0 16mm 0}
-*{margin:0;padding:0;box-sizing:border-box}
+@page{size:A4 portrait;margin:11mm 13mm 11mm 13mm}
+*{box-sizing:border-box;margin:0;padding:0}
 html,body{background:#fff}
-body{font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;font-size:9.5pt;color:#222;line-height:1.5}
-.content{padding:0 14mm}
-.print-header{position:fixed;top:0;left:0;right:0;height:18mm;background:#fff;padding:0 14mm}
-.print-header .hin{height:100%;display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:2mm;border-bottom:2px solid ${RED}}
-.print-header .hl .nm{font-size:17pt;font-weight:800;color:#1a1a1a;line-height:1;letter-spacing:.5px}
-.print-header .hl .sub{font-size:7pt;color:#888;letter-spacing:.4px;margin-top:.8mm}
-.print-header .hl img{height:9.5mm;width:auto;display:block}
-.print-header .hr{text-align:right}
-.print-header .hr .t{font-size:9.5pt;font-weight:700;color:#1a1a1a;text-transform:uppercase;letter-spacing:.5px}
-.print-header .hr .r{font-size:7.5pt;color:#888;margin-top:.8mm}
-.print-footer{position:fixed;bottom:0;left:0;right:0;height:12mm;padding:0 14mm}
-.print-footer .fin{border-top:.5px solid #cccccc;padding-top:1.5mm;display:flex;justify-content:space-between;align-items:center;font-size:7.2pt;color:#888}
-.print-footer .fin .r{white-space:nowrap}
-.doc-title{color:${RED};font-size:17pt;font-weight:800;letter-spacing:.5px;margin:0 0 4mm 0}
+body{font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;font-size:9.5pt;color:#1f2937;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+table.doc{width:100%;border-collapse:collapse}
+.doc>thead{display:table-header-group}
+.doc>tfoot{display:table-footer-group}
+.hcell{padding:0 0 5mm 0}
+.fcell{padding:5mm 0 0 0}
+.bcell{padding:0;vertical-align:top}
+.hdr{display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:2.5mm;border-bottom:2px solid ${RED}}
+.hdr .logo img{height:10mm;width:auto;display:block}
+.hdr .logo .wm{font-size:18pt;font-weight:800;color:#1f2937;letter-spacing:1px}
+.hdr .meta{text-align:right}
+.hdr .meta .t{font-size:10pt;font-weight:700;color:#1f2937;text-transform:uppercase;letter-spacing:1px}
+.hdr .meta .r{font-size:7.5pt;color:#9ca3af;margin-top:.6mm}
+.ftr{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e5e7eb;padding-top:2mm;font-size:7pt;color:#9ca3af}
+.ftr .r{white-space:nowrap}
+.title{font-size:20pt;font-weight:800;color:${RED};letter-spacing:1px;margin:1mm 0 5mm 0}
 .cover{page-break-after:always}
-.cover-tbl{width:100%;border-collapse:collapse;border:1px solid #d0d0d0;font-size:9.5pt;table-layout:fixed}
-.cover-tbl td{border:1px solid #dcdcdc;padding:2.4mm 3.5mm;vertical-align:top;width:50%;overflow-wrap:anywhere}
-.cover-tbl td.hd{background:${RED};color:#fff;font-weight:700;letter-spacing:.3px}
-.cover-tbl .nm{font-weight:700;font-size:10.5pt}
-.cover-tbl .num{color:${RED};font-weight:700}
-.cover-tbl .ogg{font-size:10pt}
+.card{width:100%;border-collapse:collapse;table-layout:fixed;border:1px solid #e5e7eb}
+.card td{width:50%;padding:3mm 4mm;vertical-align:top;border:1px solid #eef0f2}
+.card td.k{background:${RED};color:#fff;font-weight:700;font-size:8.5pt;text-transform:uppercase;letter-spacing:.6px;border-color:${RED}}
+.card .big{font-weight:700;font-size:11pt;color:#111827}
+.card .num{color:${RED};font-weight:700;font-size:10.5pt;display:block}
+.card .sub{color:#6b7280;font-size:9pt;display:block;margin-top:.5mm}
+.card .ogg{font-size:10pt;color:#111827}
+.dtitle{font-size:15pt;font-weight:800;color:${RED};letter-spacing:.5px;margin:0 0 3mm 0}
 .sec{margin:0 0 2mm 0}
-.sec-h{color:${RED};font-weight:700;font-size:11pt;margin:3mm 0 1.5mm 0;break-after:avoid;page-break-after:avoid}
-.b{list-style:disc;margin:0;padding:0 0 0 8mm}
-.b li{margin:0 0 1mm 0;padding-left:1mm;line-height:1.4}
+.sec-h{font-size:10.5pt;font-weight:700;color:${RED};margin:3mm 0 1.2mm 0;break-after:avoid;page-break-after:avoid}
+.b{list-style:none;margin:0;padding:0}
+.b li{position:relative;padding-left:5mm;margin:0 0 1mm 0;line-height:1.4}
+.b li::before{content:"";position:absolute;left:1mm;top:1.7mm;width:1.4mm;height:1.4mm;background:${RED};border-radius:50%}
 .commercial{page-break-before:always}
-.q-title{background:${RED};color:#fff;font-weight:700;font-size:10pt;padding:2.2mm 4mm;letter-spacing:.3px}
-.q-tbl{width:100%;border-collapse:collapse;font-size:9.5pt;border:1px solid #d0d0d0;border-top:none;table-layout:fixed}
-.q-tbl th{background:#f2f2f2;color:#444;font-weight:700;font-size:8.5pt;text-align:left;padding:2mm 3.5mm;border:1px solid #d8d8d8}
-.q-tbl th.r,.q-tbl td.r{text-align:right;width:38mm}
-.q-tbl td{padding:2mm 3.5mm;border:1px solid #e0e0e0;vertical-align:top;overflow-wrap:anywhere}
-.q-tbl td.r{white-space:nowrap;font-weight:600}
-.q-tbl tr.sub td{background:#fbeae8;color:${RED};font-weight:700;font-size:8.5pt;letter-spacing:.3px;text-transform:uppercase}
-.q-tbl tr.tot td{background:${RED};color:#fff;font-weight:700;font-size:11pt;border-color:${RED}}
-.q-tbl tr.tot td .iva{font-size:7.5pt;font-weight:400;opacity:.9;margin-left:2mm}
-.t-tbl{width:100%;border-collapse:collapse;font-size:9.5pt;border:1px solid #d0d0d0;margin-bottom:5mm;table-layout:fixed}
-.t-tbl td{border:1px solid #dcdcdc;padding:2.4mm 4mm;vertical-align:top;overflow-wrap:anywhere}
-.t-tbl td.lbl{background:${RED};color:#fff;font-weight:700;width:46mm;letter-spacing:.3px}
-.cond-h{color:#222;font-weight:700;font-size:9.5pt;margin:3mm 0 1.5mm 0}
-.cond-t{font-size:8.6pt;color:#444;line-height:1.5}
-.saluti{margin-top:5mm;font-size:9.5pt}
-@media print{html,body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
-@media screen{body{padding-top:20mm;padding-bottom:14mm}.content{max-width:210mm;margin:0 auto}}
+.qtbl{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9.5pt;border:1px solid #e5e7eb;margin-bottom:5mm}
+.qtbl th{background:#f3f4f6;color:#6b7280;font-weight:700;font-size:8pt;text-transform:uppercase;letter-spacing:.5px;text-align:left;padding:2.2mm 4mm;border-bottom:1px solid #e5e7eb}
+.qtbl th.r,.qtbl td.r{text-align:right;width:38mm}
+.qtbl td{padding:2.2mm 4mm;border-bottom:1px solid #eef0f2;vertical-align:top;overflow-wrap:anywhere}
+.qtbl td.imp{font-weight:600;white-space:nowrap;color:#111827}
+.qtbl tr.sub td{background:#fbeae8;color:${RED};font-weight:700;font-size:8pt;text-transform:uppercase;letter-spacing:.5px;padding:1.8mm 4mm}
+.qtbl tr.tot td{background:${RED};color:#fff;font-weight:700;font-size:11pt;border:none;padding:3mm 4mm}
+.qtbl tr.tot td .iva{font-size:7pt;font-weight:400;opacity:.85;margin-left:2mm}
+.ttbl{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9.5pt;border:1px solid #e5e7eb;margin-bottom:5mm}
+.ttbl td{padding:2.4mm 4mm;border-bottom:1px solid #eef0f2;vertical-align:top;overflow-wrap:anywhere}
+.ttbl tr:last-child td{border-bottom:none}
+.ttbl td.lbl{background:${RED};color:#fff;font-weight:700;font-size:8.5pt;width:46mm;border-color:${RED}}
+.cond-h{font-weight:700;font-size:9pt;color:#374151;margin:3mm 0 1.2mm 0}
+.cond-t{font-size:8.5pt;color:#6b7280;line-height:1.5}
+.saluti{margin-top:5mm;font-size:9.5pt;color:#1f2937}
 `;
 
   var headRef = L.offertaCol + ' ' + escHtml(d.numero||'') + (dataFmt ? ' \u00b7 ' + escHtml(dataFmt) : '');
-  var headLeft = logoSrc
-    ? '<img src="'+logoSrc+'" alt="ANYMA">'
-    : '<div class="nm">ANYMA</div><div class="sub">Service &amp; Packaging Solutions</div>';
-  var header = '<div class="print-header"><div class="hin">'
-    + '<div class="hl">'+headLeft+'</div>'
-    + '<div class="hr"><div class="t">'+L.offerta+'</div><div class="r">'+headRef+'</div></div>'
-    + '</div></div>';
-
-  var footer = '<div class="print-footer"><div class="fin">'
+  var headerCell = '<div class="hdr">'
+    + '<div class="logo">' + (logoSrc ? '<img src="'+logoSrc+'" alt="ANYMA">' : '<span class="wm">ANYMA</span>') + '</div>'
+    + '<div class="meta"><div class="t">'+L.offerta+'</div><div class="r">'+headRef+'</div></div>'
+    + '</div>';
+  var footerCell = '<div class="ftr">'
     + '<div class="l">ANYMA SRL \u2014 Via Val di Sole 31, 36010 Zan\u00e8 (VI) \u2014 sales@anymapack.it \u2014 anymapack.it</div>'
     + '<div class="r">'+L.offertaCol+' '+escHtml(d.numero||'')+'</div>'
-    + '</div></div>';
+    + '</div>';
 
   // ===== COPERTINA =====
-  var cover = '<div class="cover"><h1 class="doc-title">'+L.offerta+'</h1>'
-    + '<table class="cover-tbl">'
-    + '<tr><td class="hd">'+L.cliente+'</td><td class="hd">'+L.offertaCol+'</td></tr>'
-    + '<tr><td><span class="nm">'+escHtml(d.cliente||'-')+'</span></td>'
-    + '<td><span class="num">'+escHtml(d.numero||'-')+'</span>'+(dataFmt?('<br>'+escHtml(dataFmt)):'')+'</td></tr>'
-    + '<tr><td class="hd">'+L.riferimento+'</td><td class="hd">'+L.oggetto+'</td></tr>'
+  var cover = '<div class="cover"><h1 class="title">'+L.offerta+'</h1>'
+    + '<table class="card">'
+    + '<tr><td class="k">'+L.cliente+'</td><td class="k">'+L.offertaCol+'</td></tr>'
+    + '<tr><td><span class="big">'+escHtml(d.cliente||'-')+'</span></td>'
+    + '<td><span class="num">'+escHtml(d.numero||'-')+'</span>'+(dataFmt?('<span class="sub">'+escHtml(dataFmt)+'</span>'):'')+'</td></tr>'
+    + '<tr><td class="k">'+L.riferimento+'</td><td class="k">'+L.oggetto+'</td></tr>'
     + '<tr><td>'+(d.riferimento?(escHtml(d.riferimento)+'<br>'):'')+(d.email?escHtml(d.email):'')+'</td>'
     + '<td class="ogg">'+escHtml(d.oggetto||'-')+'</td></tr>'
     + '</table></div>';
 
-  // ===== DESCRIZIONE DELLA FORNITURA (flusso continuo) =====
+  // ===== DESCRIZIONE (flusso continuo) =====
   var desc = '';
   var mgs = d.macrogruppi || [];
   if(mgs.length){
-    desc += '<div class="desc"><h1 class="doc-title">'+L.descr+'</h1>';
+    desc += '<div class="desc"><h1 class="dtitle">'+L.descr+'</h1>';
     mgs.forEach(function(mg, i){
       var titolo = ((mg.title||'').trim()) || ('Sezione '+(i+1));
       desc += '<div class="sec"><div class="sec-h">'+(i+1)+'. '+escHtml(titolo)+'</div>';
@@ -5328,7 +5333,7 @@ body{font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;font-size:9.5pt;co
     desc += '</div>';
   }
 
-  // ===== PARTE COMMERCIALE: QUOTAZIONE + TERMINI =====
+  // ===== QUOTAZIONE + TERMINI =====
   var q = d.quotazione || {base:[],opz:[],srv:[]};
   function rowsFor(arr){ return (arr||[]).filter(function(r){ return ((r.desc||r.descrizione||'').trim()) || parseFloat(r.importo||0); }); }
   var qb=rowsFor(q.base), qo=rowsFor(q.opz), qs=rowsFor(q.srv);
@@ -5339,15 +5344,15 @@ body{font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;font-size:9.5pt;co
     var h = '<tr class="sub"><td colspan="2">'+label+'</td></tr>';
     arr.forEach(function(r){
       var imp = parseFloat(r.importo||0); tot += imp;
-      h += '<tr><td>'+escHtml(r.desc||r.descrizione||'')+'</td><td class="r">'+(imp>0?money(imp):'\u2014')+'</td></tr>';
+      h += '<tr><td>'+escHtml(r.desc||r.descrizione||'')+'</td><td class="imp r">'+(imp>0?money(imp):'\u2014')+'</td></tr>';
     });
     return h;
   }
 
   var commercial = '<div class="commercial">';
   if(hasQ){
-    commercial += '<div class="q-title">'+L.quotTitle+'</div>';
-    commercial += '<table class="q-tbl"><tr><th>'+L.descrCol+'</th><th class="r">'+L.importoCol+'</th></tr>';
+    commercial += '<h1 class="dtitle">'+L.quotTitle+'</h1>';
+    commercial += '<table class="qtbl"><tr><th>'+L.descrCol+'</th><th class="r">'+L.importoCol+'</th></tr>';
     commercial += qSection(qb,L.fornitura) + qSection(qo,L.optional) + qSection(qs,L.servizi);
     commercial += '<tr class="tot"><td>'+L.totale+'<span class="iva">'+L.ivaEsc+'</span></td><td class="r">'+money(tot)+'</td></tr>';
     commercial += '</table>';
@@ -5368,7 +5373,7 @@ body{font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;font-size:9.5pt;co
     + tRow(L.trasporto, t.trasporto) + tRow(L.porto, t.porto) + tRow(L.imballo, t.imballo)
     + tRow(L.pagamenti, t.pagamenti);
   if(tRows){
-    commercial += '<h1 class="doc-title" style="margin-top:8mm">'+L.termini+'</h1><table class="t-tbl">'+tRows+'</table>';
+    commercial += '<h1 class="dtitle" style="margin-top:7mm">'+L.termini+'</h1><table class="ttbl">'+tRows+'</table>';
   }
   if(t.note && (''+t.note).trim()){
     commercial += '<div class="cond-h">'+L.condizioni+'</div><div class="cond-t">'+escHtml(t.note).replace(/\n/g,'<br>')+'</div>';
@@ -5376,11 +5381,15 @@ body{font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;font-size:9.5pt;co
   commercial += '<div class="saluti">'+L.saluti+'<br><strong>ANYMA S.r.l.</strong></div>';
   commercial += '</div>';
 
+  var bodyTbl = '<table class="doc">'
+    + '<thead><tr><td class="hcell">'+headerCell+'</td></tr></thead>'
+    + '<tfoot><tr><td class="fcell">'+footerCell+'</td></tr></tfoot>'
+    + '<tbody><tr><td class="bcell">'+cover+desc+commercial+'</td></tr></tbody>'
+    + '</table>';
+
   var html = '<!DOCTYPE html><html lang="'+(LANG==='EN'?'en':'it')+'"><head><meta charset="UTF-8">'
     + '<title>'+L.offertaCol+' '+escHtml(d.numero||'')+' - '+escHtml(d.cliente||'')+'</title>'
-    + '<style>'+css+'</style></head><body>'
-    + header + footer + '<div class="content">' + cover + desc + commercial + '</div>'
-    + '</body></html>';
+    + '<style>'+css+'</style></head><body>'+bodyTbl+'</body></html>';
   return html;
 }
 async function offElimina(id){
