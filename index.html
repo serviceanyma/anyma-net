@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v152';</script>
+<script>const APP_VERSION = 'v154';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1558,13 +1558,13 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           <label>Validità (giorni)</label>
           <input type="number" id="off-f-validita" value="60" min="1">
         </div>
-        <div class="off-fld off-fld-half">
+        <div class="off-fld off-fld-full">
           <label>Consegna</label>
-          <input type="text" id="off-f-consegna" placeholder="Es: 120 giorni lavorativi dalla definizione dell'ordine">
+          <textarea id="off-f-consegna" placeholder="Es: 3 mesi dal ricevimento dell'ordine ufficiale..."></textarea>
         </div>
-        <div class="off-fld">
+        <div class="off-fld off-fld-full">
           <label>Garanzia</label>
-          <input type="text" id="off-f-garanzia" placeholder="Es: 12 mesi dal collaudo">
+          <textarea id="off-f-garanzia" placeholder="Es: 12 mesi dal collaudo"></textarea>
         </div>
         <div class="off-fld off-fld-half">
           <label>Prezzi</label>
@@ -4698,8 +4698,8 @@ async function offNuova(id){
     document.getElementById('off-f-lingua').value = 'ita';
     document.getElementById('off-f-stato').value = 'Bozza';
     document.getElementById('off-f-validita').value = 60;
-    document.getElementById('off-f-consegna').value = "Da definire in fase d'ordine";
-    document.getElementById('off-f-garanzia').value = '12 mesi dalla data di collaudo';
+    document.getElementById('off-f-consegna').value = "3 mesi dal ricevimento dell'ordine ufficiale (escluse le settimane 01 e 52, escluso il mese di Agosto). Salvo conferma definitiva all'atto dell'ordine. L'impegno di spedizione di ANYMA è subordinato alle seguenti condizioni: ricevimento dell'ordine firmato e integralmente accettato, comprensivo delle complete specifiche del cliente; ricevimento dell'acconto. Gli ordini non verranno inseriti nel programma di produzione di ANYMA fino all'avvenuto ricevimento dell'acconto.";
+    document.getElementById('off-f-garanzia').value = "12 mesi dalla data di collaudo e per un funzionamento di 12 (dodici) ore giornaliere. La garanzia si intende limitata alla sostituzione del pezzo guasto previa verifica del difetto di fabbricazione. L'intervento del nostro tecnico per la sostituzione del pezzo guasto sarà sempre a carico del cliente. La garanzia decade qualora il cliente proceda, senza il nostro preventivo consenso, alla sostituzione, modifica o riparazione di parti. L'accertamento delle cause dell'inconveniente o della rottura delle parti spetta esclusivamente alla società costruttrice. In ogni caso, non si darà luogo alla sostituzione gratuita delle parti il cui difetto o guasto dipenda unicamente dal normale utilizzo o dall'uso improprio della macchina.";
     document.getElementById('off-f-prezzi').value = 'Netti, franco nostro stabilimento';
     document.getElementById('off-f-collaudo').value = 'Collaudo funzionale presso ANYMA prima della spedizione';
     document.getElementById('off-f-installazione').value = 'Inclusa';
@@ -4752,8 +4752,8 @@ function offPopolaForm(o){
   document.getElementById('off-f-lingua').value = o.lingua||'ita';
   document.getElementById('off-f-stato').value = o.stato||'Bozza';
   document.getElementById('off-f-validita').value = o.validita||60;
-  document.getElementById('off-f-consegna').value = o.consegna||'';
-  document.getElementById('off-f-garanzia').value = o.garanzia||'';
+  document.getElementById('off-f-consegna').value = o.consegna || "3 mesi dal ricevimento dell'ordine ufficiale (escluse le settimane 01 e 52, escluso il mese di Agosto). Salvo conferma definitiva all'atto dell'ordine. L'impegno di spedizione di ANYMA è subordinato alle seguenti condizioni: ricevimento dell'ordine firmato e integralmente accettato, comprensivo delle complete specifiche del cliente; ricevimento dell'acconto. Gli ordini non verranno inseriti nel programma di produzione di ANYMA fino all'avvenuto ricevimento dell'acconto.";
+  document.getElementById('off-f-garanzia').value = o.garanzia || "12 mesi dalla data di collaudo e per un funzionamento di 12 (dodici) ore giornaliere. La garanzia si intende limitata alla sostituzione del pezzo guasto previa verifica del difetto di fabbricazione. L'intervento del nostro tecnico per la sostituzione del pezzo guasto sarà sempre a carico del cliente. La garanzia decade qualora il cliente proceda, senza il nostro preventivo consenso, alla sostituzione, modifica o riparazione di parti. L'accertamento delle cause dell'inconveniente o della rottura delle parti spetta esclusivamente alla società costruttrice. In ogni caso, non si darà luogo alla sostituzione gratuita delle parti il cui difetto o guasto dipenda unicamente dal normale utilizzo o dall'uso improprio della macchina.";
   document.getElementById('off-f-pagamenti').value = o.pagamenti||'';
   document.getElementById('off-f-note').value = o.note||'';
 
