@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v154';</script>
+<script>const APP_VERSION = 'v158';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1601,18 +1601,6 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         <div class="off-fld off-fld-full">
           <label>Termini pagamenti</label>
           <textarea id="off-f-pagamenti" placeholder="30% + IVA all'ordine&#10;60% + saldo IVA avviso merce pronta&#10;10% a 60gg data fattura"></textarea>
-        </div>
-        <div class="off-fld">
-          <label>Legge applicabile</label>
-          <input type="text" id="off-f-legge" placeholder="Es: Legge italiana">
-        </div>
-        <div class="off-fld">
-          <label>Foro competente</label>
-          <input type="text" id="off-f-foro" placeholder="Es: Foro di Vicenza">
-        </div>
-        <div class="off-fld off-fld-full">
-          <label>Condizioni generali</label>
-          <input type="text" id="off-f-condgen" placeholder="Es: Condizioni Generali di Vendita ANYMA · Incoterms 2020">
         </div>
         <div class="off-fld off-fld-full">
           <label>Note interne</label>
@@ -4702,16 +4690,13 @@ async function offNuova(id){
     document.getElementById('off-f-garanzia').value = "12 mesi dalla data di collaudo e per un funzionamento di 12 (dodici) ore giornaliere. La garanzia si intende limitata alla sostituzione del pezzo guasto previa verifica del difetto di fabbricazione. L'intervento del nostro tecnico per la sostituzione del pezzo guasto sarà sempre a carico del cliente. La garanzia decade qualora il cliente proceda, senza il nostro preventivo consenso, alla sostituzione, modifica o riparazione di parti. L'accertamento delle cause dell'inconveniente o della rottura delle parti spetta esclusivamente alla società costruttrice. In ogni caso, non si darà luogo alla sostituzione gratuita delle parti il cui difetto o guasto dipenda unicamente dal normale utilizzo o dall'uso improprio della macchina.";
     document.getElementById('off-f-prezzi').value = 'Netti, franco nostro stabilimento';
     document.getElementById('off-f-collaudo').value = 'Collaudo funzionale presso ANYMA prima della spedizione';
-    document.getElementById('off-f-installazione').value = 'Inclusa';
+    document.getElementById('off-f-installazione').value = 'Esclusa';
     document.getElementById('off-f-tariffa').value = '€ 1.000,00 per giornata di lavoro e/o viaggio';
     document.getElementById('off-f-trasporto').value = 'A carico del cliente';
     document.getElementById('off-f-vittoalloggio').value = 'A carico del cliente';
     document.getElementById('off-f-porto').value = 'Franco fabbrica (EXW)';
     document.getElementById('off-f-imballo').value = 'Incluso, idoneo al trasporto';
     document.getElementById('off-f-pagamenti').value = "40% all'ordine\n40% alla merce pronta\n20% al collaudo (bonifico bancario)";
-    document.getElementById('off-f-legge').value = 'Legge italiana';
-    document.getElementById('off-f-foro').value = 'Foro di Vicenza';
-    document.getElementById('off-f-condgen').value = 'Condizioni Generali di Vendita ANYMA · Incoterms 2020';
     document.getElementById('off-f-note').value = '';
     offAggiornaContatti();
     // Macrogruppi predefiniti per nuova offerta (skeleton minimo - editabili)
@@ -4771,9 +4756,6 @@ function offPopolaForm(o){
   document.getElementById('off-f-vittoalloggio').value = term.vittoAlloggio || 'A carico del cliente';
   document.getElementById('off-f-porto').value = term.porto || '';
   document.getElementById('off-f-imballo').value = term.imballo || '';
-  document.getElementById('off-f-legge').value = term.leggeApplicabile || 'Legge italiana';
-  document.getElementById('off-f-foro').value = term.foroCompetente || 'Foro di Vicenza';
-  document.getElementById('off-f-condgen').value = term.condizioniGenerali || 'Condizioni Generali di Vendita ANYMA · Incoterms 2020';
 
   OFF_WIZ.macrogruppi = (contenuto.macrogruppi||[]).map(mg=>({
     id: offUid(),
@@ -5004,10 +4986,7 @@ async function offSalva(genPdf){
       trasporto:    document.getElementById('off-f-trasporto').value.trim() || '',
       vittoAlloggio: document.getElementById('off-f-vittoalloggio').value.trim() || '',
       porto:        document.getElementById('off-f-porto').value.trim() || '',
-      imballo:      document.getElementById('off-f-imballo').value.trim() || '',
-      leggeApplicabile:   document.getElementById('off-f-legge').value.trim() || '',
-      foroCompetente:     document.getElementById('off-f-foro').value.trim() || '',
-      condizioniGenerali: document.getElementById('off-f-condgen').value.trim() || ''
+      imballo:      document.getElementById('off-f-imballo').value.trim() || ''
     }
   };
 
@@ -5324,6 +5303,13 @@ table.doc{width:100%;border-collapse:collapse}
 .cond-h{font-weight:700;font-size:9pt;color:#374151;margin:3mm 0 1.2mm 0}
 .cond-t{font-size:8.5pt;color:#6b7280;line-height:1.5}
 .saluti{margin-top:5mm;font-size:9.5pt;color:#1f2937}
+.cgv{page-break-before:always}
+.cgv-item{margin:0 0 2.5mm 0}
+.cgv-h{font-size:9.5pt;font-weight:700;color:${RED};margin:2.5mm 0 1mm 0;break-after:avoid;page-break-after:avoid}
+.cgv-p{font-size:8.4pt;color:#374151;line-height:1.45;text-align:justify}
+.cgv-b{list-style:none;margin:1mm 0 0 0;padding:0}
+.cgv-b li{position:relative;padding-left:5mm;margin:0 0 .8mm 0;font-size:8.4pt;color:#374151;line-height:1.4}
+.cgv-b li::before{content:"";position:absolute;left:1.5mm;top:1.5mm;width:1.2mm;height:1.2mm;background:${RED};border-radius:50%}
 `;
 
   var headRef = L.offertaCol + ' ' + escHtml(d.numero||'') + (dataFmt ? ' \u00b7 ' + escHtml(dataFmt) : '');
@@ -5404,16 +5390,99 @@ table.doc{width:100%;border-collapse:collapse}
     + tRow(L.tariffa, t.tariffa)
     + tRow(L.trasporto, t.trasporto) + tRow(L.vittoAlloggio, t.vittoAlloggio)
     + tRow(L.porto, t.porto) + tRow(L.imballo, t.imballo)
-    + tRow(L.pagamenti, t.pagamenti)
-    + tRow(L.leggeApplicabile, t.leggeApplicabile)
-    + tRow(L.foroCompetente, t.foroCompetente)
-    + tRow(L.condizioniGenerali, t.condizioniGenerali);
+    + tRow(L.pagamenti, t.pagamenti);
   if(tRows){
     commercial += '<h1 class="dtitle" style="margin-top:7mm">'+L.termini+'</h1><table class="ttbl">'+tRows+'</table>';
   }
   if(t.note && (''+t.note).trim()){
     commercial += '<div class="cond-h">'+L.condizioni+'</div><div class="cond-t">'+escHtml(t.note).replace(/\n/g,'<br>')+'</div>';
   }
+  // ===== CONDIZIONI GENERALI DI VENDITA (standard ANYMA) =====
+  var CGV_IT = [
+    { h:"Garanzia",
+      p:"La garanzia copre la manodopera e i ricambi di tutte le parti costruite da ANYMA S.r.l. (di seguito ANYMA), esclusi i materiali soggetti a usura. La resa del materiale in garanzia è franco sede ANYMA. Tutti i costi relativi all'eventuale intervento del tecnico (ore di viaggio, spese di viaggio, vitto e alloggio) sono a carico dell'acquirente. La durata e la decorrenza della garanzia sono indicate nei Termini e condizioni della presente offerta. La garanzia di buon funzionamento è subordinata al rispetto delle seguenti condizioni:",
+      bullets:[
+        "i prodotti da confezionare e i relativi materiali devono essere conformi a quanto concordato in fase d'ordine;",
+        "i prodotti e i materiali effettivamente utilizzati in produzione devono essere conformi a quelli inviati per il collaudo della macchina;",
+        "le condizioni di utilizzo della macchina devono essere conformi a quanto riportato nel manuale d'uso;",
+        "la manutenzione ordinaria deve essere effettuata come riportato nel manuale d'uso;",
+        "gli operatori devono aver ricevuto adeguata formazione sull'uso della macchina."
+      ] },
+    { h:"Manuale di istruzione e manutenzione",
+      p:"Il manuale d'uso e manutenzione è fornito in singola (1) copia per ogni macchina e comprende gli schemi elettrici e pneumatici, gli esplosi dei ricambi e la dichiarazione di conformità alla Direttiva Macchine 2006/42/CE. Eventuali copie aggiuntive saranno fornite al costo di € 150,00 cadauna. I manuali dei dispositivi commerciali eventualmente integrati nella macchina – quindi non prodotti da ANYMA – sono disponibili nelle sole lingue messe a disposizione dal relativo fornitore." },
+    { h:"Imballo e trasporto",
+      p:"Non sono inclusi nel prezzo della macchina se non diversamente indicato in offerta." },
+    { h:"Termine di consegna (resa)",
+      p:"Franco nostra sede." },
+    { h:"Scarico della merce, installazione e connessione alle utenze",
+      p:"Da eseguire a cura e carico dell'acquirente se non diversamente indicato in offerta." },
+    { h:"Data di consegna",
+      p:"Il tempo di consegna indicato in offerta è indicativo e subordinato a: carico di lavoro al momento dell'ordine; eventuali optional acquistati; puntuale pagamento delle rate pattuite; ricevimento, al momento dell'ordine, di tutti i dati tecnici necessari alla realizzazione della soluzione ordinata; ricevimento, al momento dell'ordine, di un campione di prodotto per ciascuna tipologia da trattare." },
+    { h:"Condizioni di pagamento",
+      p:"Ogni ritardo nel pagamento dell'acconto e delle altre rate pattuite comporterà un blocco della produzione e un conseguente ritardo nella fornitura, senza che nulla sia imputabile ad ANYMA." },
+    { h:"Formazione, installazione e messa in produzione",
+      p:"ANYMA suggerisce di avvalersi del proprio Servizio di Assistenza Tecnica per l'installazione, l'avviamento della macchina e l'addestramento del personale del cliente. Il servizio sarà prestato da un tecnico specializzato a un prezzo da definire in base alla località e ai servizi richiesti. La data di intervento dovrà essere pianificata in fase d'ordine e confermata entro 20 giorni dalla consegna della macchina." },
+    { h:"Collaudo presso ns. sede",
+      p:"Prima della spedizione un nostro tecnico effettuerà il collaudo della macchina, eventualmente alla presenza di un rappresentante del cliente per accettazione. Qualora sia richiesta la presenza del cliente, i relativi costi di trasporto e alloggio sono a suo carico. Approvato il buon funzionamento della macchina, ANYMA richiederà conferma scritta di accettazione e le relative istruzioni di spedizione." },
+    { h:"Campionature",
+      p:"La presente offerta è soggetta ad approvazione della direzione tecnica di ANYMA una volta ricevuti i campioni dei prodotti da trattare (se non già disponibili). Il cliente dovrà fornire le campionature necessarie alla corretta progettazione della macchina al momento dell'ordine. La lavorabilità di eventuali formati aggiuntivi non previsti al momento dell'ordine è subordinata all'approvazione della Direzione Tecnica e potrebbe comportare cambi formato e/o modifiche alla soluzione con costi aggiuntivi e spostamento della data di consegna. I costi di invio delle campionature sono sempre a carico del cliente." },
+    { h:"Responsabilità del cliente",
+      p:"Tutti i lavori civili e di stabilimento nei locali di installazione, il materiale d'installazione, il personale di supporto in fase di installazione, i sistemi di sollevamento e il relativo personale, l'energia elettrica, l'aria compressa, il materiale per testare e accettare la macchina, i detergenti, i lubrificanti e ogni altro prodotto non specificato in offerta sono a cura e carico del cliente." },
+    { h:"Condizioni tecniche",
+      p:"L'interfacciamento meccanico ed elettrico con le macchine a monte e a valle della fornitura ANYMA è a cura e carico del cliente. La fornitura sarà sviluppata secondo le specifiche tecniche ANYMA, se non diversamente concordato per iscritto. Eventuali layout e specifiche fornite in fase di offerta sono soggetti a revisione durante la progettazione di dettaglio; qualora le modifiche dovessero impattare in modo importante sulla soluzione, ANYMA ne informerà tempestivamente il cliente. Eventuali informazioni omesse o diverse da quelle rese disponibili dal cliente in fase d'offerta saranno considerate richieste di modifica, subordinate all'approvazione della Direzione Tecnica e potenzialmente onerose." },
+    { h:"Segretezza",
+      p:"Tutte le informazioni e i documenti ricevuti da ANYMA – ad esempio l'offerta, il layout, ecc. – sono da considerarsi strettamente confidenziali e non divulgabili." },
+    { h:"Foro competente",
+      p:"Per qualsiasi controversia relativa alla fornitura in oggetto è competente il Foro di Vicenza." }
+  ];
+  var CGV_EN = [
+    { h:"Warranty",
+      p:"The warranty covers labour and spare parts for all components manufactured by ANYMA S.r.l. (hereinafter ANYMA), excluding parts subject to wear. Warranty parts are supplied ex ANYMA works. All costs related to any technician visit (travel time, travel expenses, board and lodging) are borne by the buyer. The warranty duration and start date are stated in the Terms and conditions of this offer. The good-functioning warranty is subject to the following conditions:",
+      bullets:[
+        "the products to be packaged and related materials must comply with what was agreed at the time of order;",
+        "the products and materials actually used in production must comply with those sent for machine testing;",
+        "machine operating conditions must comply with the operating manual;",
+        "ordinary maintenance must be carried out as described in the operating manual;",
+        "operators must have received adequate training on machine use."
+      ] },
+    { h:"Instruction and maintenance manual",
+      p:"The use and maintenance manual is supplied in a single (1) copy per machine and includes electrical and pneumatic diagrams, spare-part exploded views and the declaration of conformity to Machinery Directive 2006/42/EC. Additional copies are supplied at € 150.00 each. Manuals for commercial devices integrated into the machine – therefore not manufactured by ANYMA – are available only in the languages provided by the relevant supplier." },
+    { h:"Packing and transport",
+      p:"Not included in the machine price unless otherwise stated in the offer." },
+    { h:"Delivery terms",
+      p:"Ex our works." },
+    { h:"Goods unloading, installation and connection to utilities",
+      p:"To be carried out by and at the buyer's expense unless otherwise stated in the offer." },
+    { h:"Delivery time",
+      p:"The delivery time stated in the offer is indicative and subject to: workload at the time of order; any optional items purchased; timely payment of the agreed instalments; receipt, at the time of order, of all technical data required to build the ordered solution; receipt, at the time of order, of a product sample for each type to be processed." },
+    { h:"Payment conditions",
+      p:"Any delay in payment of the deposit or the other agreed instalments will cause a production hold and a consequent delay in supply, with no liability attributable to ANYMA." },
+    { h:"Training, installation and start-up",
+      p:"ANYMA recommends using its Technical Assistance Service to install and start up the machine and to train the customer's personnel. The service will be provided by a specialised technician at a price to be defined based on location and requested services. The intervention date must be planned at the time of order and confirmed within 20 days of machine delivery." },
+    { h:"Testing at our premises",
+      p:"Before shipment, our technician will test the machine, possibly in the presence of a customer representative for acceptance. Should the customer's presence be requested, the related transport and lodging costs are at their expense. Once good functioning is approved, ANYMA will request written acceptance and the relevant shipping instructions." },
+    { h:"Samples",
+      p:"This offer is subject to approval by ANYMA's technical management once samples of the products to be processed have been received (if not already available). The customer shall provide the samples needed for correct machine design at the time of order. Machinability of any additional formats not foreseen at the time of order is subject to Technical Management approval and may entail format changes and/or modifications with additional costs and a shift of the delivery date. Sample shipping costs are always borne by the customer." },
+    { h:"Customer responsibilities",
+      p:"All civil and plant works in the installation premises, installation material, support personnel during installation, lifting systems and related personnel, electricity, compressed air, material to test and accept the machine, detergents, lubricants and any other product not specified in the offer are the responsibility and at the expense of the customer." },
+    { h:"Technical conditions",
+      p:"Mechanical and electrical interfacing with machines upstream and downstream of the ANYMA supply is the responsibility and at the expense of the customer. The supply will be developed according to ANYMA technical specifications unless otherwise agreed in writing. Any layouts and technical specifications provided at the offer stage are subject to revision during detailed design; should changes significantly affect the solution, ANYMA will promptly inform the customer. Information omitted or differing from that made available by the customer at the offer stage will be considered change requests, subject to Technical Management approval and potentially chargeable." },
+    { h:"Confidentiality",
+      p:"All information and documents received from ANYMA – e.g. the offer, the layout, etc. – are to be considered strictly confidential and non-disclosable." },
+    { h:"Jurisdiction",
+      p:"Any dispute relating to this supply shall be subject to the jurisdiction of the Court of Vicenza, Italy." }
+  ];
+  var CGV = (LANG==='EN') ? CGV_EN : CGV_IT;
+  var cgvTitle = (LANG==='EN') ? 'General Terms and Conditions of Sale' : 'Condizioni Generali di Vendita';
+  var cgv = '<div class="cgv"><h1 class="dtitle">'+cgvTitle+'</h1>';
+  CGV.forEach(function(v){
+    cgv += '<div class="cgv-item"><div class="cgv-h">'+escHtml(v.h)+'</div>';
+    if(v.p) cgv += '<div class="cgv-p">'+escHtml(v.p)+'</div>';
+    if(v.bullets) cgv += '<ul class="cgv-b">'+v.bullets.map(function(b){return '<li>'+escHtml(b)+'</li>';}).join('')+'</ul>';
+    cgv += '</div>';
+  });
+  cgv += '</div>';
+  commercial += cgv;
   commercial += '<div class="saluti">'+L.saluti+'<br><strong>ANYMA S.r.l.</strong></div>';
   commercial += '</div>';
 
