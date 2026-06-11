@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v163';</script>
+<script>const APP_VERSION = 'v164';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1867,7 +1867,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
     <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;gap:10px;padding:18px 22px">
       <div style="display:flex;align-items:center;gap:10px">
         <h2 style="margin:0;font-size:18px;color:var(--text)">Macchine</h2>
-        <span style="font-size:12px;color:var(--text3)">Registro macchine costruite — seriali univoci</span>
+        <span style="font-size:12px;color:var(--text3)">Tutte le macchine — dalle commesse + registro standalone</span>
       </div>
       <div class="sp-toolbar">
         <button class="btn btn-sm" onclick="macLoad()">
@@ -6710,43 +6710,63 @@ var MAC_STATE = { list: [], editId: null };
 function macEsc(s){ return (typeof offEsc==='function') ? offEsc(s) : (''+(s==null?'':s)); }
 
 async function macLoad(){
-  const listId = getSpMacchineId();
-  if(!listId){ showToast('Configura il GUID della lista AnymaMacchine in Impostazioni'); macRender(); return; }
+  const comId = getSpCommesseId();
+  const macId = getSpMacchineId();
+  if(!comId && !macId){ showToast('Configura i GUID (AnymaCommesse / AnymaMacchine) in Impostazioni'); macRender(); return; }
   try{
     const tok = await anGetToken();
     if(!tok){ showToast('Token scaduto'); return; }
     const headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
-    offCaricaClienti().catch(()=>{}); // prepara i clienti per il dropdown
-    const url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+
-      '/items?expand=fields(select=Title,Descrizione,Cliente,ClienteLookupId,Modello,Commessa,DataCostruzione,Stato,Note)&$top=999';
-    const r = await fetch(url,{headers});
-    if(!r.ok){
-      const t = await r.text();
-      let msg = 'HTTP '+r.status;
-      try{ msg = JSON.parse(t).error?.message || msg; }catch(e){}
-      console.error('macLoad:',r.status,t);
-      showToast('Errore caricamento macchine: '+msg);
-      return;
+    await offCaricaClienti();
+    const cliMap = {}; (_spClienti||[]).forEach(c=>{ cliMap[c.id]=c.name; });
+    let list = [];
+    // 1) Macchine dentro le commesse (AnymaCommesse)
+    if(comId){
+      const u = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+comId+
+        '/items?expand=fields(select=Title,Cliente,ClienteLookupId,Stato,DatiJSON)&$top=999';
+      const rr = await fetch(u,{headers});
+      if(rr.ok){
+        const dd = await rr.json();
+        (dd.value||[]).forEach(i=>{
+          const f = i.fields||{};
+          let dati={}; try{ dati = JSON.parse(f.DatiJSON||'{}')||{}; }catch(e){}
+          const cliId = f.ClienteLookupId ? parseInt(f.ClienteLookupId) : null;
+          const cliNome = f.Cliente || (cliId ? (cliMap[cliId]||'') : '');
+          (dati.macchine||[]).forEach((m,mi)=>{
+            list.push({
+              source:'commessa', commessaId:i.id, commessa:f.Title||'',
+              id:'com:'+i.id+':'+(m.id||mi),
+              seriale:m.seriale||'', descrizione:m.descrizione||'', modello:m.modello||'',
+              cliente:cliNome, stato:f.Stato||''
+            });
+          });
+        });
+      } else { console.error('macLoad commesse:', rr.status, await rr.text()); }
     }
-    const data = await r.json();
-    MAC_STATE.list = (data.value||[]).map(i=>{
-      const f = i.fields||{};
-      return {
-        id:          i.id,
-        seriale:     f.Title || '',
-        descrizione: f.Descrizione || '',
-        cliente:     f.Cliente || '',
-        clienteId:   f.ClienteLookupId ? parseInt(f.ClienteLookupId) : null,
-        modello:     f.Modello || '',
-        commessa:    f.Commessa || '',
-        data:        f.DataCostruzione ? f.DataCostruzione.split('T')[0] : '',
-        stato:       f.Stato || '',
-        note:        f.Note || ''
-      };
-    });
-    const cnt = document.getElementById('cnt-macchine'); if(cnt) cnt.textContent = MAC_STATE.list.length;
+    // 2) Macchine del registro standalone (AnymaMacchine), se configurato
+    if(macId){
+      const u2 = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+macId+
+        '/items?expand=fields(select=Title,Descrizione,Cliente,ClienteLookupId,Modello,Commessa,DataCostruzione,Stato,Note)&$top=999';
+      const rr2 = await fetch(u2,{headers});
+      if(rr2.ok){
+        const dd2 = await rr2.json();
+        (dd2.value||[]).forEach(i=>{
+          const f = i.fields||{};
+          const cliId = f.ClienteLookupId ? parseInt(f.ClienteLookupId) : null;
+          list.push({
+            source:'registro', id:i.id, commessaId:null, commessa:f.Commessa||'',
+            seriale:f.Title||'', descrizione:f.Descrizione||'', modello:f.Modello||'',
+            cliente:f.Cliente || (cliId ? (cliMap[cliId]||'') : ''),
+            data:f.DataCostruzione ? f.DataCostruzione.split('T')[0] : '',
+            stato:f.Stato||'', note:f.Note||'', clienteId:cliId
+          });
+        });
+      } else { console.error('macLoad registro:', rr2.status, await rr2.text()); }
+    }
+    MAC_STATE.list = list;
+    const cnt = document.getElementById('cnt-macchine'); if(cnt) cnt.textContent = list.length;
     macRender();
-    showToast(MAC_STATE.list.length+' macchine caricate');
+    showToast(list.length+' macchine');
   }catch(e){ console.error('macLoad:',e); showToast('Errore: '+e.message); }
 }
 
@@ -6761,21 +6781,33 @@ function macRender(){
   rows.sort((a,b)=> (a.seriale||'').localeCompare(b.seriale||'', 'it', {numeric:true}));
   const cf = document.getElementById('mac-count'); if(cf) cf.textContent = rows.length;
   if(!rows.length){
-    tb.innerHTML = '<tr><td colspan="7" style="padding:26px;text-align:center;color:var(--text3)">Nessuna macchina. Premi "Nuova macchina" per aggiungerne una.</td></tr>';
+    tb.innerHTML = '<tr><td colspan="7" style="padding:26px;text-align:center;color:var(--text3)">Nessuna macchina. Crea una commessa con le sue macchine, oppure aggiungi una macchina al registro.</td></tr>';
     return;
   }
-  tb.innerHTML = rows.map(m=>'<tr>'+
-    '<td style="font-family:var(--mono);font-weight:600;color:#c0392b">'+macEsc(m.seriale)+'</td>'+
-    '<td>'+macEsc(m.descrizione)+'</td>'+
-    '<td>'+macEsc(m.cliente)+'</td>'+
-    '<td>'+macEsc(m.modello)+'</td>'+
-    '<td>'+macEsc(m.commessa)+'</td>'+
-    '<td>'+(m.stato?('<span class="mac-badge">'+macEsc(m.stato)+'</span>'):'')+'</td>'+
-    '<td style="text-align:right;white-space:nowrap">'+
-      '<button class="btn btn-sm" onclick="macEdit(\''+m.id+'\')">Modifica</button> '+
-      '<button class="btn btn-sm danger" onclick="macDel(\''+m.id+'\')" title="Elimina">&#10005;</button>'+
-    '</td>'+
-  '</tr>').join('');
+  tb.innerHTML = rows.map(function(m){
+    let azioni;
+    if(m.source==='commessa'){
+      azioni = '<button class="btn btn-sm" onclick="macApriCommessa(\''+m.commessaId+'\')" title="Apri la commessa">Apri commessa</button>';
+    } else {
+      azioni = '<button class="btn btn-sm" onclick="macEdit(\''+m.id+'\')">Modifica</button> '+
+               '<button class="btn btn-sm danger" onclick="macDel(\''+m.id+'\')" title="Elimina">&#10005;</button>';
+    }
+    return '<tr>'+
+      '<td style="font-family:var(--mono);font-weight:600;color:#c0392b">'+macEsc(m.seriale)+'</td>'+
+      '<td>'+macEsc(m.descrizione)+'</td>'+
+      '<td>'+macEsc(m.cliente)+'</td>'+
+      '<td>'+macEsc(m.modello)+'</td>'+
+      '<td>'+macEsc(m.commessa)+(m.source==='commessa'?' <span class="mac-badge" style="background:rgba(243,156,18,.15);border-color:#f39c12;color:#f39c12">commessa</span>':'')+'</td>'+
+      '<td>'+(m.stato?('<span class="mac-badge">'+macEsc(m.stato)+'</span>'):'')+'</td>'+
+      '<td style="text-align:right;white-space:nowrap">'+azioni+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+async function macApriCommessa(cid){
+  if(COM_STATE.list.length===0){ await comLoad(); }
+  showView('commesse');
+  comEdit(cid);
 }
 
 function macPopulateClienti(curId, curName){
@@ -7024,7 +7056,8 @@ async function comLoad(){
     const tok = await anGetToken();
     if(!tok){ showToast('Token scaduto'); return; }
     const headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
-    offCaricaClienti().catch(()=>{});
+    await offCaricaClienti();
+    const _cm = {}; (_spClienti||[]).forEach(function(c){ _cm[c.id]=c.name; });
     const url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+
       '/items?expand=fields(select=Title,Cliente,ClienteLookupId,Stato,DatiJSON)&$top=999';
     const r = await fetch(url,{headers});
@@ -7041,7 +7074,7 @@ async function comLoad(){
       return {
         id: i.id,
         codice: f.Title || '',
-        cliente: f.Cliente || '',
+        cliente: f.Cliente || (f.ClienteLookupId ? (_cm[parseInt(f.ClienteLookupId)]||'') : ''),
         clienteId: f.ClienteLookupId ? parseInt(f.ClienteLookupId) : null,
         stato: f.Stato || '',
         agente: dati.agente||'', consegna: dati.consegna||'', utilFinale: dati.utilFinale||'',
