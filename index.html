@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v162';</script>
+<script>const APP_VERSION = 'v163';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -175,6 +175,22 @@ main{
 .mac-table td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top}
 .mac-table tbody tr:hover td{background:var(--bg3)}
 .mac-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;background:var(--bg4);border:1px solid var(--border2);color:var(--text2);white-space:nowrap}
+.com-mac{border:1px solid var(--border);border-radius:8px;margin:0 0 12px;background:var(--bg2);overflow:hidden}
+.com-mac-hdr{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;background:var(--bg3)}
+.com-mac-sub{color:var(--text3);font-size:12px}
+.com-mac.collapsed .com-mac-body{display:none}
+.com-mac-arrow{transition:transform .15s;color:var(--text3)}
+.com-mac.collapsed .com-mac-arrow{transform:rotate(-90deg)}
+.com-mac-actions{margin-left:auto;display:flex;gap:6px}
+.com-mac-body{padding:12px}
+.com-grp{margin:0 0 12px}
+.com-grp-title{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#c0392b;font-weight:700;border-bottom:1px solid var(--border);padding-bottom:4px;margin-bottom:8px}
+.com-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.com-fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.com-fld.full{grid-column:1 / -1}
+.com-fld label{font-size:11px;color:var(--text2)}
+.com-fld input,.com-fld select,.com-fld textarea{background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;padding:6px 8px;font-family:var(--font);outline:none;box-sizing:border-box;width:100%}
+.com-fld textarea{min-height:58px;resize:vertical}
 .off-punto:hover{border-color:var(--border2)}
 .off-punto-handle{color:var(--text3);font-size:13px;line-height:1;padding-top:6px;cursor:grab;user-select:none}
 .off-punto-text{flex:1;background:transparent;border:none;color:var(--text);font-family:var(--font);font-size:12px;line-height:1.4;outline:none;padding:5px;border-radius:4px;resize:vertical;min-height:34px}
@@ -843,6 +859,11 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
     Macchine
     <span class="badge-count" id="cnt-macchine">-</span>
   </div>
+  <div class="nav-item" id="nav-commesse" onclick="showView('commesse')">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h5l1.5 2H14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/></svg>
+    Commesse
+    <span class="badge-count" id="cnt-commesse">-</span>
+  </div>
 
   <div class="nav-sep"></div>
   <div class="nav-section-label">Assistenza</div>
@@ -1018,6 +1039,22 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
             style="width:100%;margin-top:7px;font-size:11px;padding:5px 8px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);outline:none;box-sizing:border-box"
             oninput="saveSpSetting('sp_macchine_id',this.value,this)">
           <div id="settings-sp-macchine-id-status" style="font-size:11px;margin-top:4px;color:var(--text3)">Non salvato</div>
+        </div>
+      </div>
+
+      <!-- Card Lista AnymaCommesse -->
+      <div class="settings-card">
+        <div class="settings-card-icon" style="background:rgba(243,156,18,.15);flex-shrink:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#f39c12" stroke-width="1.5" width="18" height="18"><path d="M3 5h6l2 3h10v11H3z"/></svg>
+        </div>
+        <div class="settings-card-info" style="flex:1;min-width:0">
+          <div class="settings-card-title">SharePoint - Lista AnymaCommesse (GUID)</div>
+          <div class="settings-card-path">ID lista Commesse da SharePoint (/sites/SERVICE)</div>
+          <input type="text" id="settings-sp-commesse-id"
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            style="width:100%;margin-top:7px;font-size:11px;padding:5px 8px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);outline:none;box-sizing:border-box"
+            oninput="saveSpSetting('sp_commesse_id',this.value,this)">
+          <div id="settings-sp-commesse-id-status" style="font-size:11px;margin-top:4px;color:var(--text3)">Non salvato</div>
         </div>
       </div>
 
@@ -1910,6 +1947,51 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         <button class="btn btn-sm btn-primary" onclick="macSalva()">Salva macchina</button>
       </div>
     </div>
+  </div>
+
+  <!-- VIEW: COMMESSE -> MACCHINE -->
+  <div id="view-commesse" class="content-view">
+    <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;gap:10px;padding:18px 22px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <h2 style="margin:0;font-size:18px;color:var(--text)">Commesse</h2>
+        <span style="font-size:12px;color:var(--text3)">Schede macchina per la produzione — più macchine per commessa</span>
+      </div>
+      <div class="sp-toolbar">
+        <button class="btn btn-sm" onclick="comLoad()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5M13.5 2.5v3.5h-3.5"/></svg>
+          Aggiorna
+        </button>
+        <button class="btn btn-sm btn-primary" onclick="comNuova()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>
+          Nuova commessa
+        </button>
+        <span class="tag-count" id="com-count">-</span>
+        <input type="text" class="filter-input" id="com-search" placeholder="Cerca commessa, cliente, seriale, modello..." oninput="comRender()" style="max-width:320px">
+      </div>
+      <div style="flex:1;min-height:0;overflow:auto;border:1px solid var(--border);border-radius:10px">
+        <table class="mac-table">
+          <thead><tr>
+            <th>Commessa</th><th>Cliente</th><th>Macchine</th><th>Stato</th><th style="width:120px"></th>
+          </tr></thead>
+          <tbody id="com-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDITOR COMMESSA (full screen) -->
+  <div class="off-modal-overlay" id="com-ed-overlay" onclick="comClose()"></div>
+  <div class="off-modal" id="com-ed-modal">
+    <div class="off-mod-hdr">
+      <h3 id="com-ed-title">Nuova commessa</h3>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <button class="btn btn-sm btn-primary" onclick="comSalva()">Salva commessa</button>
+        <button class="sp-side-close" onclick="comClose()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="off-mod-body" id="com-ed-body" style="overflow:auto"></div>
   </div>
 
   <!-- VIEW: ORDINI FORNITORI SHAREPOINT -->
@@ -3239,6 +3321,12 @@ function showView(view) {
     const el=document.getElementById('view-macchine');
     el.style.display='flex'; el.classList.add('visible');
     if(MAC_STATE.list.length===0){ macLoad(); } else { macRender(); }
+    return;
+  }
+  if (view==='commesse') {
+    const el=document.getElementById('view-commesse');
+    el.style.display='flex'; el.classList.add('visible');
+    if(COM_STATE.list.length===0){ comLoad(); } else { comRender(); }
     return;
   }
   if (view==='stato-progetti') {
@@ -6588,6 +6676,7 @@ function loadSpSettings() {
     {id:'settings-sp-contr-id', key:'sp_contr_id'},
     {id:'settings-sp-offerte-id', key:'sp_offerte_id'},
     {id:'settings-sp-macchine-id', key:'sp_macchine_id'},
+    {id:'settings-sp-commesse-id', key:'sp_commesse_id'},
     {id:'settings-sp-rapp-id', key:'sp_rapp_id'},
   ];
   fields.forEach(function(f) {
@@ -6812,6 +6901,407 @@ async function macDel(id){
     await macLoad();
   }catch(e){ console.error('macDel:',e); showToast('Errore: '+e.message); }
 }
+
+/* ======================================
+   COMMESSE -> MACCHINE  (SharePoint, sito SERVICE)
+   Lista AnymaCommesse. Colonne: Title(Codice commessa), Cliente(lookup),
+   Stato, DatiJSON(multilinea = note generali + array macchine + campi a gruppi)
+====================================== */
+function getSpCommesseId(){ return localStorage.getItem('anyma_sp_commesse_id') || ''; }
+var COM_STATE = { list: [], editId: null, draft: null };
+function comEsc(s){ return (typeof offEsc==='function') ? offEsc(s) : (''+(s==null?'':s)); }
+
+/* Template campi macchina, suddiviso per gruppi (dal PDF Scheda Tecnica).
+   t: text|textarea|sino|select ; opts per select ; d: valore di default ; full: campo a tutta larghezza */
+var COM_GROUPS = [
+  { title:'Marchi e loghi', fields:[
+    {k:'targheAnyma', l:'Targhe ANYMA', t:'sino', d:'Sì'},
+    {k:'schemiAnyma', l:'Schemi elettrici ANYMA', t:'sino', d:'Sì'},
+    {k:'hmiAnyma', l:'Pannello HMI ANYMA', t:'sino', d:'Sì'}
+  ]},
+  { title:'Dati tecnici', fields:[
+    {k:'paese', l:'Paese di installazione', t:'text'},
+    {k:'categoriaProdotto', l:'Categoria prodotto', t:'text'},
+    {k:'tipoProdotto', l:'Tipo di prodotto', t:'text'},
+    {k:'tipoBarra', l:'Tipo di barra', t:'text'},
+    {k:'tipoFilm', l:'Tipo di film', t:'text'},
+    {k:'tempMaxBarra', l:'Temp. max barra (°C)', t:'text'},
+    {k:'tempMaxAmb', l:'Temp. max ambiente (°C)', t:'text'},
+    {k:'tempMinAmb', l:'Temp. min ambiente (°C)', t:'text'},
+    {k:'paccoRif', l:'Pacco rif. tempo ciclo', t:'text'},
+    {k:'ppm', l:'Prodotti al minuto (PPM)', t:'text'},
+    {k:'noteDati', l:'Note', t:'textarea', full:true}
+  ]},
+  { title:'Parte elettrica', fields:[
+    {k:'tensione', l:'Tensione', t:'text', d:'380 V'},
+    {k:'frequenza', l:'Frequenza', t:'text', d:'50 Hz'},
+    {k:'tensFreni', l:'Tensione freni motori', t:'text', d:'230 V'},
+    {k:'tensAux', l:'Tensione aux', t:'text', d:'24 V'},
+    {k:'tensComandi', l:'Tensione comandi', t:'text', d:'24 V DC'},
+    {k:'tensSensori', l:'Tensione sensori/I-O/valvole', t:'text', d:'24 V DC'},
+    {k:'sistemaDistrib', l:'Sistema di distribuzione', t:'select', opts:['TN-S','TN-C','Altro']},
+    {k:'cavoNeutro', l:'Cavo neutro distribuito', t:'sino'},
+    {k:'cavi', l:'Cavi', t:'select', opts:['STD','BT','AT'], d:'STD'},
+    {k:'guaine', l:'Guaine', t:'select', opts:['STD','BT','AT'], d:'STD'}
+  ]},
+  { title:'Parte pneumatica', fields:[
+    {k:'pressioneAria', l:'Pressione aria compressa', t:'text', d:'5 bar'},
+    {k:'scaricoSicurezza', l:'Gruppo scarico in sicurezza', t:'sino', d:'Sì'}
+  ]},
+  { title:'Trasporti', fields:[
+    {k:'tipoTrasporto', l:'Tipo di trasporto', t:'text'}
+  ]},
+  { title:'Optional', fields:[
+    {k:'optCond', l:'Condizionatore su quadro', t:'sino'}, {k:'optCondTipo', l:'Condizionatore — tipo', t:'text'},
+    {k:'optTele', l:'Teleassistenza', t:'sino'}, {k:'optTeleTipo', l:'Teleassistenza — tipo', t:'text'},
+    {k:'optPresaPC', l:'Presa elettrica PC esterna', t:'sino'}, {k:'optPresaPCTipo', l:'Presa PC — tipo', t:'text'},
+    {k:'optEthernet', l:'Presa Ethernet esterna', t:'sino'}, {k:'optEthernetTipo', l:'Ethernet — tipo', t:'text'},
+    {k:'optIndustry40', l:'Industry 4.0', t:'sino'}, {k:'optIndustry40Tipo', l:'Industry 4.0 — tipo', t:'text'}
+  ]},
+  { title:'Caratteristiche prodotto', fields:[
+    {k:'carTipoProdotto', l:'Tipo di prodotto', t:'text'},
+    {k:'carDimensioni', l:'Dimensioni MIN/MAX (Ø est/int, lungh., busta, PPM, m/min, peso)', t:'textarea', full:true},
+    {k:'carNote', l:'Note', t:'textarea', full:true}
+  ]},
+  { title:'Indicazioni funzionali', fields:[
+    {k:'programmi', l:'Programmi di confezionamento', t:'textarea', full:true},
+    {k:'programmaSelDa', l:'Programma selezionabile da', t:'select', opts:['Linea','Pannello HMI','Altro']},
+    {k:'ppmFunz', l:'Numero di PPM', t:'text'},
+    {k:'posizioniProdotto', l:'Posizioni del prodotto', t:'text'},
+    {k:'noteFunz', l:'Note sul funzionamento', t:'textarea', full:true}
+  ]},
+  { title:'Scambio segnali macchina ↔ linea', fields:[
+    {k:'segnaliAutomazione', l:'Segnali per l\u2019automazione', t:'text'},
+    {k:'segnaliEmergenza', l:'Segnali di emergenza', t:'text'},
+    {k:'pnpnCoupler', l:'PN/PN coupler', t:'text'}
+  ]},
+  { title:'Collaudo', fields:[
+    {k:'puntiCollaudo', l:'Punti di attenzione per il collaudo', t:'textarea', full:true}
+  ]},
+  { title:'Lista componenti — Elettrico', fields:[
+    {k:'cPlc', l:'PLC', t:'text', d:'OMRON NX1P2-9024DT1'},
+    {k:'cPannello', l:'Pannello operatore', t:'text', d:'WEINTEK CMT3108XH'},
+    {k:'cQuadro', l:'Quadro', t:'text'},
+    {k:'cScatolaHMI', l:'Scatola HMI', t:'text'},
+    {k:'cPulsantiera', l:'Pulsantiera', t:'text'},
+    {k:'cAlimentatori', l:'Alimentatori', t:'text', d:'OMRON'},
+    {k:'cRele', l:'Relè', t:'text', d:'PHOENIX / FINDER / OMRON'},
+    {k:'cMagneto', l:'Magnetotermici', t:'text', d:'SIEMENS'},
+    {k:'cMorsettiere', l:'Morsettiere', t:'text', d:'PHOENIX'},
+    {k:'cInverter', l:'Inverter', t:'text', d:'OMRON M1 ETHERCAT'},
+    {k:'cServo', l:'Servoazionamenti', t:'text', d:'OMRON S1'},
+    {k:'cEncoder', l:'Encoder', t:'text', d:'LIKA'},
+    {k:'cFinecorsa', l:'Finecorsa', t:'text', d:'OMRON'},
+    {k:'cLaser', l:'Misuratori laser', t:'text', d:'OMRON'},
+    {k:'cFotocellule', l:'Fotocellule', t:'text', d:'OMRON'},
+    {k:'cSensori', l:'Sensori', t:'text', d:'OMRON'},
+    {k:'cContattori', l:'Contattori', t:'text', d:'SIEMENS'},
+    {k:'cModSic', l:'Modulo di sicurezza', t:'text', d:'OMRON'}
+  ]},
+  { title:'Lista componenti — Meccanico', fields:[
+    {k:'mMotoriduttori', l:'Motoriduttori', t:'text', d:'CMR / MOTOVARIO / BONFIGLIOLI'},
+    {k:'mRiduttori', l:'Riduttori', t:'text', d:'CMR / MOTOVARIO / BONFIGLIOLI'},
+    {k:'mCuscinetti', l:'Cuscinetti', t:'text', d:'FAG / SKF'},
+    {k:'mCatene', l:'Catene portacavi', t:'text', d:'KABELSCHLEPP'}
+  ]},
+  { title:'Lista componenti — Pneumatico', fields:[
+    {k:'pCilindri', l:'Cilindri', t:'text', d:'AIRTAC / SMC'},
+    {k:'pElettrovalvole', l:'Elettrovalvole', t:'text', d:'AIRTAC / SMC'}
+  ]}
+];
+
+function comNewMac(){
+  var campi = {};
+  COM_GROUPS.forEach(function(g){ g.fields.forEach(function(f){ if(f.d) campi[f.k]=f.d; }); });
+  return { id: offUid(), modello:'', seriale:'', codice:'', rev:'00', descrizione:'', campi: campi };
+}
+
+/* ---- Caricamento / lista ---- */
+async function comLoad(){
+  const listId = getSpCommesseId();
+  if(!listId){ showToast('Configura il GUID della lista AnymaCommesse in Impostazioni'); comRender(); return; }
+  try{
+    const tok = await anGetToken();
+    if(!tok){ showToast('Token scaduto'); return; }
+    const headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
+    offCaricaClienti().catch(()=>{});
+    const url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+
+      '/items?expand=fields(select=Title,Cliente,ClienteLookupId,Stato,DatiJSON)&$top=999';
+    const r = await fetch(url,{headers});
+    if(!r.ok){
+      const t = await r.text(); let msg='HTTP '+r.status;
+      try{ msg = JSON.parse(t).error?.message || msg; }catch(e){}
+      console.error('comLoad:',r.status,t); showToast('Errore caricamento commesse: '+msg); return;
+    }
+    const data = await r.json();
+    COM_STATE.list = (data.value||[]).map(function(i){
+      const f = i.fields||{};
+      let dati = {};
+      try{ dati = JSON.parse(f.DatiJSON||'{}') || {}; }catch(e){ dati = {}; }
+      return {
+        id: i.id,
+        codice: f.Title || '',
+        cliente: f.Cliente || '',
+        clienteId: f.ClienteLookupId ? parseInt(f.ClienteLookupId) : null,
+        stato: f.Stato || '',
+        agente: dati.agente||'', consegna: dati.consegna||'', utilFinale: dati.utilFinale||'',
+        commInterna: dati.commInterna||'', layout: dati.layout||'', data: dati.data||'',
+        noteGenerali: dati.noteGenerali||'',
+        macchine: Array.isArray(dati.macchine) ? dati.macchine : []
+      };
+    });
+    const cnt = document.getElementById('cnt-commesse'); if(cnt) cnt.textContent = COM_STATE.list.length;
+    comRender();
+    showToast(COM_STATE.list.length+' commesse caricate');
+  }catch(e){ console.error('comLoad:',e); showToast('Errore: '+e.message); }
+}
+
+function comRender(){
+  const tb = document.getElementById('com-tbody');
+  if(!tb) return;
+  const q = (document.getElementById('com-search') ? document.getElementById('com-search').value : '').toLowerCase().trim();
+  let rows = COM_STATE.list.slice();
+  if(q){ rows = rows.filter(c => (c.codice+' '+c.cliente+' '+c.stato+' '+(c.macchine||[]).map(m=>m.seriale+' '+m.modello).join(' ')).toLowerCase().indexOf(q) >= 0); }
+  rows.sort((a,b)=> (b.codice||'').localeCompare(a.codice||'', 'it', {numeric:true}));
+  const cf = document.getElementById('com-count'); if(cf) cf.textContent = rows.length;
+  if(!rows.length){
+    tb.innerHTML = '<tr><td colspan="5" style="padding:26px;text-align:center;color:var(--text3)">Nessuna commessa. Premi "Nuova commessa" per crearne una.</td></tr>';
+    return;
+  }
+  tb.innerHTML = rows.map(function(c){
+    return '<tr>'+
+      '<td style="font-family:var(--mono);font-weight:600;color:#c0392b">'+comEsc(c.codice)+'</td>'+
+      '<td>'+comEsc(c.cliente)+'</td>'+
+      '<td>'+(c.macchine?c.macchine.length:0)+' macchina/e</td>'+
+      '<td>'+(c.stato?('<span class="mac-badge">'+comEsc(c.stato)+'</span>'):'')+'</td>'+
+      '<td style="text-align:right;white-space:nowrap">'+
+        '<button class="btn btn-sm" onclick="comEdit(\''+c.id+'\')">Apri</button> '+
+        '<button class="btn btn-sm danger" onclick="comDel(\''+c.id+'\')" title="Elimina">&#10005;</button>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+}
+
+/* ---- Editor ---- */
+function comOpen(){ document.getElementById('com-ed-overlay').classList.add('open'); document.getElementById('com-ed-modal').classList.add('open'); }
+function comClose(){ document.getElementById('com-ed-overlay').classList.remove('open'); document.getElementById('com-ed-modal').classList.remove('open'); }
+
+async function comNuova(){
+  await offCaricaClienti();
+  COM_STATE.editId = null;
+  COM_STATE.draft = {
+    codice:'', clienteId:null, cliente:'', stato:'Aperta',
+    agente:'', consegna:'', utilFinale:'', commInterna:'', layout:'',
+    data: new Date().toISOString().split('T')[0], noteGenerali:'',
+    macchine: [ comNewMac() ]
+  };
+  document.getElementById('com-ed-title').textContent = 'Nuova commessa';
+  comRenderEditor();
+  comOpen();
+}
+async function comEdit(id){
+  const c = COM_STATE.list.find(x=>x.id===id);
+  if(!c) return;
+  await offCaricaClienti();
+  COM_STATE.editId = id;
+  COM_STATE.draft = JSON.parse(JSON.stringify(c)); // copia profonda
+  if(!Array.isArray(COM_STATE.draft.macchine) || !COM_STATE.draft.macchine.length) COM_STATE.draft.macchine = [ comNewMac() ];
+  document.getElementById('com-ed-title').textContent = 'Commessa '+(c.codice||'');
+  comRenderEditor();
+  comOpen();
+}
+
+function comCliOptions(curId, curName){
+  const list = (_spClienti||[]);
+  let html = '<option value="">— nessuno —</option>';
+  const has = curId != null && list.some(c=>String(c.id)===String(curId));
+  if(curId != null && !has && curName){ html += '<option value="'+comEsc(curId)+'" selected>'+comEsc(curName)+'</option>'; }
+  html += list.map(c=>'<option value="'+c.id+'"'+(String(c.id)===String(curId)?' selected':'')+'>'+comEsc(c.name)+'</option>').join('');
+  return html;
+}
+
+function comFieldHtml(mi, scope, f){
+  const mac = COM_STATE.draft.macchine[mi];
+  const val = scope==='core' ? (mac[f.k]||'') : (mac.campi[f.k]||'');
+  const setter = scope==='core' ? ('comSetCore('+mi+',\''+f.k+'\',this.value)') : ('comSetField('+mi+',\''+f.k+'\',this.value)');
+  const cls = 'com-fld' + ((f.t==='textarea'||f.full)?' full':'');
+  let inner;
+  if(f.t==='textarea'){
+    inner = '<textarea oninput="'+setter+'">'+comEsc(val)+'</textarea>';
+  } else if(f.t==='sino'){
+    inner = '<select onchange="'+setter+'"><option value=""'+(val===''?' selected':'')+'>—</option>'+
+            '<option'+(val==='Sì'?' selected':'')+'>Sì</option><option'+(val==='No'?' selected':'')+'>No</option></select>';
+  } else if(f.t==='select'){
+    inner = '<select onchange="'+setter+'"><option value="">—</option>'+
+            (f.opts||[]).map(o=>'<option'+(val===o?' selected':'')+'>'+comEsc(o)+'</option>').join('')+'</select>';
+  } else {
+    inner = '<input type="text" value="'+comEsc(val)+'" oninput="'+setter+'">';
+  }
+  return '<div class="'+cls+'"><label>'+comEsc(f.l)+'</label>'+inner+'</div>';
+}
+
+function comMacHtml(mi){
+  const m = COM_STATE.draft.macchine[mi];
+  const core = [
+    {k:'modello', l:'Modello', t:'text'},
+    {k:'seriale', l:'Matricola / Seriale (univoco)', t:'text'},
+    {k:'codice', l:'Codice', t:'text'},
+    {k:'rev', l:'Rev', t:'text'}
+  ];
+  let h = '<div class="com-mac" data-mi="'+mi+'">'+
+    '<div class="com-mac-hdr" onclick="comToggleMac('+mi+',event)">'+
+      '<span class="com-mac-arrow">▼</span>'+
+      '<strong>Macchina '+(mi+1)+'</strong>'+
+      '<span class="com-mac-sub" id="com-mac-sub-'+mi+'">'+comEsc((m.seriale||'(senza seriale)')+(m.modello?(' · '+m.modello):''))+'</span>'+
+      '<div class="com-mac-actions" onclick="event.stopPropagation()">'+
+        '<button class="btn btn-sm danger" onclick="comDelMac('+mi+')" title="Rimuovi macchina">&#128465;</button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="com-mac-body">'+
+      '<div class="com-grp"><div class="com-grp-title">Identificazione</div><div class="com-grid">'+
+        core.map(f=>comFieldHtml(mi,'core',f)).join('')+
+        comFieldHtml(mi,'core',{k:'descrizione', l:'Descrizione macchina', t:'textarea', full:true})+
+      '</div></div>';
+  COM_GROUPS.forEach(function(g){
+    h += '<div class="com-grp"><div class="com-grp-title">'+comEsc(g.title)+'</div><div class="com-grid">'+
+         g.fields.map(f=>comFieldHtml(mi,'campi',f)).join('')+
+         '</div></div>';
+  });
+  h += '</div></div>';
+  return h;
+}
+
+function comRenderEditor(){
+  const d = COM_STATE.draft;
+  const box = document.getElementById('com-ed-body');
+  if(!box) return;
+  let h = '<div class="com-grp"><div class="com-grp-title">Dati commessa</div><div class="com-grid">'+
+    '<div class="com-fld"><label>Codice commessa *</label><input type="text" value="'+comEsc(d.codice)+'" oninput="comSetHdr(\'codice\',this.value)" style="font-family:var(--mono)"></div>'+
+    '<div class="com-fld"><label>Cliente</label><select onchange="comSetCliente(this.value)">'+comCliOptions(d.clienteId, d.cliente)+'</select></div>'+
+    '<div class="com-fld"><label>Stato</label><select onchange="comSetHdr(\'stato\',this.value)">'+
+      ['Aperta','In lavorazione','Collaudo','Consegnata','Chiusa'].map(s=>'<option'+(d.stato===s?' selected':'')+'>'+s+'</option>').join('')+'</select></div>'+
+    '<div class="com-fld"><label>Agente</label><input type="text" value="'+comEsc(d.agente)+'" oninput="comSetHdr(\'agente\',this.value)"></div>'+
+    '<div class="com-fld"><label>Consegna</label><input type="text" value="'+comEsc(d.consegna)+'" oninput="comSetHdr(\'consegna\',this.value)"></div>'+
+    '<div class="com-fld"><label>Utilizzatore finale</label><input type="text" value="'+comEsc(d.utilFinale)+'" oninput="comSetHdr(\'utilFinale\',this.value)"></div>'+
+    '<div class="com-fld"><label>Commessa interna</label><input type="text" value="'+comEsc(d.commInterna)+'" oninput="comSetHdr(\'commInterna\',this.value)"></div>'+
+    '<div class="com-fld"><label>Layout N°</label><input type="text" value="'+comEsc(d.layout)+'" oninput="comSetHdr(\'layout\',this.value)"></div>'+
+    '<div class="com-fld"><label>Data</label><input type="date" value="'+comEsc(d.data)+'" oninput="comSetHdr(\'data\',this.value)"></div>'+
+    '<div class="com-fld full"><label>Note generali</label><textarea oninput="comSetHdr(\'noteGenerali\',this.value)">'+comEsc(d.noteGenerali)+'</textarea></div>'+
+    '</div></div>';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin:14px 0 6px"><h4 style="margin:0;color:var(--text)">Macchine</h4>'+
+       '<button class="btn btn-sm btn-primary" onclick="comAddMac()">+ Aggiungi macchina</button></div>';
+  h += '<div id="com-macchine">'+ d.macchine.map((m,mi)=>comMacHtml(mi)).join('') +'</div>';
+  box.innerHTML = h;
+}
+
+/* ---- Binding ---- */
+function comSetHdr(k, v){ if(COM_STATE.draft) COM_STATE.draft[k]=v; }
+function comSetCliente(idStr){
+  const id = parseInt(idStr)||null;
+  COM_STATE.draft.clienteId = id;
+  const c = (_spClienti||[]).find(x=>String(x.id)===String(id));
+  COM_STATE.draft.cliente = c ? c.name : '';
+}
+function comSetCore(mi, k, v){
+  const m = COM_STATE.draft.macchine[mi]; if(!m) return;
+  m[k]=v;
+  if(k==='seriale'||k==='modello'){
+    const sub = document.getElementById('com-mac-sub-'+mi);
+    if(sub) sub.textContent = (m.seriale||'(senza seriale)')+(m.modello?(' · '+m.modello):'');
+  }
+}
+function comSetField(mi, k, v){ const m = COM_STATE.draft.macchine[mi]; if(m) m.campi[k]=v; }
+
+function comToggleMac(mi, ev){
+  const el = document.querySelector('.com-mac[data-mi="'+mi+'"]');
+  if(el) el.classList.toggle('collapsed');
+}
+function comAddMac(){
+  COM_STATE.draft.macchine.push(comNewMac());
+  comRenderEditor();
+  setTimeout(()=>{ const box=document.getElementById('com-ed-body'); if(box) box.scrollTop = box.scrollHeight; }, 40);
+}
+function comDelMac(mi){
+  if(COM_STATE.draft.macchine.length<=1){ showToast('La commessa deve avere almeno una macchina'); return; }
+  if(!confirm('Rimuovere la macchina '+(mi+1)+'?')) return;
+  COM_STATE.draft.macchine.splice(mi,1);
+  comRenderEditor();
+}
+
+/* ---- Salvataggio (con univocità seriali su tutte le commesse) ---- */
+async function comSalva(){
+  const d = COM_STATE.draft;
+  const codice = (d.codice||'').trim();
+  if(!codice){ showToast('Inserisci il codice commessa'); return; }
+  // Univocità seriali: tutte le altre commesse + interno bozza
+  const altri = {};
+  COM_STATE.list.forEach(function(c){
+    if(c.id===COM_STATE.editId) return;
+    (c.macchine||[]).forEach(function(m){ if(m.seriale && m.seriale.trim()) altri[m.seriale.trim().toLowerCase()] = (c.codice||''); });
+  });
+  const visti = {};
+  for(var i=0;i<d.macchine.length;i++){
+    const s = (d.macchine[i].seriale||'').trim();
+    if(!s) continue;
+    const key = s.toLowerCase();
+    if(altri[key]){ showToast('Seriale "'+s+'" già presente nella commessa '+altri[key]); return; }
+    if(visti[key]){ showToast('Seriale "'+s+'" ripetuto in questa commessa'); return; }
+    visti[key]=true;
+  }
+  const dati = {
+    agente: d.agente||'', consegna: d.consegna||'', utilFinale: d.utilFinale||'',
+    commInterna: d.commInterna||'', layout: d.layout||'', data: d.data||'',
+    noteGenerali: d.noteGenerali||'', macchine: d.macchine
+  };
+  const fields = {
+    Title: codice,
+    ClienteLookupId: d.clienteId || null,
+    Stato: d.stato || null,
+    DatiJSON: JSON.stringify(dati)
+  };
+  try{
+    const tok = await anGetToken();
+    if(!tok){ showToast('Token scaduto'); return; }
+    const listId = getSpCommesseId();
+    if(!listId){ showToast('GUID lista AnymaCommesse mancante in Impostazioni'); return; }
+    const headers = {'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'};
+    let url, method, body;
+    if(COM_STATE.editId){
+      url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+'/items/'+COM_STATE.editId+'/fields';
+      method='PATCH'; body=JSON.stringify(fields);
+    } else {
+      url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+'/items';
+      method='POST'; body=JSON.stringify({fields:fields});
+    }
+    const r = await fetch(url,{method, headers, body});
+    if(!r.ok){
+      const t = await r.text(); let msg='HTTP '+r.status;
+      try{ msg = JSON.parse(t).error?.message || msg; }catch(e){}
+      console.error('comSalva:',r.status,t); showToast('Errore salvataggio: '+msg); return;
+    }
+    showToast(COM_STATE.editId ? 'Commessa aggiornata' : 'Commessa creata');
+    comClose();
+    await comLoad();
+  }catch(e){ console.error('comSalva:',e); showToast('Errore: '+e.message); }
+}
+
+async function comDel(id){
+  const c = COM_STATE.list.find(x=>x.id===id);
+  if(!c) return;
+  if(!confirm('Eliminare la commessa '+(c.codice||'')+' e tutte le sue macchine?')) return;
+  try{
+    const tok = await anGetToken();
+    if(!tok){ showToast('Token scaduto'); return; }
+    const listId = getSpCommesseId();
+    if(!listId){ showToast('GUID lista AnymaCommesse mancante in Impostazioni'); return; }
+    const headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
+    const r = await fetch(GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+'/items/'+id,{method:'DELETE', headers});
+    if(!r.ok && r.status!==204){ const t=await r.text(); console.error('comDel:',r.status,t); showToast('Errore eliminazione: HTTP '+r.status); return; }
+    showToast('Commessa eliminata');
+    await comLoad();
+  }catch(e){ console.error('comDel:',e); showToast('Errore: '+e.message); }
+}
+
 
 
 /* ======================================
