@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v158';</script>
+<script>const APP_VERSION = 'v162';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -167,6 +167,14 @@ main{
 
 /* Punti */
 .off-punto{display:flex;align-items:flex-start;gap:8px;padding:7px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;transition:border-color .12s}
+.off-punto.dragging{opacity:.45}
+.off-punto.drag-over{border-top:2px solid #c0392b;box-shadow:0 -2px 0 #c0392b}
+.off-punto-handle:active{cursor:grabbing}
+.mac-table{width:100%;border-collapse:collapse;font-size:12px}
+.mac-table th{position:sticky;top:0;background:var(--bg2);text-align:left;padding:9px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap}
+.mac-table td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top}
+.mac-table tbody tr:hover td{background:var(--bg3)}
+.mac-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;background:var(--bg4);border:1px solid var(--border2);color:var(--text2);white-space:nowrap}
 .off-punto:hover{border-color:var(--border2)}
 .off-punto-handle{color:var(--text3);font-size:13px;line-height:1;padding-top:6px;cursor:grab;user-select:none}
 .off-punto-text{flex:1;background:transparent;border:none;color:var(--text);font-family:var(--font);font-size:12px;line-height:1.4;outline:none;padding:5px;border-radius:4px;resize:vertical;min-height:34px}
@@ -830,6 +838,11 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
     Genera Offerta
     <span class="badge-count" id="cnt-offerte">-</span>
   </div>
+  <div class="nav-item" id="nav-macchine" onclick="showView('macchine')">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1l6 3.5v7L8 15l-6-3.5v-7L8 1z"/><path d="M2 4.5L8 8l6-3.5M8 8v7"/></svg>
+    Macchine
+    <span class="badge-count" id="cnt-macchine">-</span>
+  </div>
 
   <div class="nav-sep"></div>
   <div class="nav-section-label">Assistenza</div>
@@ -989,6 +1002,22 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
             style="width:100%;margin-top:7px;font-size:11px;padding:5px 8px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);outline:none;box-sizing:border-box"
             oninput="saveSpSetting('sp_offerte_id',this.value,this)">
           <div id="settings-sp-offerte-id-status" style="font-size:11px;margin-top:4px;color:var(--text3)">Non salvato</div>
+        </div>
+      </div>
+
+      <!-- Card Lista AnymaMacchine -->
+      <div class="settings-card">
+        <div class="settings-card-icon" style="background:rgba(46,204,113,.15);flex-shrink:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="1.5" width="18" height="18"><path d="M12 2l9 5v10l-9 5-9-5V7l9-5z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>
+        </div>
+        <div class="settings-card-info" style="flex:1;min-width:0">
+          <div class="settings-card-title">SharePoint - Lista AnymaMacchine (GUID)</div>
+          <div class="settings-card-path">ID lista Macchine da SharePoint (/sites/SERVICE)</div>
+          <input type="text" id="settings-sp-macchine-id"
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            style="width:100%;margin-top:7px;font-size:11px;padding:5px 8px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);outline:none;box-sizing:border-box"
+            oninput="saveSpSetting('sp_macchine_id',this.value,this)">
+          <div id="settings-sp-macchine-id-status" style="font-size:11px;margin-top:4px;color:var(--text3)">Non salvato</div>
         </div>
       </div>
 
@@ -1367,6 +1396,10 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><line x1="2" y1="6" x2="14" y2="6"/></svg>
           Da template
         </button>
+        <button class="btn btn-sm" onclick="offDefaultsOpen()" title="Modifica i valori predefiniti dei Termini e condizioni (salvati su SharePoint)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/></svg>
+          Default offerta
+        </button>
         <span class="tag-count" id="off-count">-</span>
 
         <input type="text" class="filter-input" id="off-search" placeholder="Cerca cliente, oggetto, n°..." oninput="offRender()" style="max-width:240px">
@@ -1636,6 +1669,74 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
     <div class="off-mod-body" id="off-tmpl-body"></div>
   </div>
 
+  <!-- MODALE DEFAULT OFFERTA -->
+  <div class="off-modal-overlay" id="off-def-overlay" onclick="offDefaultsClose()"></div>
+  <div class="off-modal" id="off-def-modal" style="inset:auto;top:50%;left:50%;transform:translate(-50%,-50%);width:760px;max-width:95vw;height:auto;max-height:88vh">
+    <div class="off-mod-hdr">
+      <h3>Default Offerta — Termini e condizioni</h3>
+      <button class="sp-side-close" onclick="offDefaultsClose()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>
+      </button>
+    </div>
+    <div class="off-mod-body">
+      <p style="margin:0 0 12px;font-size:12px;color:var(--txt2)">Questi valori vengono precompilati in ogni nuova offerta. Le modifiche sono salvate su SharePoint e condivise.</p>
+      <div class="off-form-hdr">
+        <div class="off-fld">
+          <label>Validità offerta (giorni)</label>
+          <input type="number" id="def-f-validita" min="1">
+        </div>
+        <div class="off-fld off-fld-half">
+          <label>Prezzi</label>
+          <input type="text" id="def-f-prezzi">
+        </div>
+        <div class="off-fld off-fld-full">
+          <label>Consegna</label>
+          <textarea id="def-f-consegna"></textarea>
+        </div>
+        <div class="off-fld off-fld-full">
+          <label>Garanzia</label>
+          <textarea id="def-f-garanzia"></textarea>
+        </div>
+        <div class="off-fld">
+          <label>Collaudo</label>
+          <input type="text" id="def-f-collaudo">
+        </div>
+        <div class="off-fld">
+          <label>Installazione</label>
+          <input type="text" id="def-f-installazione">
+        </div>
+        <div class="off-fld">
+          <label>Tariffa assistenza</label>
+          <input type="text" id="def-f-tariffa">
+        </div>
+        <div class="off-fld">
+          <label>Trasporto</label>
+          <input type="text" id="def-f-trasporto">
+        </div>
+        <div class="off-fld">
+          <label>Vitto e alloggio</label>
+          <input type="text" id="def-f-vittoalloggio">
+        </div>
+        <div class="off-fld">
+          <label>Porto</label>
+          <input type="text" id="def-f-porto">
+        </div>
+        <div class="off-fld">
+          <label>Imballo</label>
+          <input type="text" id="def-f-imballo">
+        </div>
+        <div class="off-fld off-fld-full">
+          <label>Termini pagamenti</label>
+          <textarea id="def-f-pagamenti"></textarea>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
+        <button class="btn btn-sm" onclick="offDefaultsClose()">Annulla</button>
+        <button class="btn btn-sm btn-primary" onclick="offDefaultsSave()">Salva default</button>
+      </div>
+    </div>
+  </div>
+
 
 
   <!-- SIDE PANEL EDIT -->
@@ -1720,6 +1821,93 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8l3 3 7-7"/></svg>
           Salva
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW: MACCHINE (registro macchine ANYMA) -->
+  <div id="view-macchine" class="content-view">
+    <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;gap:10px;padding:18px 22px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <h2 style="margin:0;font-size:18px;color:var(--text)">Macchine</h2>
+        <span style="font-size:12px;color:var(--text3)">Registro macchine costruite — seriali univoci</span>
+      </div>
+      <div class="sp-toolbar">
+        <button class="btn btn-sm" onclick="macLoad()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5M13.5 2.5v3.5h-3.5"/></svg>
+          Aggiorna
+        </button>
+        <button class="btn btn-sm btn-primary" onclick="macNuova()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>
+          Nuova macchina
+        </button>
+        <span class="tag-count" id="mac-count">-</span>
+        <input type="text" class="filter-input" id="mac-search" placeholder="Cerca seriale, descrizione, cliente, commessa..." oninput="macRender()" style="max-width:300px">
+      </div>
+      <div style="flex:1;min-height:0;overflow:auto;border:1px solid var(--border);border-radius:10px">
+        <table class="mac-table">
+          <thead><tr>
+            <th>Seriale</th><th>Descrizione</th><th>Cliente</th><th>Modello</th><th>Commessa</th><th>Stato</th><th style="width:120px"></th>
+          </tr></thead>
+          <tbody id="mac-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE MACCHINA -->
+  <div class="off-modal-overlay" id="mac-overlay" onclick="macClose()"></div>
+  <div class="off-modal" id="mac-modal" style="inset:auto;top:50%;left:50%;transform:translate(-50%,-50%);width:700px;max-width:95vw;height:auto;max-height:90vh">
+    <div class="off-mod-hdr">
+      <h3 id="mac-modal-title">Nuova macchina</h3>
+      <button class="sp-side-close" onclick="macClose()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>
+      </button>
+    </div>
+    <div class="off-mod-body">
+      <div class="off-form-hdr">
+        <div class="off-fld off-fld-half">
+          <label>Seriale / Matricola *</label>
+          <input type="text" id="mac-f-seriale" placeholder="Es: ANY-2026-001" style="font-family:var(--mono)">
+        </div>
+        <div class="off-fld off-fld-half">
+          <label>Stato</label>
+          <select id="mac-f-stato">
+            <option>In costruzione</option>
+            <option>Collaudo</option>
+            <option>Consegnata</option>
+            <option>In assistenza</option>
+            <option>Dismessa</option>
+          </select>
+        </div>
+        <div class="off-fld off-fld-full">
+          <label>Descrizione</label>
+          <input type="text" id="mac-f-descrizione" placeholder="Es: Scartatore ad aria / Incartonatrice...">
+        </div>
+        <div class="off-fld off-fld-half">
+          <label>Cliente</label>
+          <select id="mac-f-cliente"><option value="">— nessuno —</option></select>
+        </div>
+        <div class="off-fld off-fld-half">
+          <label>Modello</label>
+          <input type="text" id="mac-f-modello" placeholder="Es: SA-100">
+        </div>
+        <div class="off-fld off-fld-half">
+          <label>Commessa</label>
+          <input type="text" id="mac-f-commessa" placeholder="Es: C250001">
+        </div>
+        <div class="off-fld off-fld-half">
+          <label>Data costruzione</label>
+          <input type="date" id="mac-f-data">
+        </div>
+        <div class="off-fld off-fld-full">
+          <label>Note</label>
+          <textarea id="mac-f-note" placeholder="Note interne..."></textarea>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
+        <button class="btn btn-sm" onclick="macClose()">Annulla</button>
+        <button class="btn btn-sm btn-primary" onclick="macSalva()">Salva macchina</button>
       </div>
     </div>
   </div>
@@ -3047,6 +3235,12 @@ function showView(view) {
     }
     return;
   }
+  if (view==='macchine') {
+    const el=document.getElementById('view-macchine');
+    el.style.display='flex'; el.classList.add('visible');
+    if(MAC_STATE.list.length===0){ macLoad(); } else { macRender(); }
+    return;
+  }
   if (view==='stato-progetti') {
     const el=document.getElementById('view-stato-progetti');
     el.style.display='flex'; el.classList.add('visible');
@@ -4106,6 +4300,98 @@ async function spDelete(){
 // PagamentiTesto, TotaleImporto(valuta), Stato(choice), Lingua(choice),
 // Note, ContenutoJSON (tutta la struttura macrogruppi/punti/quotazione)
 // ════════════════════════════════════════════════════════════════
+// ── Default offerta (modificabili da "Default offerta", salvati su SP) ──
+var _offDefaultsItemId = null;
+var OFF_DEFAULTS = {
+  validita: 60,
+  consegna: "3 mesi dal ricevimento dell'ordine ufficiale (escluse le settimane 01 e 52, escluso il mese di Agosto). Salvo conferma definitiva all'atto dell'ordine. L'impegno di spedizione di ANYMA è subordinato alle seguenti condizioni: ricevimento dell'ordine firmato e integralmente accettato, comprensivo delle complete specifiche del cliente; ricevimento dell'acconto. Gli ordini non verranno inseriti nel programma di produzione di ANYMA fino all'avvenuto ricevimento dell'acconto.",
+  garanzia: "12 mesi dalla data di collaudo e per un funzionamento di 12 (dodici) ore giornaliere. La garanzia si intende limitata alla sostituzione del pezzo guasto previa verifica del difetto di fabbricazione. L'intervento del nostro tecnico per la sostituzione del pezzo guasto sarà sempre a carico del cliente. La garanzia decade qualora il cliente proceda, senza il nostro preventivo consenso, alla sostituzione, modifica o riparazione di parti. L'accertamento delle cause dell'inconveniente o della rottura delle parti spetta esclusivamente alla società costruttrice. In ogni caso, non si darà luogo alla sostituzione gratuita delle parti il cui difetto o guasto dipenda unicamente dal normale utilizzo o dall'uso improprio della macchina.",
+  prezzi: "Netti, franco nostro stabilimento",
+  collaudo: "Collaudo funzionale presso ANYMA prima della spedizione",
+  installazione: "Esclusa",
+  tariffa: "€ 1.000,00 per giornata di lavoro e/o viaggio",
+  trasporto: "A carico del cliente",
+  vittoAlloggio: "A carico del cliente",
+  porto: "Franco fabbrica (EXW)",
+  imballo: "Incluso, idoneo al trasporto",
+  pagamenti: "40% all'ordine\n40% alla merce pronta\n20% al collaudo (bonifico bancario)"
+};
+
+function offDefaultsClose(){
+  document.getElementById('off-def-overlay').classList.remove('open');
+  document.getElementById('off-def-modal').classList.remove('open');
+}
+function offDefaultsOpen(){
+  const d = OFF_DEFAULTS;
+  document.getElementById('def-f-validita').value = d.validita;
+  document.getElementById('def-f-consegna').value = d.consegna || '';
+  document.getElementById('def-f-garanzia').value = d.garanzia || '';
+  document.getElementById('def-f-prezzi').value = d.prezzi || '';
+  document.getElementById('def-f-collaudo').value = d.collaudo || '';
+  document.getElementById('def-f-installazione').value = d.installazione || '';
+  document.getElementById('def-f-tariffa').value = d.tariffa || '';
+  document.getElementById('def-f-trasporto').value = d.trasporto || '';
+  document.getElementById('def-f-vittoalloggio').value = d.vittoAlloggio || '';
+  document.getElementById('def-f-porto').value = d.porto || '';
+  document.getElementById('def-f-imballo').value = d.imballo || '';
+  document.getElementById('def-f-pagamenti').value = d.pagamenti || '';
+  document.getElementById('off-def-overlay').classList.add('open');
+  document.getElementById('off-def-modal').classList.add('open');
+}
+async function offDefaultsSave(){
+  const g = id => (document.getElementById(id).value || '');
+  OFF_DEFAULTS = {
+    validita:     parseInt(g('def-f-validita')) || 60,
+    consegna:     g('def-f-consegna').trim(),
+    garanzia:     g('def-f-garanzia').trim(),
+    prezzi:       g('def-f-prezzi').trim(),
+    collaudo:     g('def-f-collaudo').trim(),
+    installazione:g('def-f-installazione').trim(),
+    tariffa:      g('def-f-tariffa').trim(),
+    trasporto:    g('def-f-trasporto').trim(),
+    vittoAlloggio:g('def-f-vittoalloggio').trim(),
+    porto:        g('def-f-porto').trim(),
+    imballo:      g('def-f-imballo').trim(),
+    pagamenti:    g('def-f-pagamenti')
+  };
+  try{
+    const tok = await anGetToken();
+    if(!tok){ showToast('Token scaduto'); return; }
+    const listId = getSpOfferteId();
+    if(!listId){ showToast('GUID lista AnymaOfferte mancante in Impostazioni'); return; }
+    const headers = {'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'};
+    const fields = {
+      Title: '__DEFAULTS__',
+      Stato: 'Config',
+      ContenutoJSON: JSON.stringify({ __defaults: OFF_DEFAULTS })
+    };
+    let url, method, body;
+    if(_offDefaultsItemId){
+      url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+'/items/'+_offDefaultsItemId+'/fields';
+      method = 'PATCH'; body = JSON.stringify(fields);
+    } else {
+      url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+'/items';
+      method = 'POST'; body = JSON.stringify({fields:fields});
+    }
+    const r = await fetch(url,{method, headers, body});
+    if(!r.ok){
+      const errTxt = await r.text();
+      let msg = 'HTTP '+r.status;
+      try { msg = JSON.parse(errTxt).error?.message || msg; } catch(e){}
+      console.error('offDefaultsSave:',r.status,errTxt);
+      showToast('Errore salvataggio default: '+msg);
+      return;
+    }
+    const saved = await r.json();
+    if(!_offDefaultsItemId && saved && saved.id) _offDefaultsItemId = saved.id;
+    showToast('Default offerta salvati');
+    offDefaultsClose();
+  }catch(e){
+    console.error('offDefaultsSave:',e);
+    showToast('Errore: '+e.message);
+  }
+}
+
 const OFF_STATE = {
   list: [],
   sortCol: 'data',
@@ -4176,10 +4462,20 @@ async function offLoad(){
     }
     const data = await r.json();
 
-    OFF_STATE.list = (data.value||[]).map(i=>{
+    OFF_STATE.list = [];
+    (data.value||[]).forEach(i=>{
       const f = i.fields||{};
+      // Elemento di configurazione default (non è un'offerta)
+      if(f.Stato==='Config' && f.Title==='__DEFAULTS__'){
+        _offDefaultsItemId = i.id;
+        try{
+          const cfg = JSON.parse(f.ContenutoJSON||'{}');
+          if(cfg && cfg.__defaults) Object.assign(OFF_DEFAULTS, cfg.__defaults);
+        }catch(e){ console.warn('Default offerta non leggibili:', e); }
+        return;
+      }
       const _cliId = f.ClienteLookupId ? parseInt(f.ClienteLookupId) : null;
-      return {
+      OFF_STATE.list.push({
         id:         i.id,
         numero:     f.Title || '',
         cliente:    f.Cliente || (_cliId ? (_cliMap[_cliId]||'') : ''),
@@ -4197,7 +4493,7 @@ async function offLoad(){
         lingua:     f.Lingua || 'ita',
         note:       f.Note || '',
         contenuto:  f.ContenutoJSON || ''
-      };
+      });
     });
 
     // Popola filtro anni
@@ -4685,18 +4981,18 @@ async function offNuova(id){
     document.getElementById('off-f-email').value = '';
     document.getElementById('off-f-lingua').value = 'ita';
     document.getElementById('off-f-stato').value = 'Bozza';
-    document.getElementById('off-f-validita').value = 60;
-    document.getElementById('off-f-consegna').value = "3 mesi dal ricevimento dell'ordine ufficiale (escluse le settimane 01 e 52, escluso il mese di Agosto). Salvo conferma definitiva all'atto dell'ordine. L'impegno di spedizione di ANYMA è subordinato alle seguenti condizioni: ricevimento dell'ordine firmato e integralmente accettato, comprensivo delle complete specifiche del cliente; ricevimento dell'acconto. Gli ordini non verranno inseriti nel programma di produzione di ANYMA fino all'avvenuto ricevimento dell'acconto.";
-    document.getElementById('off-f-garanzia').value = "12 mesi dalla data di collaudo e per un funzionamento di 12 (dodici) ore giornaliere. La garanzia si intende limitata alla sostituzione del pezzo guasto previa verifica del difetto di fabbricazione. L'intervento del nostro tecnico per la sostituzione del pezzo guasto sarà sempre a carico del cliente. La garanzia decade qualora il cliente proceda, senza il nostro preventivo consenso, alla sostituzione, modifica o riparazione di parti. L'accertamento delle cause dell'inconveniente o della rottura delle parti spetta esclusivamente alla società costruttrice. In ogni caso, non si darà luogo alla sostituzione gratuita delle parti il cui difetto o guasto dipenda unicamente dal normale utilizzo o dall'uso improprio della macchina.";
-    document.getElementById('off-f-prezzi').value = 'Netti, franco nostro stabilimento';
-    document.getElementById('off-f-collaudo').value = 'Collaudo funzionale presso ANYMA prima della spedizione';
-    document.getElementById('off-f-installazione').value = 'Esclusa';
-    document.getElementById('off-f-tariffa').value = '€ 1.000,00 per giornata di lavoro e/o viaggio';
-    document.getElementById('off-f-trasporto').value = 'A carico del cliente';
-    document.getElementById('off-f-vittoalloggio').value = 'A carico del cliente';
-    document.getElementById('off-f-porto').value = 'Franco fabbrica (EXW)';
-    document.getElementById('off-f-imballo').value = 'Incluso, idoneo al trasporto';
-    document.getElementById('off-f-pagamenti').value = "40% all'ordine\n40% alla merce pronta\n20% al collaudo (bonifico bancario)";
+    document.getElementById('off-f-validita').value = OFF_DEFAULTS.validita;
+    document.getElementById('off-f-consegna').value = OFF_DEFAULTS.consegna;
+    document.getElementById('off-f-garanzia').value = OFF_DEFAULTS.garanzia;
+    document.getElementById('off-f-prezzi').value = OFF_DEFAULTS.prezzi;
+    document.getElementById('off-f-collaudo').value = OFF_DEFAULTS.collaudo;
+    document.getElementById('off-f-installazione').value = OFF_DEFAULTS.installazione;
+    document.getElementById('off-f-tariffa').value = OFF_DEFAULTS.tariffa;
+    document.getElementById('off-f-trasporto').value = OFF_DEFAULTS.trasporto;
+    document.getElementById('off-f-vittoalloggio').value = OFF_DEFAULTS.vittoAlloggio;
+    document.getElementById('off-f-porto').value = OFF_DEFAULTS.porto;
+    document.getElementById('off-f-imballo').value = OFF_DEFAULTS.imballo;
+    document.getElementById('off-f-pagamenti').value = OFF_DEFAULTS.pagamenti;
     document.getElementById('off-f-note').value = '';
     offAggiornaContatti();
     // Macrogruppi predefiniti per nuova offerta (skeleton minimo - editabili)
@@ -4737,8 +5033,8 @@ function offPopolaForm(o){
   document.getElementById('off-f-lingua').value = o.lingua||'ita';
   document.getElementById('off-f-stato').value = o.stato||'Bozza';
   document.getElementById('off-f-validita').value = o.validita||60;
-  document.getElementById('off-f-consegna').value = o.consegna || "3 mesi dal ricevimento dell'ordine ufficiale (escluse le settimane 01 e 52, escluso il mese di Agosto). Salvo conferma definitiva all'atto dell'ordine. L'impegno di spedizione di ANYMA è subordinato alle seguenti condizioni: ricevimento dell'ordine firmato e integralmente accettato, comprensivo delle complete specifiche del cliente; ricevimento dell'acconto. Gli ordini non verranno inseriti nel programma di produzione di ANYMA fino all'avvenuto ricevimento dell'acconto.";
-  document.getElementById('off-f-garanzia').value = o.garanzia || "12 mesi dalla data di collaudo e per un funzionamento di 12 (dodici) ore giornaliere. La garanzia si intende limitata alla sostituzione del pezzo guasto previa verifica del difetto di fabbricazione. L'intervento del nostro tecnico per la sostituzione del pezzo guasto sarà sempre a carico del cliente. La garanzia decade qualora il cliente proceda, senza il nostro preventivo consenso, alla sostituzione, modifica o riparazione di parti. L'accertamento delle cause dell'inconveniente o della rottura delle parti spetta esclusivamente alla società costruttrice. In ogni caso, non si darà luogo alla sostituzione gratuita delle parti il cui difetto o guasto dipenda unicamente dal normale utilizzo o dall'uso improprio della macchina.";
+  document.getElementById('off-f-consegna').value = o.consegna || OFF_DEFAULTS.consegna;
+  document.getElementById('off-f-garanzia').value = o.garanzia || OFF_DEFAULTS.garanzia;
   document.getElementById('off-f-pagamenti').value = o.pagamenti||'';
   document.getElementById('off-f-note').value = o.note||'';
 
@@ -4748,14 +5044,14 @@ function offPopolaForm(o){
 
   // Carica termini estesi da contenuto.termini (nuova struttura v140)
   const term = contenuto.termini || {};
-  document.getElementById('off-f-prezzi').value = term.prezzi || 'Netti, franco nostro stabilimento';
-  document.getElementById('off-f-collaudo').value = term.collaudo || '';
-  document.getElementById('off-f-installazione').value = term.installazione || '';
-  document.getElementById('off-f-tariffa').value = term.tariffa || '€ 1.000,00 per giornata di lavoro e/o viaggio';
-  document.getElementById('off-f-trasporto').value = term.trasporto || '';
-  document.getElementById('off-f-vittoalloggio').value = term.vittoAlloggio || 'A carico del cliente';
-  document.getElementById('off-f-porto').value = term.porto || '';
-  document.getElementById('off-f-imballo').value = term.imballo || '';
+  document.getElementById('off-f-prezzi').value = term.prezzi || OFF_DEFAULTS.prezzi;
+  document.getElementById('off-f-collaudo').value = term.collaudo || OFF_DEFAULTS.collaudo;
+  document.getElementById('off-f-installazione').value = term.installazione || OFF_DEFAULTS.installazione;
+  document.getElementById('off-f-tariffa').value = term.tariffa || OFF_DEFAULTS.tariffa;
+  document.getElementById('off-f-trasporto').value = term.trasporto || OFF_DEFAULTS.trasporto;
+  document.getElementById('off-f-vittoalloggio').value = term.vittoAlloggio || OFF_DEFAULTS.vittoAlloggio;
+  document.getElementById('off-f-porto').value = term.porto || OFF_DEFAULTS.porto;
+  document.getElementById('off-f-imballo').value = term.imballo || OFF_DEFAULTS.imballo;
 
   OFF_WIZ.macrogruppi = (contenuto.macrogruppi||[]).map(mg=>({
     id: offUid(),
@@ -4783,8 +5079,8 @@ function offRenderMacrogruppi(){
   if(!box) return;
   box.innerHTML = OFF_WIZ.macrogruppi.map((mg,idx)=>{
     const itemsHtml = mg.items.map((it,iidx)=>`
-      <div class="off-punto" data-mgid="${mg.id}" data-itemid="${it.id}">
-        <span class="off-punto-handle">⋮⋮</span>
+      <div class="off-punto" data-mgid="${mg.id}" data-itemid="${it.id}" ondragover="offDragOver(event,'${mg.id}','${it.id}')" ondragleave="offDragLeave(event)" ondrop="offDrop(event,'${mg.id}','${it.id}')">
+        <span class="off-punto-handle" draggable="true" title="Trascina per riordinare" ondragstart="offDragStart(event,'${mg.id}','${it.id}')" ondragend="offDragEnd(event)">⋮⋮</span>
         <textarea class="off-punto-text" oninput="offUpdItemText('${mg.id}','${it.id}',this.value)" rows="1" placeholder="Inserisci testo del punto...">${offEsc(it.text)}</textarea>
         <div class="off-punto-actions">
           <button onclick="offMoveItem('${mg.id}','${it.id}',-1)" title="Sposta su">▲</button>
@@ -4803,7 +5099,7 @@ function offRenderMacrogruppi(){
           <button class="off-mg-act danger" onclick="offDelMg('${mg.id}')" title="Rimuovi sezione">🗑</button>
         </div>
       </div>
-      <div class="off-mg-body">
+      <div class="off-mg-body" ondragover="offDragOverMg(event,'${mg.id}')" ondrop="offDropMg(event,'${mg.id}')">
         ${itemsHtml}
         <button class="off-add-punto" onclick="offAddItem('${mg.id}')">+ Aggiungi punto</button>
       </div>
@@ -4868,6 +5164,68 @@ function offMoveItem(mgId, itId, dir){
   const ni = i+dir;
   if(ni<0||ni>=mg.items.length) return;
   [mg.items[i],mg.items[ni]] = [mg.items[ni],mg.items[i]];
+  offRenderMacrogruppi();
+}
+
+// ── Drag & drop delle voci (punti) nel wizard offerta ──
+var _offDrag = null;
+function offDragStart(ev, mgId, itId){
+  _offDrag = { mgId: mgId, itId: itId };
+  try{ ev.dataTransfer.effectAllowed = 'move'; ev.dataTransfer.setData('text/plain', itId); }catch(e){}
+  const row = ev.target.closest ? ev.target.closest('.off-punto') : null;
+  if(row){
+    row.classList.add('dragging');
+    try{ ev.dataTransfer.setDragImage(row, 16, 16); }catch(e){}
+  }
+}
+function offDragEnd(ev){
+  document.querySelectorAll('.off-punto.dragging, .off-punto.drag-over').forEach(function(el){
+    el.classList.remove('dragging'); el.classList.remove('drag-over');
+  });
+  _offDrag = null;
+}
+function offDragOver(ev, mgId, itId){
+  if(!_offDrag) return;
+  ev.preventDefault();
+  ev.dataTransfer.dropEffect = 'move';
+  const row = ev.currentTarget;
+  document.querySelectorAll('.off-punto.drag-over').forEach(function(el){ if(el!==row) el.classList.remove('drag-over'); });
+  if(!(row.dataset.mgid===_offDrag.mgId && row.dataset.itemid===_offDrag.itId)) row.classList.add('drag-over');
+}
+function offDragLeave(ev){
+  ev.currentTarget.classList.remove('drag-over');
+}
+function offDrop(ev, mgId, itId){
+  if(!_offDrag) return;
+  ev.preventDefault();
+  ev.stopPropagation();
+  const src = _offDrag;
+  offMoveItemTo(src.mgId, src.itId, mgId, itId);
+  _offDrag = null;
+}
+function offDragOverMg(ev, mgId){
+  if(!_offDrag) return;
+  ev.preventDefault();
+  ev.dataTransfer.dropEffect = 'move';
+}
+function offDropMg(ev, mgId){
+  if(!_offDrag) return;
+  ev.preventDefault();
+  const src = _offDrag;
+  offMoveItemTo(src.mgId, src.itId, mgId, null);
+  _offDrag = null;
+}
+function offMoveItemTo(srcMg, srcIt, dstMg, dstIt){
+  if(srcMg===dstMg && srcIt===dstIt) return;
+  const sMg = OFF_WIZ.macrogruppi.find(function(m){return m.id===srcMg;});
+  const dMg = OFF_WIZ.macrogruppi.find(function(m){return m.id===dstMg;});
+  if(!sMg || !dMg) return;
+  const si = sMg.items.findIndex(function(it){return it.id===srcIt;});
+  if(si<0) return;
+  const moved = sMg.items.splice(si,1)[0];
+  let di = dstIt ? dMg.items.findIndex(function(it){return it.id===dstIt;}) : -1;
+  if(di<0) di = dMg.items.length;
+  dMg.items.splice(di,0,moved);
   offRenderMacrogruppi();
 }
 
@@ -6229,6 +6587,7 @@ function loadSpSettings() {
     {id:'settings-sp-ordf-id', key:'sp_ordf_id'},
     {id:'settings-sp-contr-id', key:'sp_contr_id'},
     {id:'settings-sp-offerte-id', key:'sp_offerte_id'},
+    {id:'settings-sp-macchine-id', key:'sp_macchine_id'},
     {id:'settings-sp-rapp-id', key:'sp_rapp_id'},
   ];
   fields.forEach(function(f) {
@@ -6250,6 +6609,210 @@ function getSpProjId() {
 function getSpOrdfId() {
   return localStorage.getItem('anyma_sp_ordf_id') || '';
 }
+
+/* ======================================
+   MACCHINE - Registro macchine ANYMA (SharePoint, sito SERVICE)
+   Lista AnymaMacchine. Campi: Title(Seriale, UNIVOCO), Descrizione,
+   Cliente(testo, dal dropdown lista clienti SP nota), Modello, Commessa,
+   DataCostruzione(date), Stato(choice), Note(multilinea)
+====================================== */
+function getSpMacchineId(){ return localStorage.getItem('anyma_sp_macchine_id') || ''; }
+var MAC_STATE = { list: [], editId: null };
+function macEsc(s){ return (typeof offEsc==='function') ? offEsc(s) : (''+(s==null?'':s)); }
+
+async function macLoad(){
+  const listId = getSpMacchineId();
+  if(!listId){ showToast('Configura il GUID della lista AnymaMacchine in Impostazioni'); macRender(); return; }
+  try{
+    const tok = await anGetToken();
+    if(!tok){ showToast('Token scaduto'); return; }
+    const headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
+    offCaricaClienti().catch(()=>{}); // prepara i clienti per il dropdown
+    const url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+
+      '/items?expand=fields(select=Title,Descrizione,Cliente,ClienteLookupId,Modello,Commessa,DataCostruzione,Stato,Note)&$top=999';
+    const r = await fetch(url,{headers});
+    if(!r.ok){
+      const t = await r.text();
+      let msg = 'HTTP '+r.status;
+      try{ msg = JSON.parse(t).error?.message || msg; }catch(e){}
+      console.error('macLoad:',r.status,t);
+      showToast('Errore caricamento macchine: '+msg);
+      return;
+    }
+    const data = await r.json();
+    MAC_STATE.list = (data.value||[]).map(i=>{
+      const f = i.fields||{};
+      return {
+        id:          i.id,
+        seriale:     f.Title || '',
+        descrizione: f.Descrizione || '',
+        cliente:     f.Cliente || '',
+        clienteId:   f.ClienteLookupId ? parseInt(f.ClienteLookupId) : null,
+        modello:     f.Modello || '',
+        commessa:    f.Commessa || '',
+        data:        f.DataCostruzione ? f.DataCostruzione.split('T')[0] : '',
+        stato:       f.Stato || '',
+        note:        f.Note || ''
+      };
+    });
+    const cnt = document.getElementById('cnt-macchine'); if(cnt) cnt.textContent = MAC_STATE.list.length;
+    macRender();
+    showToast(MAC_STATE.list.length+' macchine caricate');
+  }catch(e){ console.error('macLoad:',e); showToast('Errore: '+e.message); }
+}
+
+function macRender(){
+  const tb = document.getElementById('mac-tbody');
+  if(!tb) return;
+  const q = (document.getElementById('mac-search') ? document.getElementById('mac-search').value : '').toLowerCase().trim();
+  let rows = MAC_STATE.list.slice();
+  if(q){
+    rows = rows.filter(m => (m.seriale+' '+m.descrizione+' '+m.cliente+' '+m.modello+' '+m.commessa+' '+m.stato).toLowerCase().indexOf(q) >= 0);
+  }
+  rows.sort((a,b)=> (a.seriale||'').localeCompare(b.seriale||'', 'it', {numeric:true}));
+  const cf = document.getElementById('mac-count'); if(cf) cf.textContent = rows.length;
+  if(!rows.length){
+    tb.innerHTML = '<tr><td colspan="7" style="padding:26px;text-align:center;color:var(--text3)">Nessuna macchina. Premi "Nuova macchina" per aggiungerne una.</td></tr>';
+    return;
+  }
+  tb.innerHTML = rows.map(m=>'<tr>'+
+    '<td style="font-family:var(--mono);font-weight:600;color:#c0392b">'+macEsc(m.seriale)+'</td>'+
+    '<td>'+macEsc(m.descrizione)+'</td>'+
+    '<td>'+macEsc(m.cliente)+'</td>'+
+    '<td>'+macEsc(m.modello)+'</td>'+
+    '<td>'+macEsc(m.commessa)+'</td>'+
+    '<td>'+(m.stato?('<span class="mac-badge">'+macEsc(m.stato)+'</span>'):'')+'</td>'+
+    '<td style="text-align:right;white-space:nowrap">'+
+      '<button class="btn btn-sm" onclick="macEdit(\''+m.id+'\')">Modifica</button> '+
+      '<button class="btn btn-sm danger" onclick="macDel(\''+m.id+'\')" title="Elimina">&#10005;</button>'+
+    '</td>'+
+  '</tr>').join('');
+}
+
+function macPopulateClienti(curId, curName){
+  const sel = document.getElementById('mac-f-cliente');
+  if(!sel) return;
+  const list = (_spClienti||[]);
+  let html = '<option value="">— nessuno —</option>';
+  const has = curId != null && list.some(c=>String(c.id)===String(curId));
+  if(curId != null && !has && curName){
+    html += '<option value="'+macEsc(curId)+'">'+macEsc(curName)+'</option>';
+  }
+  html += list.map(c=>'<option value="'+c.id+'">'+macEsc(c.name)+'</option>').join('');
+  sel.innerHTML = html;
+  sel.value = (curId != null) ? String(curId) : '';
+}
+function macOpen(){
+  document.getElementById('mac-overlay').classList.add('open');
+  document.getElementById('mac-modal').classList.add('open');
+}
+function macClose(){
+  document.getElementById('mac-overlay').classList.remove('open');
+  document.getElementById('mac-modal').classList.remove('open');
+}
+
+async function macNuova(){
+  MAC_STATE.editId = null;
+  await offCaricaClienti();
+  document.getElementById('mac-modal-title').textContent = 'Nuova macchina';
+  document.getElementById('mac-f-seriale').value = '';
+  document.getElementById('mac-f-descrizione').value = '';
+  document.getElementById('mac-f-modello').value = '';
+  document.getElementById('mac-f-commessa').value = '';
+  document.getElementById('mac-f-data').value = '';
+  document.getElementById('mac-f-stato').value = 'In costruzione';
+  document.getElementById('mac-f-note').value = '';
+  macPopulateClienti(null, '');
+  macOpen();
+  setTimeout(()=>{ const s=document.getElementById('mac-f-seriale'); if(s) s.focus(); }, 60);
+}
+
+async function macEdit(id){
+  const m = MAC_STATE.list.find(x=>x.id===id);
+  if(!m) return;
+  MAC_STATE.editId = id;
+  await offCaricaClienti();
+  document.getElementById('mac-modal-title').textContent = 'Modifica macchina';
+  document.getElementById('mac-f-seriale').value = m.seriale;
+  document.getElementById('mac-f-descrizione').value = m.descrizione;
+  document.getElementById('mac-f-modello').value = m.modello;
+  document.getElementById('mac-f-commessa').value = m.commessa;
+  document.getElementById('mac-f-data').value = m.data;
+  document.getElementById('mac-f-stato').value = m.stato || 'In costruzione';
+  document.getElementById('mac-f-note').value = m.note;
+  macPopulateClienti(m.clienteId, m.cliente);
+  macOpen();
+}
+
+async function macSalva(){
+  const seriale = (document.getElementById('mac-f-seriale').value||'').trim();
+  if(!seriale){ showToast('Inserisci il numero seriale'); return; }
+  // Univocità seriale (case-insensitive), escluso l'elemento in modifica
+  const dup = MAC_STATE.list.find(m => m.id !== MAC_STATE.editId && (m.seriale||'').trim().toLowerCase() === seriale.toLowerCase());
+  if(dup){ showToast('Seriale già esistente: '+seriale); return; }
+
+  const cliId = parseInt(document.getElementById('mac-f-cliente').value) || null;
+  const fields = {
+    Title:          seriale,
+    Descrizione:    (document.getElementById('mac-f-descrizione').value||'').trim() || null,
+    ClienteLookupId: cliId,
+    Modello:        (document.getElementById('mac-f-modello').value||'').trim() || null,
+    Commessa:       (document.getElementById('mac-f-commessa').value||'').trim() || null,
+    DataCostruzione:document.getElementById('mac-f-data').value ? document.getElementById('mac-f-data').value+'T00:00:00Z' : null,
+    Stato:          document.getElementById('mac-f-stato').value || null,
+    Note:           (document.getElementById('mac-f-note').value||'').trim() || null
+  };
+  try{
+    const tok = await anGetToken();
+    if(!tok){ showToast('Token scaduto'); return; }
+    const listId = getSpMacchineId();
+    if(!listId){ showToast('GUID lista AnymaMacchine mancante in Impostazioni'); return; }
+    const headers = {'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'};
+    let url, method, body;
+    if(MAC_STATE.editId){
+      url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+'/items/'+MAC_STATE.editId+'/fields';
+      method = 'PATCH'; body = JSON.stringify(fields);
+    } else {
+      url = GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+'/items';
+      method = 'POST'; body = JSON.stringify({fields:fields});
+    }
+    const r = await fetch(url,{method, headers, body});
+    if(!r.ok){
+      const t = await r.text();
+      let msg = 'HTTP '+r.status;
+      try{ msg = JSON.parse(t).error?.message || msg; }catch(e){}
+      console.error('macSalva:',r.status,t);
+      showToast('Errore salvataggio: '+msg);
+      return;
+    }
+    showToast(MAC_STATE.editId ? 'Macchina aggiornata' : 'Macchina creata');
+    macClose();
+    await macLoad();
+  }catch(e){ console.error('macSalva:',e); showToast('Errore: '+e.message); }
+}
+
+async function macDel(id){
+  const m = MAC_STATE.list.find(x=>x.id===id);
+  if(!m) return;
+  if(!confirm('Eliminare la macchina '+(m.seriale||'')+' ?')) return;
+  try{
+    const tok = await anGetToken();
+    if(!tok){ showToast('Token scaduto'); return; }
+    const listId = getSpMacchineId();
+    if(!listId){ showToast('GUID lista AnymaMacchine mancante in Impostazioni'); return; }
+    const headers = {'Authorization':'Bearer '+tok,'Accept':'application/json'};
+    const r = await fetch(GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+'/items/'+id,{method:'DELETE', headers});
+    if(!r.ok && r.status!==204){
+      const t = await r.text();
+      console.error('macDel:',r.status,t);
+      showToast('Errore eliminazione: HTTP '+r.status);
+      return;
+    }
+    showToast('Macchina eliminata');
+    await macLoad();
+  }catch(e){ console.error('macDel:',e); showToast('Errore: '+e.message); }
+}
+
 
 /* ======================================
    ORDINI FORNITORI - SharePoint
