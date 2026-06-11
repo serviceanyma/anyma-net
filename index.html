@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v164';</script>
+<script>const APP_VERSION = 'v165';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -5661,6 +5661,128 @@ async function offGeneraPDF(id){
   }
 }
 
+// ====== STAMPA SCHEDA TECNICA (commessa -> macchina) ======
+function comStampaScheda(mi){
+  try{
+    var d = COM_STATE.draft; if(!d){ showToast('Nessuna commessa aperta'); return; }
+    var m = d.macchine[mi]; if(!m){ showToast('Macchina non trovata'); return; }
+    showToast('Generazione Scheda Tecnica...');
+    var html = _buildSchedaPDF(d, m, mi);
+    var w = window.open('','_blank','width=900,height=700');
+    if(!w){ showToast('Popup bloccato dal browser'); return; }
+    w.document.write(html); w.document.close();
+    setTimeout(function(){ try{ w.focus(); w.print(); }catch(e){} }, 600);
+  }catch(e){ console.error('comStampaScheda:',e); showToast('Errore stampa: '+(e.message||e)); }
+}
+
+function _buildSchedaPDF(d, m, mi){
+  var RED = '#c0392b';
+  var logoSrc = (typeof LOGO_RESOCONTO!=='undefined' && LOGO_RESOCONTO) ? LOGO_RESOCONTO : '';
+  function esc(s){ return (''+(s==null?'':s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function nl2br(s){ return esc(s).replace(/\n/g,'<br>'); }
+  function dataFmt(x){ if(!x) return ''; var p=(''+x).split('-'); return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0] : x; }
+
+  var clienteNome = d.cliente || '';
+  if(!clienteNome && d.clienteId && typeof _spClienti!=='undefined'){
+    var c = (_spClienti||[]).find(function(x){return String(x.id)===String(d.clienteId);});
+    if(c) clienteNome = c.name;
+  }
+
+  // Tabella a 4 colonne (lbl|val|lbl|val); i campi testarea/full occupano tutta la riga
+  function groupTable(fields){
+    var html = '<table class="ktbl">'; var pend = null;
+    fields.forEach(function(f){
+      var v = m.campi ? (m.campi[f.k]||'') : '';
+      if(f.t==='textarea' || f.full){
+        if(pend){ html += '<tr><td class="lbl">'+esc(pend.l)+'</td><td class="val" colspan="3">'+esc(pend.v)+'</td></tr>'; pend=null; }
+        html += '<tr><td class="lbl">'+esc(f.l)+'</td><td class="val" colspan="3">'+nl2br(v)+'</td></tr>';
+      } else {
+        if(pend){ html += '<tr><td class="lbl">'+esc(pend.l)+'</td><td class="val">'+esc(pend.v)+'</td><td class="lbl">'+esc(f.l)+'</td><td class="val">'+esc(v)+'</td></tr>'; pend=null; }
+        else { pend = {l:f.l, v:v}; }
+      }
+    });
+    if(pend){ html += '<tr><td class="lbl">'+esc(pend.l)+'</td><td class="val" colspan="3">'+esc(pend.v)+'</td></tr>'; }
+    html += '</table>'; return html;
+  }
+
+  // Testata commessa
+  var testata =
+    '<table class="card"><tr>'+
+      '<td class="k">Commessa</td><td><span class="num">'+esc(d.codice||'-')+'</span></td>'+
+      '<td class="k">Cliente</td><td class="big">'+esc(clienteNome||'-')+'</td>'+
+    '</tr><tr>'+
+      '<td class="k">Modello</td><td>'+esc(m.modello||'-')+'</td>'+
+      '<td class="k">Matricola / Seriale</td><td>'+esc(m.seriale||'-')+'</td>'+
+    '</tr><tr>'+
+      '<td class="k">Codice</td><td>'+esc(m.codice||'')+'</td>'+
+      '<td class="k">Rev</td><td>'+esc(m.rev||'')+'</td>'+
+    '</tr><tr>'+
+      '<td class="k">Agente</td><td>'+esc(d.agente||'')+'</td>'+
+      '<td class="k">Consegna</td><td>'+esc(d.consegna||'')+'</td>'+
+    '</tr><tr>'+
+      '<td class="k">Util. finale</td><td>'+esc(d.utilFinale||'')+'</td>'+
+      '<td class="k">Comm. interna</td><td>'+esc(d.commInterna||'')+'</td>'+
+    '</tr><tr>'+
+      '<td class="k">Layout N°</td><td>'+esc(d.layout||'')+'</td>'+
+      '<td class="k">Data</td><td>'+esc(dataFmt(d.data))+'</td>'+
+    '</tr></table>';
+
+  // Corpo: descrizione + note generali + gruppi
+  var body = '';
+  if(m.descrizione && m.descrizione.trim()){
+    body += '<div class="grp"><div class="grp-h">Descrizione macchina</div><div class="freetext">'+nl2br(m.descrizione)+'</div></div>';
+  }
+  (COM_GROUPS||[]).forEach(function(g){
+    body += '<div class="grp"><div class="grp-h">'+esc(g.title)+'</div>'+groupTable(g.fields)+'</div>';
+  });
+  if(d.noteGenerali && d.noteGenerali.trim()){
+    body += '<div class="grp"><div class="grp-h">Note generali commessa</div><div class="freetext">'+nl2br(d.noteGenerali)+'</div></div>';
+  }
+
+  var metaR = esc((d.codice||'')+(m.modello?(' · '+m.modello):''));
+  var css =
+'@page{size:A4 portrait;margin:11mm 13mm 12mm 13mm}'+
+'*{box-sizing:border-box;margin:0;padding:0}'+
+'html,body{background:#fff}'+
+'body{font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;font-size:9pt;color:#1f2937;line-height:1.4;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+'table.doc{width:100%;border-collapse:collapse}'+
+'.doc>thead{display:table-header-group}.doc>tfoot{display:table-footer-group}'+
+'.hcell{padding:0 0 4mm 0}.fcell{padding:4mm 0 0 0}.bcell{padding:0;vertical-align:top}'+
+'.hdr{display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:2.5mm;border-bottom:2px solid '+RED+'}'+
+'.hdr .logo img{height:10mm;width:auto;display:block}'+
+'.hdr .logo .wm{font-size:18pt;font-weight:800;color:#1f2937;letter-spacing:1px}'+
+'.hdr .meta{text-align:right}'+
+'.hdr .meta .t{font-size:11pt;font-weight:800;color:'+RED+';text-transform:uppercase;letter-spacing:1px}'+
+'.hdr .meta .r{font-size:7.5pt;color:#9ca3af;margin-top:.6mm}'+
+'.ftr{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e5e7eb;padding-top:2mm;font-size:7pt;color:#9ca3af}'+
+'.card{width:100%;border-collapse:collapse;table-layout:fixed;border:1px solid #e5e7eb;margin:0 0 4mm 0}'+
+'.card td{padding:2mm 3mm;vertical-align:top;border:1px solid #eef0f2;font-size:8.5pt;width:32%}'+
+'.card td.k{background:'+RED+';color:#fff;font-weight:700;font-size:7.5pt;text-transform:uppercase;letter-spacing:.5px;border-color:'+RED+';width:18%}'+
+'.card .num{color:'+RED+';font-weight:700;font-size:9.5pt}'+
+'.card .big{font-weight:700;color:#111827}'+
+'.grp{margin:0 0 3mm 0;break-inside:avoid}'+
+'.grp-h{font-size:9.5pt;font-weight:800;color:'+RED+';letter-spacing:.4px;text-transform:uppercase;margin:0 0 1.4mm 0;border-bottom:1px solid #e5e7eb;padding-bottom:1mm;break-after:avoid;page-break-after:avoid}'+
+'.ktbl{width:100%;border-collapse:collapse;table-layout:fixed;border:1px solid #e5e7eb}'+
+'.ktbl td{padding:1.6mm 2.5mm;border:1px solid #eef0f2;vertical-align:top;font-size:8.3pt;overflow-wrap:anywhere}'+
+'.ktbl td.lbl{background:#f8f5f4;color:#6b7280;font-weight:600;width:18%}'+
+'.ktbl td.val{color:#111827;width:32%}'+
+'.freetext{font-size:8.5pt;color:#374151;line-height:1.5;border:1px solid #eef0f2;padding:2.5mm 3mm;white-space:normal}';
+
+  var html =
+'<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>Scheda Tecnica '+esc(d.codice||'')+'</title><style>'+css+'</style></head><body>'+
+'<table class="doc"><thead><tr><td class="hcell"><div class="hdr">'+
+  '<div class="logo">'+(logoSrc?('<img src="'+logoSrc+'" alt="ANYMA">'):'<span class="wm">ANYMA</span>')+'</div>'+
+  '<div class="meta"><div class="t">Scheda Tecnica</div><div class="r">'+metaR+'</div></div>'+
+'</div></td></tr></thead>'+
+'<tfoot><tr><td class="fcell"><div class="ftr"><span>ANYMA S.r.l. — Via Val di Sole 31, 36010 Zan\u00e8 (VI)</span><span class="r">Scheda Tecnica '+esc(d.codice||'')+(m.seriale?(' — S/N '+esc(m.seriale)):'')+'</span></div></td></tr></tfoot>'+
+'<tbody><tr><td class="bcell">'+
+  testata + body +
+'</td></tr></tbody></table>'+
+'</body></html>';
+  return html;
+}
+
+
 function _buildOffertaPDF(d){
   var RED = '#c0392b';
   var LANG = (d.lingua||'IT').toUpperCase().indexOf('EN')>=0 ? 'EN' : 'IT';
@@ -7187,6 +7309,7 @@ function comMacHtml(mi){
       '<strong>Macchina '+(mi+1)+'</strong>'+
       '<span class="com-mac-sub" id="com-mac-sub-'+mi+'">'+comEsc((m.seriale||'(senza seriale)')+(m.modello?(' · '+m.modello):''))+'</span>'+
       '<div class="com-mac-actions" onclick="event.stopPropagation()">'+
+        '<button class="btn btn-sm" onclick="comStampaScheda('+mi+')" title="Stampa scheda tecnica">&#128424; Scheda</button>'+
         '<button class="btn btn-sm danger" onclick="comDelMac('+mi+')" title="Rimuovi macchina">&#128465;</button>'+
       '</div>'+
     '</div>'+
