@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v165';</script>
+<script>const APP_VERSION = 'v167';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -7309,6 +7309,7 @@ function comMacHtml(mi){
       '<strong>Macchina '+(mi+1)+'</strong>'+
       '<span class="com-mac-sub" id="com-mac-sub-'+mi+'">'+comEsc((m.seriale||'(senza seriale)')+(m.modello?(' · '+m.modello):''))+'</span>'+
       '<div class="com-mac-actions" onclick="event.stopPropagation()">'+
+        '<button class="btn btn-sm" onclick="comCopiaMac('+mi+')" title="Duplica macchina (poi cambia solo la matricola)">&#10697; Copia</button>'+
         '<button class="btn btn-sm" onclick="comStampaScheda('+mi+')" title="Stampa scheda tecnica">&#128424; Scheda</button>'+
         '<button class="btn btn-sm danger" onclick="comDelMac('+mi+')" title="Rimuovi macchina">&#128465;</button>'+
       '</div>'+
@@ -7376,6 +7377,20 @@ function comAddMac(){
   COM_STATE.draft.macchine.push(comNewMac());
   comRenderEditor();
   setTimeout(()=>{ const box=document.getElementById('com-ed-body'); if(box) box.scrollTop = box.scrollHeight; }, 40);
+}
+function comCopiaMac(mi){
+  const src = COM_STATE.draft.macchine[mi];
+  if(!src) return;
+  const copy = JSON.parse(JSON.stringify(src));
+  copy.id = offUid();
+  copy.seriale = '';            // matricola da reinserire (deve restare univoca)
+  COM_STATE.draft.macchine.splice(mi+1, 0, copy);
+  comRenderEditor();
+  setTimeout(function(){
+    const el = document.querySelector('.com-mac[data-mi="'+(mi+1)+'"]');
+    if(el && el.scrollIntoView) el.scrollIntoView({behavior:'smooth', block:'center'});
+  }, 50);
+  showToast('Macchina copiata — inserisci la nuova matricola');
 }
 function comDelMac(mi){
   if(COM_STATE.draft.macchine.length<=1){ showToast('La commessa deve avere almeno una macchina'); return; }
@@ -8768,7 +8783,17 @@ function _renderPdfPanelInner(items, cliente, tipo) {
       */
       var sessioniWrapper = {};
       try { sessioniWrapper = JSON.parse(f.SessioniJSON||'{}'); } catch(e){}
-      var sessioni   = sessioniWrapper.sessioni || [];
+      // Normalizza in righe sessione con data propria:
+      // - nuovo formato: wrapper.giornate = [{data, sessioni:[...]}]
+      // - vecchio formato: wrapper.sessioni piatto (data = DataIntervento)
+      var sessioni = [];
+      if(Array.isArray(sessioniWrapper.giornate) && sessioniWrapper.giornate.length){
+        sessioniWrapper.giornate.forEach(function(g){
+          (g.sessioni||[]).forEach(function(s){ sessioni.push(Object.assign({}, s, {data: g.data || dataFallback})); });
+        });
+      } else {
+        sessioni = (sessioniWrapper.sessioni || []).map(function(s){ return Object.assign({}, s, {data: s.data || dataFallback}); });
+      }
       var packRT     = sessioniWrapper.pacchetto || f.Pacchetto || '-';
       // l'app salva 'oreAddebitare'; versioni vecchie usavano 'oreUsate' — accetta entrambi
       var _oreRaw = sessioniWrapper.oreAddebitare !== undefined ? sessioniWrapper.oreAddebitare
@@ -8795,7 +8820,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
           } else if(s.coefficiente !== undefined && packRT.toUpperCase().indexOf('SPOT')<0) {
             fasceSessione = [{label:'', coeff:parseFloat(s.coefficiente), display:'×'+s.coefficiente, minuti:parseFloat(s.durata)||0, flat:false}];
           } else {
-            fasceSessione = calcolaFasceSessione(s.inizio||'', s.fine||'', dataFallback, packRT);
+            fasceSessione = calcolaFasceSessione(s.inizio||'', s.fine||'', s.data||dataFallback, packRT);
           }
           // Calcola durata da inizio/fine se s.durata mancante o zero
           var _durMin = parseFloat(s.durata)||0;
@@ -8811,7 +8836,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
           var oreScalate = oreScalateSessione(fasceSessione, _durMin, s.coefficiente);
           rows.push({
             numRT:        title,
-            data:         dataFallback,
+            data:         s.data||dataFallback,
             inizio:       s.inizio||'',
             fine:         s.fine||'',
             durataMin:    _durMin,
