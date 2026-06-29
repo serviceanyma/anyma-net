@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v167';</script>
+<script>const APP_VERSION = 'v168';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -9693,10 +9693,15 @@ function _buildPaginaResocontoGlobale(items, cliente, tipo, _lang) {
       else{chiamate.forEach(function(ch,idx){rows.push({numRT:title,data:dataFb,inizio:ch.inizio||'',fine:ch.fine||'',durataMin:parseFloat(ch.durata)||0,minArrotondati:idx===0?minArr:null,referente:ch.referente||'-',pacchetto:packRT});});}
     } else if(isTeleass){
       var sjRaw={},sessioni=[];
-      try{sjRaw=JSON.parse(f.SessioniJSON||'{}');sessioni=Array.isArray(sjRaw)?sjRaw:(sjRaw.sessioni||[]);}catch(e){}
+      try{
+        sjRaw=JSON.parse(f.SessioniJSON||'{}');
+        if(Array.isArray(sjRaw)){ sessioni=sjRaw.map(function(s){return Object.assign({},s,{data:s.data||dataFb});}); }
+        else if(Array.isArray(sjRaw.giornate)&&sjRaw.giornate.length){ sjRaw.giornate.forEach(function(g){(g.sessioni||[]).forEach(function(s){sessioni.push(Object.assign({},s,{data:g.data||dataFb}));});}); }
+        else { sessioni=(sjRaw.sessioni||[]).map(function(s){return Object.assign({},s,{data:s.data||dataFb});}); }
+      }catch(e){}
       if(sjRaw.pacchetto)packRT=sjRaw.pacchetto;
       if(!sessioni.length){rows.push({numRT:title,data:dataFb,inizio:'',fine:'',durataMin:0,oreScalate:null,fasceSessione:[],sovrapposta:false,referente:'-',pacchetto:packRT});}
-      else{sessioni.forEach(function(s){var fasce=calcolaFasce(s.inizio||'',s.fine||'',dataFb,packRT),os=oreScalate(fasce,s.durata,s.coefficiente);rows.push({numRT:title,data:dataFb,inizio:s.inizio||'',fine:s.fine||'',durataMin:parseFloat(s.durata)||0,oreScalate:os,fasceSessione:fasce,sovrapposta:fasce.length>1,referente:s.referente||'-',pacchetto:packRT});});}
+      else{sessioni.forEach(function(s){var _d=s.data||dataFb;var fasce=calcolaFasce(s.inizio||'',s.fine||'',_d,packRT),os=oreScalate(fasce,s.durata,s.coefficiente);rows.push({numRT:title,data:_d,inizio:s.inizio||'',fine:s.fine||'',durataMin:parseFloat(s.durata)||0,oreScalate:os,fasceSessione:fasce,sovrapposta:fasce.length>1,referente:s.referente||'-',pacchetto:packRT});});}
     } else {
       var giornate=[];
       try{var gj=JSON.parse(f.GiornateJSON||'null');if(Array.isArray(gj))giornate=gj;else if(gj&&gj.giornate)giornate=gj.giornate;}catch(e){}
