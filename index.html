@@ -6,16 +6,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v168';</script>
+<script>const APP_VERSION = 'v171';</script>
+<!-- ANYMA Design System: colori, misure e componenti condivisi con Rapportini -->
+<link href="https://serviceanyma.github.io/anyma-ds/anyma-ds.css" rel="stylesheet">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0d0d0d;--bg2:#141414;--bg3:#1c1c1c;--bg4:#242424;--bg5:#2d2f3a;
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
-  --text:#f0ebe6;--text2:#b8a898;--text3:#7a6858;
-  --accent:#c0392b;--green:#3ecf8e;--amber:#f5a623;--red:#f05c5c;--purple:#a78bfa;
-  --radius:10px;--font:'Barlow',system-ui,sans-serif;--cond:'Barlow Condensed',system-ui,sans-serif;--cr-shadow:0 3px 16px rgba(192,57,43,.25);--cr-bg:rgba(192,57,43,.12);--mono:'DM Mono',monospace;
+  /* Alias verso il design system ANYMA (anyma-ds.css); il secondo valore vale solo se il CSS condiviso non si carica */
+  --bg:var(--surface-0,#0d0d0d);--bg2:var(--surface-1,#141414);--bg3:var(--surface-2,#1c1c1c);--bg4:var(--surface-3,#242424);--bg5:var(--surface-3,#242424);
+  --border:var(--border-1,rgba(255,255,255,0.07));--border2:var(--border-2,rgba(255,255,255,0.13));
+  --text:var(--ink,#f0ebe6);--text2:var(--ink-2,#b8a898);--text3:var(--ink-3,#9a8878);
+  --accent:var(--brand,#c0392b);--green:var(--success,#3ecf8e);--amber:var(--warning,#f5a623);--red:var(--danger,#f05c5c);--purple:var(--chart-travel,#a78bfa);
+  --radius:var(--radius-md,10px);--font:var(--font-sans,'Barlow',system-ui,sans-serif);--cond:var(--font-cond,'Barlow Condensed',system-ui,sans-serif);--cr-shadow:var(--shadow-brand,0 3px 16px rgba(192,57,43,.25));--cr-bg:var(--brand-soft,rgba(192,57,43,.12));--mono:var(--font-mono,'DM Mono',monospace);
   --sidebar:220px;--header:52px;
 }
 html,body{height:100%}
@@ -519,10 +522,10 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 .chart-preview-col .preview-iframe-wrap iframe{display:block;width:100%;height:100%;border:none}
 
 /* BUTTONS */
-.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--radius-sm,7px);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-family:var(--font);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;cursor:pointer;transition:all .15s;white-space:nowrap}
 .btn:hover{background:var(--bg4);border-color:rgba(255,255,255,.2)}
-.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn-primary:hover{background:#a93226}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--on-brand,#fff)}
+.btn-primary:hover{background:var(--accent);filter:brightness(1.12)}
 .btn svg{width:12px;height:12px;flex-shrink:0}
 .btn-sm{padding:4px 9px;font-size:11px}
 
@@ -2579,7 +2582,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         <!-- Firma -->
         <div class="ea-card">
           <span class="ea-label">Firma</span>
-          <div class="ea-firma-prev" id="ea-fp">Daniel Consolaro<br>Servizio Tecnico - ANYMA SRL<br><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5e2d3b2c28373d3b1e3f3027333f2e3f3d3570372a">[email&#160;protected]</a></div>
+          <div class="ea-firma-prev" id="ea-fp">Daniel Consolaro<br>Servizio Tecnico - ANYMA SRL<br>service@anymapack.it</div>
           <div class="ea-inp-row">
             <input class="ea-inp" id="ea-fn" value="Daniel Consolaro" placeholder="Nome" oninput="eaUpdFirma()">
             <input class="ea-inp" id="ea-fr" value="Servizio Tecnico" placeholder="Ruolo" oninput="eaUpdFirma()">
@@ -2782,7 +2785,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 
 <div class="toast" id="toast"></div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 /* == ANYMA-NET Auth (v124 — replica metodo app rapportini con popup) == */
 const GRAPH_SCOPES = [
@@ -8198,8 +8201,8 @@ async function loadContratti() {
         pacchetto:   f.Pacchetto||'Spot',
         saldoMinuti: parseInt(f.SaldoMinuti||0),
         saldoOre:    parseFloat(f.SaldoOre||0),
-        dataInizio:  f.DataInizio ? f.DataInizio.split('T')[0] : '',
-        dataFine:    f.DataFine   ? f.DataFine.split('T')[0]   : '',
+        dataInizio:  f.DataInizio ? new Date(f.DataInizio).toLocaleDateString('sv-SE') : '',
+        dataFine:    f.DataFine   ? new Date(f.DataFine).toLocaleDateString('sv-SE')   : '',
         numContratto:f.NumContratto||'',
         attivo:      f.Attivo!==false && f.Attivo!=='false',
         note:        f.Note||''
@@ -8355,7 +8358,7 @@ function renderContrDettaglio(nome) {
     var col = CONTR_TIPO_COLORS[c.tipo]||'var(--text)';
     var saldoStr = '';
     if(c.tipo==='Telefonica') saldoStr = c.pacchetto!=='Spot'&&c.pacchetto!=='Premium' ? c.saldoMinuti+' min' : 'N/A';
-    else saldoStr = c.pacchetto!=='Spot' && !(c.tipo==='On-Site'&&c.pacchetto==='Premium') ? c.saldoOre+' h' : 'N/A';
+    else saldoStr = c.pacchetto!=='Spot' && !(c.tipo==='On-Site'&&c.pacchetto==='Premium') ? c.saldoOre+' h'+(c.tipo==='On-Site'?' acquistate':'') : 'N/A';
     var saldoColor = saldoStr==='N/A' ? 'var(--text3)' : col;
     return '<div style="background:var(--bg3);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:12px;padding:20px 22px;display:flex;flex-direction:column;gap:14px">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">' +
@@ -8590,7 +8593,7 @@ function stampaResoconto() {
   var w = window.open('','_blank','width=900,height=700');
   w.document.write('<html><head><title>Resoconto ANYMA</title>');
   w.document.write('<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;800&display=swap" rel="stylesheet">');
-  w.document.write('<style>@page{size:A4 portrait;margin:12mm 14mm}*{margin:0;padding:0;box-sizing:border-box}body{background:white;font-family:Barlow,Arial,Helvetica,sans-serif}.pdf-page{width:100%;max-width:182mm;margin:0 auto;background:white;font-family:Barlow,Arial,Helvetica,sans-serif;font-size:7.5pt;color:#222;line-height:1.35;position:relative;page-break-after:always}.pdf-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:2px solid #8B1A1A;padding-bottom:6px;margin-bottom:8px}.pdf-logo-img{max-width:160px;height:auto;flex-shrink:0}.pdf-company{font-size:6.5pt;color:#444;line-height:1.45;text-align:right;white-space:nowrap;flex-shrink:0}.pdf-company strong{font-size:7.5pt;color:#222;display:block}.pdf-infobar{display:flex;gap:0;margin-bottom:8px;border:1px solid #ccc;border-radius:4px;overflow:hidden;font-size:7pt}.pdf-infobar-cell{flex:1;padding:5px 10px;border-right:1px solid #ccc;line-height:1.5}.pdf-infobar-cell:last-child{border-right:none}.pdf-infobar-label{font-size:6pt;font-weight:700;color:#8B1A1A;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:2px}.pdf-sec{font-weight:700;font-size:8pt;color:#8B1A1A;border-bottom:1px solid #8B1A1A;padding-bottom:3px;margin:8px 0 4px}.pdf-tbl{width:100%;border-collapse:collapse;font-size:7pt}.pdf-tbl th{background:#8B1A1A;color:white;padding:4px 5px;text-align:center;border:1px solid #a83226;font-size:6.5pt;font-weight:700}.pdf-tbl th.thl{text-align:left}.pdf-tbl td{padding:3px 5px;border:1px solid #bbb;text-align:center;vertical-align:middle;font-size:7pt}.pdf-tbl td.tdl{text-align:left}.pdf-tbl td.num{text-align:right;font-weight:700}.pdf-tbl tr:nth-child(even) td{background:#f8f8f8}.pdf-tbl tfoot td{font-weight:bold;background:#f0f0f0;border-top:2px solid #8B1A1A}.pdf-tot{display:flex;gap:8px;margin-top:8px}.pdf-tot-box{flex:1;background:#f9f0f0;border:1px solid #d4a0a0;border-radius:4px;padding:6px 8px;text-align:center}.pdf-tot-label{font-size:6pt;color:#8B1A1A;text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-bottom:2px}.pdf-tot-val{font-size:13pt;font-weight:900;color:#8B1A1A}.pdf-wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:72px;font-weight:900;color:rgba(139,26,26,.06);white-space:nowrap;pointer-events:none;letter-spacing:6px;z-index:1}@media print{body{background:white}.pdf-page{page-break-after:always}}</style></head><body>');;
+  w.document.write('<style>@page{size:A4 portrait;margin:10mm}*{margin:0;padding:0;box-sizing:border-box}body{background:white;font-family:Barlow,Arial,Helvetica,sans-serif}.pdf-page{width:100%;max-width:190mm;margin:0 auto;background:white;font-family:Barlow,Arial,Helvetica,sans-serif;font-size:7.5pt;color:#222;line-height:1.35;position:relative;page-break-after:always}.pdf-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:2px solid #8B1A1A;padding-bottom:6px;margin-bottom:8px}.pdf-logo-img{max-width:160px;height:auto;flex-shrink:0}.pdf-company{font-size:6.5pt;color:#444;line-height:1.45;text-align:right;white-space:nowrap;flex-shrink:0}.pdf-company strong{font-size:7.5pt;color:#222;display:block}.pdf-infobar{display:flex;gap:0;margin-bottom:8px;border:1px solid #ccc;border-radius:4px;overflow:hidden;font-size:7pt}.pdf-infobar-cell{flex:1;padding:5px 10px;border-right:1px solid #ccc;line-height:1.5}.pdf-infobar-cell:last-child{border-right:none}.pdf-infobar-label{font-size:6pt;font-weight:700;color:#8B1A1A;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:2px}.pdf-sec{font-weight:700;font-size:8pt;color:#8B1A1A;border-bottom:1px solid #8B1A1A;padding-bottom:3px;margin:8px 0 4px}.pdf-tbl{width:100%;border-collapse:collapse;font-size:7pt}.pdf-tbl th{background:#8B1A1A;color:white;padding:4px 5px;text-align:center;border:1px solid #a83226;font-size:6.5pt;font-weight:700}.pdf-tbl th.thl{text-align:left}.pdf-tbl td{padding:3px 5px;border:1px solid #bbb;text-align:center;vertical-align:middle;font-size:7pt}.pdf-tbl td.tdl{text-align:left}.pdf-tbl td.num{text-align:right;font-weight:700}.pdf-tbl tr:nth-child(even) td{background:#f8f8f8}.pdf-tbl tfoot td{font-weight:bold;background:#f0f0f0;border-top:2px solid #8B1A1A}.pdf-tot{display:flex;gap:8px;margin-top:8px}.pdf-tot-box{flex:1;background:#f9f0f0;border:1px solid #d4a0a0;border-radius:4px;padding:6px 8px;text-align:center}.pdf-tot-label{font-size:6pt;color:#8B1A1A;text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-bottom:2px}.pdf-tot-val{font-size:13pt;font-weight:900;color:#8B1A1A}.pdf-wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:72px;font-weight:900;color:rgba(139,26,26,.06);white-space:nowrap;pointer-events:none;letter-spacing:6px;z-index:1}@media print{body{background:white}.pdf-page{page-break-after:always}}</style></head><body>');;
   w.document.write(el.outerHTML);
   w.document.write('</body></html>');
   w.document.close();
@@ -8605,6 +8608,38 @@ function renderPdfPanel(items, cliente, tipo) {
     if(prev) prev.innerHTML = '<div style="padding:40px;text-align:center;color:var(--red)">Errore: '+escHtml(e.message)+'<br><pre style="font-size:9px;text-align:left;margin-top:8px;color:#aaa">'+escHtml(e.stack||'')+'</pre></div>';
   }
 }
+/* ── Consumo pacchetto On-Site (allineato a Rapportini v163) ──
+   per tecnico: max(lavoro+viaggio della trasferta ; 4 h) — trasferta = da giornata con andata a giornata con ritorno
+   totale RT = ore per tecnico × numero tecnici */
+var AN_MIN_TRASFERTA_H = 4;
+function anTrasferte(giornate){
+  var gr=[], cur=null;
+  (giornate||[]).forEach(function(g){
+    var andata=!!(g.vAnDa||g.vAnA), ritorno=!!(g.vRetDa||g.vRetA);
+    if(!cur||andata){ cur={tot:0}; gr.push(cur); }
+    cur.tot += (parseFloat(g.oreLav)||0)+(parseFloat(g.oreViag)||0);
+    if(ritorno) cur=null;
+  });
+  gr.forEach(function(t){ t.scal = t.tot>0 ? Math.max(t.tot,AN_MIN_TRASFERTA_H) : 0; t.min = t.tot>0 && t.tot<AN_MIN_TRASFERTA_H; });
+  return gr;
+}
+function anGiornateRT(f){
+  try{ var gj=JSON.parse(f.GiornateJSON||'null'); if(Array.isArray(gj)) return gj; if(gj&&gj.giornate) return gj.giornate; }catch(e){}
+  return [];
+}
+function anNTec(f){
+  var t=(f.Tecnici||f.Tecnico||'').split(',').filter(function(x){return x.trim();});
+  return t.length||1;
+}
+function anScalOnSite(f, da, a){
+  var vuoto={perTec:0,nTec:1,tot:0,min:false};
+  var tp=f.Tipo0||f.TipoIntervento||'';
+  if(tp==='Teleassistenza'||tp==='Assistenza Telefonica'||f.TipoServizio==='Telefonica'||f.TipoServizio==='Teleassistenza') return vuoto;
+  var gg=anGiornateRT(f).filter(function(g){ return (!da||g.data>=da)&&(!a||g.data<=a); });
+  var tr=anTrasferte(gg), perTec=tr.reduce(function(s,t){return s+t.scal;},0), n=anNTec(f);
+  return {perTec:perTec, nTec:n, tot:perTec*n, min:tr.some(function(t){return t.min;})};
+}
+
 function _renderPdfPanelInner(items, cliente, tipo) {
   // Dizionario i18n — dichiarato per primo perché usato in tutta la funzione
   var _lang = (typeof _resocontoLingua !== 'undefined') ? _resocontoLingua : 'ita';
@@ -8913,7 +8948,8 @@ function _renderPdfPanelInner(items, cliente, tipo) {
     var isSpotPac = pUp.indexOf('SPOT') >= 0;
     var isPremTelPac = isTel && pUp.indexOf('PREMIUM') >= 0; // Premium Tel. = canone, no saldo prepagato
     // Teleassistenza Premium: HA saldo ore (scalato con coefficienti notturni)
-    var hasSaldo = !isSpotPac && !isPremTelPac && !(!isTel && !isTeleass); // On-Site: no saldo
+    var isOnSiteSaldo = !isTel && !isTeleass;
+    var hasSaldo = !isSpotPac && !isPremTelPac && !(isOnSiteSaldo && pUp.indexOf('PREMIUM')>=0); // On-Site: saldo calcolato (no Premium)
     if(hasSaldo) {
       var saldoIniziale = isTel ? (contr.saldoMinuti||0) : (contr.saldoOre||0);
       var totConsumato;
@@ -8923,6 +8959,10 @@ function _renderPdfPanelInner(items, cliente, tipo) {
       } else if(isTeleass) {
         // Somma ore scalate (con coefficienti)
         totConsumato = rows.reduce(function(s,r){ return s+(r.oreScalate!=null?r.oreScalate:0); },0);
+      } else {
+        // On-Site: tutti i RT del cliente (non solo il periodo filtrato), giornate entro la validità del contratto
+        var _allIt = (_resocontoStato && _resocontoStato.cliente===cliente && _resocontoStato.items && _resocontoStato.items.length) ? _resocontoStato.items : items;
+        totConsumato = _allIt.reduce(function(s,it){ return s+anScalOnSite(it.fields||{}, contr.dataInizio, contr.dataFine).tot; },0);
       }
       saldoAtt = parseFloat((saldoIniziale - (totConsumato||0)).toFixed(2));
     }
@@ -8941,7 +8981,14 @@ function _renderPdfPanelInner(items, cliente, tipo) {
     var isSpot   = p.indexOf('SPOT') >= 0;
     var isOnSite = tipo === 'On-Site';
     var isPremTel = isTel && p.indexOf('PREMIUM') >= 0; // Premium Tel. = canone mensile/annuale
-    var haScadenza = !isSpot && !isOnSite && !isPremTel && dataInizio !== '-';
+    if(isOnSite) {
+      if(isSpot || !contr || !contr.dataFine) return;
+      dataScadenza = contr.dataFine;
+      var _msOS = new Date(contr.dataFine) - new Date();
+      scadenzaAvviso = _msOS > 0 && _msOS < 60 * 24 * 3600 * 1000;
+      return;
+    }
+    var haScadenza = !isSpot && !isPremTel && dataInizio !== '-';
     if(!haScadenza) return;
     try {
       var d = new Date(dataInizio);
@@ -8956,7 +9003,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
   var FONT = 'Barlow,Arial,sans-serif';
 
   var wrap  = 'box-sizing:border-box;width:100%;height:100%;background:#d0d0d0;padding:20px;overflow-y:auto;font-family:'+FONT+';display:flex;justify-content:center;align-items:flex-start';
-  var sheet = 'box-sizing:border-box;width:794px;min-width:794px;min-height:1123px;background:white;padding:20px 24px;font-family:'+FONT+';font-size:9px;color:#222;line-height:1.4;position:relative;box-shadow:0 4px 20px rgba(0,0,0,.35);display:flex;flex-direction:column';
+  var sheet = 'box-sizing:border-box;width:750px;min-width:750px;min-height:1061px;background:white;padding:20px;font-family:'+FONT+';font-size:9px;color:#222;line-height:1.4;position:relative;box-shadow:0 4px 20px rgba(0,0,0,.35);display:flex;flex-direction:column';
 
   var h = '<div id="pdf-a4-content" style="'+sheet+'">';
   h += '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:90px;font-weight:900;color:rgba(139,26,26,.05);white-space:nowrap;pointer-events:none;letter-spacing:8px;z-index:0">ANYMA</div>';
@@ -9047,6 +9094,8 @@ function _renderPdfPanelInner(items, cliente, tipo) {
     if(r.minArrotondati!=null) rt.minArrot   += r.minArrotondati;
     if(r.oreScalate!=null)     rt.oreScalate += r.oreScalate;
   });
+  var scalByRT = {};
+  if(isOnSiteR) items.forEach(function(it){ var f=it.fields||{}; scalByRT[f.Title||'-']=anScalOnSite(f); });
   var TF_RT = 'padding:3px 6px;border:1px solid #ccc;background:#f0f0f0;border-top:1.5px solid '+RED+';font-weight:700;font-size:8px;color:#444';
 
   var prevRT = null, zebraIdx = 0;
@@ -9145,7 +9194,13 @@ function _renderPdfPanelInner(items, cliente, tipo) {
           var subOreL = rt.durataMin > 0 ? fmtVal(rt.durataMin) : '-';
           var subOreV = rt.oreViag   > 0 ? fmtVal(rt.oreViag*60) : '-';
           var subKm   = rt.km        > 0 ? rt.km+' km' : '-';
-          h += '<td colspan="6" style="'+TF_RT+'">'+subLabel+'</td>';
+          var _sc = scalByRT[r.numRT];
+          var _scTxt = (_sc && _sc.tot>0)
+            ? ' — '+(_lang==='eng'?'hours deducted':'ore scalate')+': <span style="color:'+RED+'">'+fmtVal(_sc.tot*60)+'</span>'
+              +(_sc.nTec>1?' ('+fmtVal(_sc.perTec*60)+' × '+_sc.nTec+')':'')
+              +(_sc.min?' · min. '+AN_MIN_TRASFERTA_H+'h/'+(_lang==='eng'?'trip':'trasferta'):'')
+            : '';
+          h += '<td colspan="6" style="'+TF_RT+'">'+subLabel+_scTxt+'</td>';
           h += '<td style="'+TF_RT+';text-align:center;color:'+RED+'">'+subOreL+'</td>';
           h += '<td style="'+TF_RT+';text-align:center;color:'+RED+'">'+subOreV+'</td>';
           h += '<td style="'+TF_RT+';text-align:center;color:'+RED+'">'+subKm+'</td>';
@@ -9221,8 +9276,8 @@ function _renderPdfPanelInner(items, cliente, tipo) {
     var _tmT = rows.reduce(function(s,r){return s+(r.oreScalate!==null&&r.oreScalate!==undefined ? r.oreScalate : 0);},0);
     totConsumatoEffettivo = _tmT * 60;  // converti ore -> minuti per fmtVal
   } else {
-    // On-Site: stesso di durataMin
-    totConsumatoEffettivo = rows.reduce(function(s,r){return s+(r.durataMin||0);},0);
+    // On-Site: ore scalate dal pacchetto nel periodo (trasferte, minimo 4h, × tecnici)
+    totConsumatoEffettivo = Object.keys(scalByRT).reduce(function(s,k){return s+scalByRT[k].tot;},0) * 60;
   }
   h += '<div style="'+BOX+'"><span style="'+BL+'">'+L.consumato+'</span><span style="'+BV+'">'+fmtVal(totConsumatoEffettivo)+'</span></div>';
   if(saldoAtt!==null) {
@@ -9462,6 +9517,7 @@ function rcAggiornaCampi() {
   }
 }
 
+var _rcFullByTipo = {};
 async function generaResocontoCliente() {
   var cliente = document.getElementById('rc-cliente').value;
   var periodo = document.querySelector('input[name="rc-periodo"]:checked').value;
@@ -9504,6 +9560,7 @@ async function generaResocontoCliente() {
       var resp = await fetch(url,{headers:headers});
       if(!resp.ok) throw new Error(tipo+': HTTP '+resp.status);
       var items = (await resp.json()).value||[];
+      _rcFullByTipo[tipo] = items;
 
       // Filtra per periodo
       var filtered = items.filter(function(item){
@@ -9532,7 +9589,7 @@ async function generaResocontoCliente() {
     tipiSel.forEach(function(tipo){
       var items = allItemsByTipo[tipo] || [];
       if(items.length === 0) return; // salta sezioni vuote per non sporcare
-      pagesHtml += _buildPaginaResocontoGlobale(items, cliente, tipo, lingua);
+      pagesHtml += _buildPaginaResocontoGlobale(items, cliente, tipo, lingua, _rcFullByTipo[tipo]);
     });
 
     if(!pagesHtml) {
@@ -9614,7 +9671,7 @@ async function generaResocontoGlobale() {
     clientiOrd.forEach(function(cliente){
       var items = clientiMap[cliente]||[];
       items.sort(function(a,b){return ((b.fields&&b.fields.Title)||'').localeCompare((a.fields&&a.fields.Title)||'');});
-      pagesHtml += _buildPaginaResocontoGlobale(items, cliente, tipo, lingua);
+      pagesHtml += _buildPaginaResocontoGlobale(items, cliente, tipo, lingua, allItems.filter(function(it){return (it.fields&&it.fields.Cliente)===cliente;}));
     });
     var w = window.open('','_blank','width=900,height=700');
     w.document.write('<html><head><title>Resoconto '+escHtml(tipo)+' '+mese+'/'+anno+'</title>');
@@ -9633,10 +9690,10 @@ async function generaResocontoGlobale() {
 }
 
 function _getCSSResocontoGlobale(){
-  return '@page{size:A4 portrait;margin:12mm 14mm}'
+  return '@page{size:A4 portrait;margin:10mm}'
     +'*{margin:0;padding:0;box-sizing:border-box}body{background:white;font-family:Barlow,Arial,sans-serif}'
-    +'.rg-page{width:100%;max-width:182mm;margin:0 auto;background:white;font-size:7.5pt;color:#222;line-height:1.35;position:relative;page-break-after:always}'
-    +'.rg-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:2.5px solid #8B1A1A;padding-bottom:6px;margin-bottom:8px}'
+    +'.rg-page{width:100%;max-width:190mm;margin:0 auto;background:white;font-size:7.5pt;color:#222;line-height:1.35;position:relative;page-break-after:always}'
+    +'.rg-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:2px solid #8B1A1A;padding-bottom:6px;margin-bottom:8px}'
     +'.rg-company{font-size:6.5pt;color:#444;line-height:1.45;text-align:right;white-space:nowrap;flex-shrink:0}'
     +'.rg-company strong{font-size:7.5pt;color:#222;display:block}'
     +'.rg-infobar{display:flex;border:1px solid #ccc;border-radius:3px;overflow:hidden;margin-bottom:7px}'
@@ -9657,7 +9714,7 @@ function _getCSSResocontoGlobale(){
     +'@media print{.rg-page{page-break-after:always}}';
 }
 
-function _buildPaginaResocontoGlobale(items, cliente, tipo, _lang) {
+function _buildPaginaResocontoGlobale(items, cliente, tipo, _lang, allItemsCli) {
   var RED='#8B1A1A';
   var isTel=tipo==='Telefonica', isTeleass=tipo==='Teleassistenza', isOnSite=!isTel&&!isTeleass;
   var unitaLabel=isTel?'min':'h';
@@ -9715,10 +9772,13 @@ function _buildPaginaResocontoGlobale(items, cliente, tipo, _lang) {
   var rtTotals={};
   rows.forEach(function(r){if(!rtTotals[r.numRT])rtTotals[r.numRT]={minArrot:0,oreScalate:0,durataMin:0,oreViag:0,km:0};var rt=rtTotals[r.numRT];rt.durataMin+=r.durataMin||0;rt.oreViag+=r.oreViag||0;rt.km+=r.km||0;if(r.minArrotondati!=null)rt.minArrot+=r.minArrotondati;if(r.oreScalate!=null)rt.oreScalate+=r.oreScalate;});
 
+  var scalByRT={};
+  if(isOnSite)items.forEach(function(it){var f=it.fields||{};scalByRT[f.Title||'-']=anScalOnSite(f);});
+  function scTxt(sc){return (sc&&sc.tot>0)?' — '+(_lang==='eng'?'hours deducted':'ore scalate')+': <span style="color:'+RED+'">'+fmtVal(sc.tot*60)+'</span>'+(sc.nTec>1?' ('+fmtVal(sc.perTec*60)+' × '+sc.nTec+')':'')+(sc.min?' · min. '+AN_MIN_TRASFERTA_H+'h/'+(_lang==='eng'?'trip':'trasferta'):''):'';}
   var pUp2=(pacchetto||'').toUpperCase(),saldoAtt=null;
-  if(contr&&pUp2.indexOf('SPOT')<0&&!(isTel&&pUp2.indexOf('PREMIUM')>=0)&&!isOnSite){
+  if(contr&&pUp2.indexOf('SPOT')<0&&!(isTel&&pUp2.indexOf('PREMIUM')>=0)&&!(isOnSite&&pUp2.indexOf('PREMIUM')>=0)){
     var saldoIniz=isTel?(contr.saldoMinuti||0):(contr.saldoOre||0);
-    var totCons=isTel?rows.reduce(function(s,r){return s+(r.minArrotondati!=null?r.minArrotondati:0);},0):rows.reduce(function(s,r){return s+(r.oreScalate!=null?r.oreScalate:0);},0);
+    var totCons=isOnSite?(allItemsCli&&allItemsCli.length?allItemsCli:items).reduce(function(s,it){return s+anScalOnSite(it.fields||{},contr.dataInizio,contr.dataFine).tot;},0):isTel?rows.reduce(function(s,r){return s+(r.minArrotondati!=null?r.minArrotondati:0);},0):rows.reduce(function(s,r){return s+(r.oreScalate!=null?r.oreScalate:0);},0);
     saldoAtt=parseFloat((saldoIniz-totCons).toFixed(2));
   }
   var saldoNeg=saldoAtt!==null&&saldoAtt<0;
@@ -9773,7 +9833,7 @@ function _buildPaginaResocontoGlobale(items, cliente, tipo, _lang) {
       if(isLast){
         var rt=rtTotals[r.numRT];
         h+='<tr>';
-        if(isOnSite){h+='<td colspan="6" style="'+TF_RT+'">'+L.subtotale+'</td><td style="'+TF_RT+';text-align:center;color:'+RED+'">'+fmtVal(rt.durataMin)+'</td><td style="'+TF_RT+';text-align:center;color:'+RED+'">'+(rt.oreViag>0?fmtVal(rt.oreViag*60):'-')+'</td><td style="'+TF_RT+';text-align:center;color:'+RED+'">'+(rt.km>0?rt.km+' km':'-')+'</td>';}
+        if(isOnSite){h+='<td colspan="6" style="'+TF_RT+'">'+L.subtotale+scTxt(scalByRT[r.numRT])+'</td><td style="'+TF_RT+';text-align:center;color:'+RED+'">'+fmtVal(rt.durataMin)+'</td><td style="'+TF_RT+';text-align:center;color:'+RED+'">'+(rt.oreViag>0?fmtVal(rt.oreViag*60):'-')+'</td><td style="'+TF_RT+';text-align:center;color:'+RED+'">'+(rt.km>0?rt.km+' km':'-')+'</td>';}
         else if(isTel){var sp=hasCoeff?8:7;h+='<td colspan="'+sp+'" style="'+TF_RT+'">'+L.subtotale+'</td><td style="'+TF_RT+';text-align:center;color:'+RED+'">'+(rt.minArrot>0?rt.minArrot+' min':'-')+'</td>';}
         else{var sp2=hasCoeff?8:7;h+='<td colspan="'+sp2+'" style="'+TF_RT+'">'+L.subtotale+'</td><td style="'+TF_RT+';text-align:center;color:'+RED+'">'+(rt.oreScalate>0?fmtVal(rt.oreScalate*60):'-')+'</td>';}
         h+='</tr>';
@@ -9784,7 +9844,7 @@ function _buildPaginaResocontoGlobale(items, cliente, tipo, _lang) {
   }
 
   var tLabel=_lang==='eng'?'TOTAL':'TOTALE';
-  if(isOnSite){var tOL=rows.reduce(function(s,r){return s+(r.durataMin||0);},0),tOV=rows.reduce(function(s,r){return s+(r.oreViag||0);},0),tKm=rows.reduce(function(s,r){return s+(r.km||0);},0);h+='</tbody><tfoot><tr><td colspan="6" style="'+TF+'">'+tLabel+'</td><td style="'+TF+';text-align:center;color:'+RED+'">'+(tOL>0?fmtVal(tOL):'-')+'</td><td style="'+TF+';text-align:center;color:'+RED+'">'+(tOV>0?fmtVal(tOV*60):'-')+'</td><td style="'+TF+';text-align:center;color:'+RED+'">'+(tKm>0?tKm+' km':'-')+'</td></tr></tfoot>';}
+  if(isOnSite){var tOL=rows.reduce(function(s,r){return s+(r.durataMin||0);},0),tOV=rows.reduce(function(s,r){return s+(r.oreViag||0);},0),tKm=rows.reduce(function(s,r){return s+(r.km||0);},0);var _scTot=Object.keys(scalByRT).reduce(function(s,k){return s+scalByRT[k].tot;},0);h+='</tbody><tfoot><tr><td colspan="6" style="'+TF+'">'+tLabel+(_scTot>0?' — '+(_lang==='eng'?'hours deducted':'ore scalate')+': <span style="color:'+RED+'">'+fmtVal(_scTot*60)+'</span>':'')+'</td><td style="'+TF+';text-align:center;color:'+RED+'">'+(tOL>0?fmtVal(tOL):'-')+'</td><td style="'+TF+';text-align:center;color:'+RED+'">'+(tOV>0?fmtVal(tOV*60):'-')+'</td><td style="'+TF+';text-align:center;color:'+RED+'">'+(tKm>0?tKm+' km':'-')+'</td></tr></tfoot>';}
   else if(isTel){var tM=rows.reduce(function(s,r){return s+(r.minArrotondati!=null?r.minArrotondati:0);},0),spT=hasCoeff?8:7;h+='</tbody><tfoot><tr><td colspan="'+spT+'" style="'+TF+'">'+tLabel+'</td><td style="'+TF+';text-align:center;color:'+RED+'">'+(tM>0?tM+' min':'-')+'</td></tr></tfoot>';}
   else{var tO=rows.reduce(function(s,r){return s+(r.oreScalate!=null?r.oreScalate:0);},0),spTA=hasCoeff?8:7;h+='</tbody><tfoot><tr><td colspan="'+spTA+'" style="'+TF+'">'+tLabel+'</td><td style="'+TF+';text-align:center;color:'+RED+'">'+(tO>0?fmtVal(tO*60):'-')+'</td></tr></tfoot>';}
   h+='</table></div>';
