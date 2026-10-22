@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v172';</script>
+<script>const APP_VERSION = 'v174';</script>
 <!-- ANYMA Design System: colori, misure e componenti condivisi con Rapportini -->
 <link href="https://serviceanyma.github.io/anyma-ds/anyma-ds.css" rel="stylesheet">
 <style>
@@ -1999,6 +1999,34 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 
   <!-- VIEW: ORDINI FORNITORI SHAREPOINT -->
   <div id="view-ordini-sp" class="content-view">
+    <style>
+      /* ── Ordini fornitori (token design system ANYMA) ── */
+      .ordf-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;flex-shrink:0}
+      .ordf-kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md,10px);padding:10px 12px;min-width:0;transition:border-color .15s,background .15s}
+      .ordf-kpi.click{cursor:pointer}.ordf-kpi.click:hover{border-color:var(--border2);background:var(--bg3)}
+      .ordf-kpi.on{border-color:var(--accent);background:var(--cr-bg)}
+      .ordf-kpi-v{font-family:var(--cond);font-size:24px;font-weight:800;line-height:1.05}
+      .ordf-kpi-l{font-size:9.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .ordf-kpi-s{font-size:10px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .ordf-badge{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid;white-space:nowrap}
+      .ordf-gg{font-weight:700;white-space:nowrap}
+      .ordf-act{display:flex;gap:4px;justify-content:flex-end}
+      .ordf-act .btn{padding:3px 8px;font-size:10px}
+      .ordf-tbl tr.done td{opacity:.5}
+      .ordf-tbl tbody tr:hover td{background:var(--bg3)}
+      .ordf-board{display:grid;grid-template-columns:repeat(5,minmax(220px,1fr));gap:10px;flex:1;min-height:0;overflow:auto;padding-bottom:10px}
+      .ordf-col{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md,10px);display:flex;flex-direction:column;min-height:0}
+      .ordf-col-h{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-family:var(--cond);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text2)}
+      .ordf-col-b{padding:8px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+      .ordf-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm,7px);padding:10px 11px;cursor:pointer}
+      .ordf-card:hover{border-color:var(--border2)}
+      .ordf-card-f{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .ordf-card-m{font-size:11px;color:var(--text2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .ordf-card-r{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:6px}
+      .ordf-empty{font-size:11px;color:var(--text3);text-align:center;padding:14px 4px}
+      #ordfFormOverlay .filter-input,#ordfFormOverlay .sel{max-width:none}
+      @media(max-width:1300px){.ordf-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    </style>
     <div class="proj-view" id="ordf-inner">
 
       <!-- Toolbar -->
@@ -2013,12 +2041,15 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           Nuovo ordine
         </button>
         <span class="tag-count" id="ordf-count" style="display:none"></span>
-        <input type="text" class="filter-input" id="ordf-search" placeholder="Cerca fornitore, cliente, conferma..." oninput="renderOrdfView()" style="display:none;max-width:220px">
-        <!-- Vista tabs -->
-        <div class="proj-view-tabs" id="ordf-view-tabs" style="display:none">
+        <input type="text" class="filter-input" id="ordf-search" placeholder="Cerca fornitore, cliente, conferma…" oninput="renderOrdfView()" style="display:none;max-width:240px">
+        <div class="proj-view-tabs" id="ordf-view-tabs" style="display:none;margin-left:auto">
           <button class="proj-vtab active" data-view="tabella" onclick="setOrdfView('tabella')">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><rect x="1" y="3" width="14" height="10" rx="1"/><line x1="1" y1="7" x2="15" y2="7"/><line x1="6" y1="3" x2="6" y2="13"/></svg>
-            Tabella
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><rect x="1" y="3" width="14" height="10" rx="1"/><line x1="1" y1="7" x2="15" y2="7"/></svg>
+            Elenco
+          </button>
+          <button class="proj-vtab" data-view="scadenzario" onclick="setOrdfView('scadenzario')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><rect x="1" y="2" width="4" height="12" rx="1"/><rect x="6" y="2" width="4" height="8" rx="1"/><rect x="11" y="2" width="4" height="10" rx="1"/></svg>
+            Scadenzario
           </button>
           <button class="proj-vtab" data-view="grafici" onclick="setOrdfView('grafici')">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M1 12l4-4 3 3 4-5 3 2"/></svg>
@@ -2027,15 +2058,17 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         </div>
       </div>
 
-      <!-- Vista TABELLA -->
+      <!-- KPI / filtri rapidi -->
+      <div class="ordf-kpis" id="ordf-kpis" style="display:none"></div>
+
+      <!-- Vista ELENCO -->
       <div id="ordf-tabella-view" style="display:none;flex:1;min-height:0;overflow:hidden;flex-direction:column">
-        <!-- Toolbar colonne: nascondi/mostra + ordina -->
-        <div id="ordf-col-toolbar" style="display:flex;gap:6px;align-items:center;flex-shrink:0;flex-wrap:wrap;padding:4px 0 6px">
-          <span style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Colonne:</span>
+        <div id="ordf-col-toolbar" style="display:flex;gap:6px;align-items:center;flex-shrink:0;flex-wrap:wrap;padding:0 0 6px">
+          <span style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.7px">Colonne</span>
           <div id="ordf-col-chips" style="display:flex;gap:4px;flex-wrap:wrap"></div>
           <select class="sel" id="ordf-sort-sel" onchange="ordfApplySort()" style="margin-left:auto;font-size:11px">
-            <option value="DataConsegna_asc">Data consegna ↑</option>
-            <option value="DataConsegna_desc">Data consegna ↓</option>
+            <option value="DataConsegna_asc">Consegna ↑</option>
+            <option value="DataConsegna_desc">Consegna ↓</option>
             <option value="Title_asc">Fornitore A-Z</option>
             <option value="Title_desc">Fornitore Z-A</option>
             <option value="ClienteRiferimento_asc">Cliente A-Z</option>
@@ -2045,9 +2078,9 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
             <option value="Stato_asc">Stato A-Z</option>
           </select>
         </div>
-        <div style="flex:1;overflow:hidden">
+        <div style="flex:1;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-md,10px);background:var(--bg2)">
           <div style="height:100%;overflow-y:auto;overflow-x:auto">
-            <table style="border-collapse:collapse;font-size:12px;min-width:100%" id="ordf-table">
+            <table class="ordf-tbl" style="border-collapse:collapse;font-size:12px;min-width:100%" id="ordf-table">
               <thead style="position:sticky;top:0;background:var(--bg2);z-index:2"><tr id="ordf-thead"></tr></thead>
               <tbody id="ordf-tbody"></tbody>
             </table>
@@ -2055,13 +2088,16 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         </div>
       </div>
 
+      <!-- Vista SCADENZARIO -->
+      <div id="ordf-scad-view" class="ordf-board" style="display:none"></div>
+
       <!-- Vista GRAFICI -->
-      <div id="ordf-grafici-view" style="display:none;flex:1;min-height:0;overflow-y:auto;padding:4px 0 14px">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="chart-panel"><h3>Ordini per fornitore (top 10)</h3><div class="chart-wrap" style="height:220px"><canvas id="chartOrdfFornitori"></canvas></div></div>
-          <div class="chart-panel"><h3>Distribuzione per stato</h3><div class="chart-wrap" style="height:220px"><canvas id="chartOrdfStato"></canvas></div></div>
-          <div class="chart-panel"><h3>Ordini per cliente (top 10)</h3><div class="chart-wrap" style="height:220px"><canvas id="chartOrdfClienti"></canvas></div></div>
-          <div class="chart-panel"><h3>Scadenze mensili</h3><div class="chart-wrap" style="height:220px"><canvas id="chartOrdfMesi"></canvas></div></div>
+      <div id="ordf-grafici-view" style="display:none;flex:1;min-height:0;overflow-y:auto;padding:0 0 14px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="chart-panel"><h3>Consegne previste — prossimi 6 mesi</h3><div class="chart-wrap" style="height:220px"><canvas id="chartOrdfMesi"></canvas></div></div>
+          <div class="chart-panel"><h3>Ordini per stato</h3><div class="chart-wrap" style="height:220px"><canvas id="chartOrdfStato"></canvas></div></div>
+          <div class="chart-panel"><h3>Fornitori con più ordini aperti</h3><div class="chart-wrap" style="height:220px"><canvas id="chartOrdfFornitori"></canvas></div></div>
+          <div class="chart-panel"><h3>Clienti con più ordini aperti</h3><div class="chart-wrap" style="height:220px"><canvas id="chartOrdfClienti"></canvas></div></div>
         </div>
       </div>
 
@@ -2332,6 +2368,10 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           </div>
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+          <button class="btn btn-danger" id="of-del-btn" onclick="eliminaOrdf()" style="display:none;margin-right:auto">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M3 4h10M6 4V2.5h4V4M4.5 4l.7 9.5h5.6L11.5 4"/></svg>
+            Elimina ordine
+          </button>
           <button class="btn" onclick="document.getElementById('ordfFormOverlay').classList.add('hidden')">Annulla</button>
           <button class="btn btn-primary" id="of-save-btn" onclick="saveOrdfForm()">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M13 2L6 9l-3-3"/></svg>
@@ -2347,7 +2387,57 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 
   <!-- ===== TICKET ASSISTENZA ===== -->
   <div id="view-ticket" class="content-view">
-    <div class="proj-view" style="gap:0">
+    <style>
+      /* ── Ticket: layout da helpdesk (usa i token del design system ANYMA) ── */
+      .tkt-wrap{gap:0}
+      .tkt-kpis{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;padding:10px 0 0;flex-shrink:0}
+      .tkt-kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md,10px);padding:10px 12px;cursor:pointer;transition:border-color .15s,background .15s;min-width:0}
+      .tkt-kpi:hover{border-color:var(--border2);background:var(--bg3)}
+      .tkt-kpi.on{border-color:var(--accent);background:var(--cr-bg)}
+      .tkt-kpi-v{font-family:var(--cond);font-size:24px;font-weight:800;line-height:1.05;color:var(--text)}
+      .tkt-kpi-l{font-size:9.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .tkt-kpi-s{font-size:10px;color:var(--text3);margin-top:1px}
+      .tkt-charts{display:grid;grid-template-columns:1fr 1.6fr 1.4fr;gap:8px;padding:8px 0 10px;flex-shrink:0}
+      .tkt-chart{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md,10px);padding:10px 12px;min-width:0}
+      .tkt-chart-t{font-family:var(--cond);font-size:10.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text2);margin-bottom:6px}
+      .tkt-chart-c{position:relative;height:130px}
+      .tkt-split{display:flex;flex:1;min-height:0;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-md,10px);background:var(--bg)}
+      .tkt-list-col{width:360px;min-width:300px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+      .tkt-item{padding:11px 14px 11px 12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;display:flex;gap:10px}
+      .tkt-item:hover{background:var(--bg3)}
+      .tkt-item.active{background:var(--cr-bg);box-shadow:inset 3px 0 0 var(--accent)}
+      .tkt-pdot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}
+      .tkt-item-b{flex:1;min-width:0}
+      .tkt-row{display:flex;justify-content:space-between;align-items:center;gap:6px}
+      .tkt-id{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--text3)}
+      .tkt-subj{font-size:12.5px;font-weight:600;color:var(--text);margin:3px 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .tkt-meta{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .tkt-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid;white-space:nowrap}
+      .tkt-age{font-size:10px;font-weight:700;color:var(--text3);white-space:nowrap}
+      .tkt-age.w{color:var(--amber)} .tkt-age.d{color:var(--red)}
+      .tkt-group{padding:6px 14px;font-family:var(--cond);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);background:var(--bg);border-bottom:1px solid var(--border)}
+      .tkt-d-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+      .tkt-d-title{font-size:19px;font-weight:700;color:var(--text);margin:4px 0 8px;line-height:1.3}
+      .tkt-steps{display:flex;gap:0;margin-bottom:16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md,10px);overflow:hidden}
+      .tkt-step{flex:1;padding:10px 6px;text-align:center;cursor:pointer;font-size:11px;font-weight:700;color:var(--text3);border-right:1px solid var(--border);transition:background .15s;position:relative}
+      .tkt-step:last-child{border-right:none}
+      .tkt-step:hover{background:var(--bg3);color:var(--text)}
+      .tkt-step .n{display:block;font-family:var(--cond);font-size:16px;font-weight:800;margin-bottom:2px}
+      .tkt-step.done{color:var(--text2)}
+      .tkt-step.cur{color:#fff}
+      .tkt-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:16px}
+      .tkt-cell{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm,7px);padding:10px 12px;min-width:0}
+      .tkt-cell-l{font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+      .tkt-cell-v{font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .tkt-sec-l{font-family:var(--cond);font-size:10.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text2);margin:0 0 8px}
+      .tkt-box{font-size:13px;color:var(--text);line-height:1.6;padding:14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm,7px);white-space:pre-wrap;margin-bottom:16px}
+      .tkt-box.note{background:rgba(245,166,35,.06);border-color:rgba(245,166,35,.25);color:var(--text2)}
+      #tkt-modal .filter-input,#tkt-modal .sel{max-width:none}
+      .btn-danger{background:var(--cr-bg);border-color:var(--accent);color:var(--brand-text,#e74c3c)}
+      .btn-danger:hover{background:var(--accent);color:#fff}
+      @media(max-width:1300px){.tkt-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}.tkt-charts{grid-template-columns:1fr 1fr}.tkt-charts .tkt-chart:last-child{display:none}}
+    </style>
+    <div class="proj-view tkt-wrap">
 
       <!-- Toolbar -->
       <div class="proj-top">
@@ -2360,44 +2450,57 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>
           Nuovo ticket
         </button>
-        <button class="btn btn-sm" id="btn-tkt-leggi-email" onclick="leggiEmailTicket()" style="background:rgba(0,100,200,.1);color:#0064c8;border-color:rgba(0,100,200,.3)">
+        <button class="btn btn-sm" id="btn-tkt-leggi-email" onclick="leggiEmailTicket()">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1"/><path d="M1 5l7 5 7-5"/></svg>
-          Leggi Email <span id="tkt-btn-email-lbl">service@</span>
+          Leggi email <span id="tkt-btn-email-lbl">service@</span>
+        </button>
+        <button class="btn btn-sm" id="btn-tkt-stats" onclick="tktToggleStats()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14h12M4 11V7M8 11V3M12 11V8"/></svg>
+          Statistiche
         </button>
         <span id="tkt-count" style="display:none;font-size:11px;color:var(--text3);margin-left:4px"></span>
         <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
-          <select class="sel" id="tkt-filtro-stato" onchange="renderTicket()" style="font-size:11px">
+          <select class="sel" id="tkt-filtro-stato" onchange="tktSetKpiFilter(null,true)" style="font-size:11px">
             <option value="">Tutti gli stati</option>
+            <option value="_aperti">Solo aperti</option>
             <option value="Nuovo">Nuovo</option>
             <option value="In lavorazione">In lavorazione</option>
             <option value="Attesa cliente">Attesa cliente</option>
             <option value="Risolto">Risolto</option>
             <option value="Chiuso">Chiuso</option>
           </select>
-          <select class="sel" id="tkt-filtro-priorita" onchange="renderTicket()" style="font-size:11px">
+          <select class="sel" id="tkt-filtro-priorita" onchange="tktSetKpiFilter(null,true)" style="font-size:11px">
             <option value="">Tutte le priorità</option>
             <option value="Alta">Alta</option>
             <option value="Media">Media</option>
             <option value="Bassa">Bassa</option>
           </select>
-          <input type="text" class="filter-input" id="tkt-search" placeholder="Cerca ticket..." oninput="renderTicket()" style="max-width:180px">
+          <input type="text" class="filter-input" id="tkt-search" placeholder="Cerca ID, cliente, oggetto…" oninput="renderTicket()" style="max-width:200px">
         </div>
       </div>
 
+      <!-- KPI -->
+      <div class="tkt-kpis" id="tkt-kpis"></div>
+
+      <!-- Grafici -->
+      <div class="tkt-charts" id="tkt-charts">
+        <div class="tkt-chart"><div class="tkt-chart-t">Per stato</div><div class="tkt-chart-c"><canvas id="tkt-ch-stato"></canvas></div></div>
+        <div class="tkt-chart"><div class="tkt-chart-t">Aperti / chiusi — ultimi 6 mesi</div><div class="tkt-chart-c"><canvas id="tkt-ch-mesi"></canvas></div></div>
+        <div class="tkt-chart"><div class="tkt-chart-t">Clienti con più ticket aperti</div><div class="tkt-chart-c"><canvas id="tkt-ch-clienti"></canvas></div></div>
+      </div>
+
       <!-- Split: lista | dettaglio -->
-      <div style="display:flex;flex:1;min-height:0;overflow:hidden">
-        <!-- Lista ticket -->
-        <div style="width:340px;min-width:280px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
+      <div class="tkt-split">
+        <div class="tkt-list-col">
           <div class="list-header"><span>Ticket</span><span id="tkt-list-count" style="color:var(--accent);font-size:10px"></span></div>
           <div class="list-scroll" id="tkt-list"></div>
         </div>
-        <!-- Dettaglio ticket -->
         <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
           <div id="tkt-empty" class="detail-empty">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5h18a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H8l-4 3v-3H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/></svg>
             Seleziona un ticket
           </div>
-          <div id="tkt-detail" style="display:none;flex:1;overflow-y:auto;padding:24px"></div>
+          <div id="tkt-detail" style="display:none;flex:1;overflow-y:auto;padding:22px 24px"></div>
         </div>
       </div>
     </div>
@@ -2475,7 +2578,17 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           <textarea id="tkt-f-note" class="filter-input" rows="2" style="width:100%;resize:vertical;font-family:var(--font);box-sizing:border-box" placeholder="Note visibili solo ai tecnici..."></textarea>
         </div>
 
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+        <!-- RT collegato -->
+        <div>
+          <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Rapportino collegato</label>
+          <input type="text" id="tkt-f-rt" class="filter-input" style="width:100%;box-sizing:border-box;font-family:var(--mono)" placeholder="es. RT_202610221005">
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;align-items:center">
+          <button class="btn btn-danger" id="tkt-modal-del-btn" onclick="eliminaTicket()" style="display:none;margin-right:auto">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M3 4h10M6 4V2.5h4V4M4.5 4l.7 9.5h5.6L11.5 4"/></svg>
+            Elimina ticket
+          </button>
           <button class="btn" onclick="chiudiTktModal()">Annulla</button>
           <button class="btn btn-primary" id="tkt-modal-save-btn" onclick="salvaTktModal()">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M13 2L6 9l-3-3"/></svg>
@@ -7488,7 +7601,7 @@ async function comDel(id){
 var _ordfData        = [];   // raw fields array
 var _ordfFiltered    = [];   // dopo filtri
 var _ordfCurrentView = 'tabella';
-var _ordfStatoFilter = '';
+var _ordfStatoFilter = 'aperti';
 var _ordfSortKey     = 'DataConsegna';
 var _ordfSortAsc     = true;
 var _ordfEditId      = null;
@@ -7497,7 +7610,8 @@ var _ordfCharts      = {};
 // Colonne fisse (con label, key, visibilità default)
 const ORDF_COLS = [
   {key:'DataConsegna',         label:'Consegna',    visible:true,  type:'date'},
-  {key:'GG',                   label:'GG',          visible:true,  type:'gg'},
+  {key:'GG',                   label:'Scadenza',    visible:true,  type:'gg'},
+  {key:'Stato',                label:'Stato',       visible:true,  type:'stato'},
   {key:'Title',                label:'Fornitore',   visible:true,  type:'text'},
   {key:'ClienteRiferimento',   label:'Cliente',     visible:true,  type:'text'},
   {key:'N_x002e_Conferma',     label:'N.Conf.',     visible:true,  type:'text'},
@@ -7507,34 +7621,126 @@ const ORDF_COLS = [
 ];
 
 const ORDF_STATO_COLORS = {
-  'In Ordine':   {bg:'rgba(56,189,248,.15)', color:'#38bdf8'},
-  'In Consegna': {bg:'rgba(245,166,35,.15)', color:'#f39c12'},
-  'In Ritardo':  {bg:'rgba(240,92,92,.15)',  color:'#e74c3c'},
-  'Consegnato':  {bg:'rgba(62,207,142,.15)', color:'#2ecc71'},
+  'In Ordine':   {bg:'rgba(184,168,152,.15)', color:'#b8a898'},
+  'In Consegna': {bg:'rgba(167,139,250,.15)', color:'#a78bfa'},
+  'In Ritardo':  {bg:'rgba(240,92,92,.15)',   color:'#f05c5c'},
+  'Consegnato':  {bg:'rgba(62,207,142,.15)',  color:'#3ecf8e'},
 };
 
 // Colore riga in base a GG (giorni alla consegna, negativo = futuro)
 // GG < -4  → azzurro (>4 gg)  GG -4..-1 → verde (0-4 gg)
 // GG 0..3  → giallo            GG > 3    → rosso (scaduto)
+// ── Stato effettivo e giorni calcolati alla data di oggi ──
+function ordfCalcGG(d){
+  if(!d) return null;
+  var p=d.split('-'); if(p.length<3) return null;
+  var c=new Date(+p[0],+p[1]-1,+p[2]), t=new Date(); t.setHours(0,0,0,0);
+  return Math.round((t-c)/86400000);   // positivo = consegna superata
+}
+function ordfStatoEff(r){
+  if(r.stato==='Consegnato') return 'Consegnato';
+  var g=parseInt(r.gg); if(!isNaN(g)&&g>0) return 'In Ritardo';
+  return r.stato&&r.stato!=='In Ritardo'?r.stato:'In Ordine';
+}
 function ordfRowColor(gg, stato) {
-  if(stato === 'Consegnato') return '';
-  if(gg === null || gg === undefined || gg === '') return '';
-  var g = parseInt(gg);
-  if(isNaN(g)) return '';
-  if(g < -3)  return 'rgba(56,189,248,.06)';   // azzurro - >3 gg
-  if(g <= 0)  return 'rgba(62,207,142,.08)';   // verde - da -3 a oggi
-  if(g <= 3)  return 'rgba(245,166,35,.10)';   // giallo - 1-3 gg scaduto
-  return 'rgba(240,92,92,.12)';                // rosso - >3 gg scaduto
+  if(stato==='Consegnato') return '';
+  var g=parseInt(gg); if(isNaN(g)) return '';
+  if(g>0) return 'rgba(240,92,92,.10)';
+  if(g>=-7) return 'rgba(245,166,35,.08)';
+  return '';
 }
 function ordfGGLabel(gg, stato) {
-  if(stato === 'Consegnato') return '<span style="color:var(--green);font-weight:600">✓</span>';
-  if(gg === null || gg === '' || gg === undefined) return '-';
-  var g = parseInt(gg);
-  if(isNaN(g)) return gg;
-  // g negativo = giorni mancanti alla consegna, g positivo = già scaduto
-  var color = g < -3 ? '#38bdf8' : g <= 0 ? '#2ecc71' : g <= 3 ? '#f39c12' : '#e74c3c';
-  var label = g < 0 ? '-'+(-g)+' gg' : g === 0 ? '0 gg' : '+'+g+' gg';
-  return '<span style="font-weight:700;color:'+color+'">'+label+'</span>';
+  if(stato==='Consegnato') return '<span class="ordf-gg" style="color:var(--green)">✓ consegnato</span>';
+  var g=parseInt(gg); if(isNaN(g)) return '<span style="color:var(--text3)">—</span>';
+  var col=g>0?'var(--red)':(g>=-7?'var(--amber)':'var(--text2)');
+  var lbl=g>0?(g+' g di ritardo'):(g===0?'oggi':'tra '+(-g)+' g');
+  return '<span class="ordf-gg" style="color:'+col+'">'+lbl+'</span>';
+}
+function ordfBadge(st){
+  var c=(ORDF_STATO_COLORS[st]||{color:'#9a8878'}).color;
+  return '<span class="ordf-badge" style="background:'+c+'1f;border-color:'+c+'55;color:'+c+'">'+escHtml(st)+'</span>';
+}
+function ordfMatchQuick(r,k){
+  var st=ordfStatoEff(r), g=parseInt(r.gg);
+  if(k==='aperti') return st!=='Consegnato';
+  if(k==='ritardo') return st==='In Ritardo';
+  if(k==='settimana') return st!=='Consegnato'&&!isNaN(g)&&g<=0&&g>=-7;
+  if(k==='nodata') return st!=='Consegnato'&&!r.dataConsegna;
+  if(k==='consegnati') return st==='Consegnato';
+  return true;
+}
+function setOrdfQuick(k){ _ordfStatoFilter=(_ordfStatoFilter===k?'':k); renderOrdfView(); }
+function ordfRenderKpis(){
+  var box=document.getElementById('ordf-kpis'); if(!box) return;
+  var D=_ordfData, ap=D.filter(function(r){return ordfMatchQuick(r,'aperti');});
+  var forn={}; ap.forEach(function(r){forn[r.title]=1;});
+  var K=[
+    {k:'aperti',v:ap.length,l:'Da consegnare',s:'ordini aperti',c:'var(--text)'},
+    {k:'ritardo',v:D.filter(function(r){return ordfMatchQuick(r,'ritardo');}).length,l:'In ritardo',s:'consegna superata',c:'var(--red)'},
+    {k:'settimana',v:D.filter(function(r){return ordfMatchQuick(r,'settimana');}).length,l:'Entro 7 giorni',s:'da sollecitare/ricevere',c:'var(--amber)'},
+    {k:'nodata',v:D.filter(function(r){return ordfMatchQuick(r,'nodata');}).length,l:'Senza data',s:'manca la consegna',c:'var(--text2)'},
+    {k:'consegnati',v:D.filter(function(r){return ordfMatchQuick(r,'consegnati');}).length,l:'Consegnati',s:'storico',c:'var(--green)'},
+    {k:null,v:Object.keys(forn).length,l:'Fornitori attivi',s:'con ordini aperti',c:'var(--text)'}
+  ];
+  box.innerHTML=K.map(function(x){
+    return '<div class="ordf-kpi'+(x.k?' click':'')+(x.k&&_ordfStatoFilter===x.k?' on':'')+'"'+(x.k?' onclick="setOrdfQuick(\''+x.k+'\')"':'')+'>'+
+      '<div class="ordf-kpi-v" style="color:'+x.c+'">'+x.v+'</div><div class="ordf-kpi-l">'+x.l+'</div><div class="ordf-kpi-s">'+x.s+'</div></div>';
+  }).join('');
+}
+async function ordfPatch(id,fields){
+  var listId=decodeURIComponent(getSpOrdfId()).replace(/[{}]/g,'');
+  var tok=await anGetToken(); if(!tok) throw new Error('Token scaduto');
+  var r=await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+listId+'/items/'+id+'/fields',
+    {method:'PATCH',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(fields)});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+}
+async function ordfSegnaConsegnato(id,ev){
+  if(ev) ev.stopPropagation();
+  var r=_ordfData.find(function(x){return x.id===id;}); if(!r) return;
+  try{
+    await ordfPatch(id,{Stato:'Consegnato'});
+    r.stato='Consegnato'; r.Stato='Consegnato';
+    showToast('✓ '+r.title+': consegnato');
+    renderOrdfView();
+  }catch(e){ showToast('Errore aggiornamento: '+e.message,'err'); }
+}
+async function eliminaOrdf(){
+  var id=_ordfEditId; if(!id) return;
+  var r=_ordfData.find(function(x){return x.id===id;});
+  if(!confirm('Eliminare l\'ordine '+(r?r.title+(r.conferma?' (conf. '+r.conferma+')':''):id)+'?\n\nVerrà rimosso dalla lista su SharePoint.')) return;
+  var listId=decodeURIComponent(getSpOrdfId()).replace(/[{}]/g,'');
+  try{
+    var tok=await anGetToken(); if(!tok) throw new Error('Token scaduto');
+    var resp=await fetch(GRAPH_BASE+'/sites/'+_spSiteId+'/lists/'+listId+'/items/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+tok}});
+    if(!resp.ok&&resp.status!==204) throw new Error('HTTP '+resp.status);
+    document.getElementById('ordfFormOverlay').classList.add('hidden');
+    showToast('Ordine eliminato');
+    await loadOrdiniF();
+  }catch(e){ showToast('Errore eliminazione: '+e.message,'err'); }
+}
+function renderOrdfScadenzario(){
+  var box=document.getElementById('ordf-scad-view'); if(!box) return;
+  var aperti=_ordfFiltered.filter(function(r){return ordfStatoEff(r)!=='Consegnato';});
+  var B=[
+    {t:'In ritardo',c:'var(--red)',f:function(g){return g!==null&&g>0;}},
+    {t:'Entro 7 giorni',c:'var(--amber)',f:function(g){return g!==null&&g<=0&&g>=-7;}},
+    {t:'Entro 3 settimane',c:'var(--text)',f:function(g){return g!==null&&g<-7&&g>=-21;}},
+    {t:'Più avanti',c:'var(--text2)',f:function(g){return g!==null&&g<-21;}},
+    {t:'Senza data',c:'var(--text3)',f:function(g){return g===null;}}
+  ];
+  box.innerHTML=B.map(function(b){
+    var items=aperti.filter(function(r){var g=parseInt(r.gg);return b.f(isNaN(g)?null:g);})
+      .sort(function(a,c){return (a.dataConsegna||'9')<(c.dataConsegna||'9')?-1:1;});
+    return '<div class="ordf-col"><div class="ordf-col-h"><span style="color:'+b.c+'">'+b.t+'</span><span class="tag-count">'+items.length+'</span></div><div class="ordf-col-b">'+
+      (items.map(function(r){
+        return '<div class="ordf-card" onclick="openOrdfForm(\''+r.id+'\')">'+
+          '<div class="ordf-card-f" title="'+escHtml(r.title)+'">'+escHtml(r.title)+'</div>'+
+          '<div class="ordf-card-m">'+escHtml(r.cliente||'— nessun cliente')+(r.conferma?' · conf. '+escHtml(r.conferma):'')+'</div>'+
+          (r.nota2?'<div class="ordf-card-m" style="color:var(--text3)">'+escHtml(r.nota2)+'</div>':'')+
+          '<div class="ordf-card-r"><span style="font-size:11px;color:var(--text2)">'+(r.dataConsegna?fmtDate(r.dataConsegna):'—')+' · '+ordfGGLabel(r.gg,r.stato)+'</span>'+
+          '<button class="btn btn-sm" style="padding:2px 7px;font-size:10px" title="Segna come consegnato" onclick="ordfSegnaConsegnato(\''+r.id+'\',event)">✓</button></div></div>';
+      }).join('')||'<div class="ordf-empty">Nessun ordine</div>')+'</div></div>';
+  }).join('');
 }
 
 function ordfSetStatus(st, msg) {
@@ -7643,7 +7849,8 @@ async function loadOrdiniF() {
       };
     });
 
-    document.getElementById('cnt-ordini-sp').textContent = _ordfData.length;
+    _ordfData.forEach(function(r){ var g=ordfCalcGG(r.dataConsegna); if(g!==null){ r.gg=g; r.GG=g; } });
+    document.getElementById('cnt-ordini-sp').textContent = _ordfData.filter(function(r){return ordfStatoEff(r)!=='Consegnato';}).length;
     ordfSetStatus('ok', _ordfData.length+' ordini · '+new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}));
     document.getElementById('btn-ordf-load').textContent = '↻ Aggiorna';
     document.getElementById('btn-ordf-load').disabled = false;
@@ -7652,6 +7859,7 @@ async function loadOrdiniF() {
     document.getElementById('ordf-search').style.display = '';
     document.getElementById('ordf-view-tabs').style.display = '';
     document.getElementById('btn-ordf-new').style.display = '';
+    document.getElementById('ordf-kpis').style.display = '';
 
     // Build column chips
     buildOrdfColChips();
@@ -7684,35 +7892,34 @@ function toggleOrdfCol(i) {
 
 function renderOrdfView() {
   var q = (document.getElementById('ordf-search')?.value||'').toLowerCase();
-  _ordfFiltered = _ordfData.filter(r => {
-    if(q && !Object.values(r).some(v => String(v||'').toLowerCase().includes(q))) return false;
+  _ordfFiltered = _ordfData.filter(function(r){
+    if(_ordfStatoFilter && !ordfMatchQuick(r,_ordfStatoFilter)) return false;
+    if(q && !Object.values(r).some(function(v){return String(v||'').toLowerCase().includes(q);})) return false;
     return true;
   });
-
-  // Ordina
-  _ordfFiltered.sort((a,b) => {
+  _ordfFiltered.sort(function(a,b){
     var va = a[_ordfSortKey] !== undefined ? a[_ordfSortKey] : '';
     var vb = b[_ordfSortKey] !== undefined ? b[_ordfSortKey] : '';
-    // Numerico per GG
-    if(_ordfSortKey === 'GG') { var na=parseInt(va); var nb=parseInt(vb); va=isNaN(na)?9999:na; vb=isNaN(nb)?9999:nb; return _ordfSortAsc ? va-vb : vb-va; }
+    if(_ordfSortKey === 'GG') { var na=parseInt(va), nb=parseInt(vb); va=isNaN(na)?-9999:na; vb=isNaN(nb)?-9999:nb; return _ordfSortAsc ? va-vb : vb-va; }
+    if(_ordfSortKey === 'DataConsegna') { va=va||'9999'; vb=vb||'9999'; }
+    if(_ordfSortKey === 'Stato') { va=ordfStatoEff(a); vb=ordfStatoEff(b); }
     va = String(va||''); vb = String(vb||'');
     return _ordfSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
   });
-
   document.getElementById('ordf-count').textContent = _ordfFiltered.length + ' ordini';
-
-  // Nascondi viste
+  ordfRenderKpis();
   document.getElementById('ordf-tabella-view').style.display = 'none';
   document.getElementById('ordf-grafici-view').style.display = 'none';
-  document.getElementById('ordf-col-toolbar').style.display  = 'none';
-
-  if(_ordfCurrentView === 'tabella') {
-    document.getElementById('ordf-tabella-view').style.cssText = 'display:flex;flex:1;min-height:0;overflow:hidden;flex-direction:column';
-    document.getElementById('ordf-col-toolbar').style.display  = '';
-    renderOrdfTabella();
-  } else {
+  document.getElementById('ordf-scad-view').style.display = 'none';
+  if(_ordfCurrentView === 'scadenzario') {
+    document.getElementById('ordf-scad-view').style.display = 'grid';
+    renderOrdfScadenzario();
+  } else if(_ordfCurrentView === 'grafici') {
     document.getElementById('ordf-grafici-view').style.display = '';
     renderOrdfGrafici();
+  } else {
+    document.getElementById('ordf-tabella-view').style.cssText = 'display:flex;flex:1;min-height:0;overflow:hidden;flex-direction:column';
+    renderOrdfTabella();
   }
 }
 
@@ -7733,7 +7940,7 @@ function renderOrdfTabella() {
       c.label + (_ordfSortKey===c.key ? (_ordfSortAsc?' ↑':' ↓'):'') +
       ' <span style="font-size:9px;opacity:.35;font-weight:400">⠿</span>' +
       '</th>';
-  }).join('') + '<th style="'+thStyle+';width:36px;cursor:default"></th>';
+  }).join('') + '<th style="'+thStyle+';width:150px;cursor:default"></th>';
 
   document.getElementById('ordf-tbody').innerHTML = _ordfFiltered.map(r => {
     var rowBg = ordfRowColor(r.gg, r.stato);
@@ -7743,17 +7950,17 @@ function renderOrdfTabella() {
       var cell = '';
       if(c.type==='date') cell = val ? fmtDate(val) : '-';
       else if(c.type==='gg') cell = ordfGGLabel(r.gg, r.stato);
-      else if(c.type==='stato') {
-        var sc = ORDF_STATO_COLORS[val] || {bg:'rgba(148,152,168,.12)',color:'var(--text3)'};
-        cell = val ? '<span style="background:'+sc.bg+';color:'+sc.color+';border-radius:20px;font-size:9px;font-weight:700;padding:2px 8px;white-space:nowrap">'+escHtml(val)+'</span>' : '-';
-      }
+      else if(c.type==='stato') cell = ordfBadge(ordfStatoEff(r));
       else cell = escHtml(String(val||'-'));
-      return '<td style="padding:7px 12px;font-size:14px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+escHtml(String(val||''))+'">'+cell+'</td>';
+      var tdStyle = c.key==='Title' ? 'font-weight:700;color:var(--text);' : (c.key==='ClienteRiferimento'||c.type==='date' ? 'color:var(--text2);' : '');
+      return '<td style="padding:9px 12px;font-size:13px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'+tdStyle+'" title="'+escHtml(String(val||''))+'">'+cell+'</td>';
     }).join('');
-    return '<tr style="'+rowStyle+'border-bottom:1px solid var(--border);transition:filter .1s" ' +
-      'onmouseenter="this.style.filter=\'brightness(1.15)\'" onmouseleave="this.style.filter=\'\'">' +
+    var done = ordfStatoEff(r)==='Consegnato';
+    return '<tr class="'+(done?'done':'')+'" style="'+rowStyle+'border-bottom:1px solid var(--border)">' +
       cells +
-      '<td style="padding:4px 8px;text-align:center"><button class="btn btn-sm" style="padding:3px 7px;font-size:10px" onclick="openOrdfForm(\''+r.id+'\')">✎</button></td>' +
+      '<td style="padding:4px 10px"><div class="ordf-act">' +
+        (done?'':'<button class="btn btn-sm" title="Segna come consegnato" onclick="ordfSegnaConsegnato(\''+r.id+'\',event)">✓ Consegnato</button>') +
+        '<button class="btn btn-sm" title="Modifica" onclick="openOrdfForm(\''+r.id+'\')">✎</button></div></td>' +
     '</tr>';
   }).join('') || '<tr><td colspan="'+(visCols.length+1)+'" style="padding:20px;text-align:center;color:var(--text3)">Nessun risultato</td></tr>';
 }
@@ -7766,48 +7973,44 @@ function ordfSortBy(key) {
 }
 
 function renderOrdfGrafici() {
-  var data = _ordfFiltered;
-
-  // 1. Per fornitore
-  var byF={}; data.forEach(r=>{byF[r.title]=(byF[r.title]||0)+1;});
-  var topF=Object.entries(byF).sort((a,b)=>b[1]-a[1]).slice(0,10);
-
-  // 2. Per stato
-  var byS={}; data.forEach(r=>{byS[r.stato||'?']=(byS[r.stato||'?']||0)+1;});
-
-  // 3. Per cliente
-  var byC={}; data.forEach(r=>{byC[r.cliente||'(nessuno)']=(byC[r.cliente||'(nessuno)']||0)+1;});
-  var topC=Object.entries(byC).sort((a,b)=>b[1]-a[1]).slice(0,10);
-
-  // 4. Scadenze mensili
-  var byM={}; data.forEach(r=>{if(r.dataConsegna){var m=r.dataConsegna.substring(0,7);byM[m]=(byM[m]||0)+1;}});
-  var mesi=Object.keys(byM).sort();
-
-  Object.values(_ordfCharts).forEach(c=>{try{c.destroy();}catch(e){}});
+  var data=_ordfData, ap=data.filter(function(r){return ordfStatoEff(r)!=='Consegnato';});
+  Object.values(_ordfCharts).forEach(function(c){try{c.destroy();}catch(e){}});
   _ordfCharts={};
-
-  var barOpts = {responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-    scales:{x:{ticks:{color:'#b8a898',font:{size:10},maxRotation:35},grid:{color:'rgba(255,255,255,.04)'}},
-            y:{ticks:{color:'#b8a898',font:{size:10},stepSize:1},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}};
-  var dOpts = {responsive:true,maintainAspectRatio:false,cutout:'60%',
-    plugins:{legend:{position:'bottom',labels:{color:'#b8a898',font:{size:10},padding:8,boxWidth:9,boxHeight:9}}}};
-
-  var c1=document.getElementById('chartOrdfFornitori');
-  if(c1) _ordfCharts.f=new Chart(c1.getContext('2d'),{type:'bar',
-    data:{labels:topF.map(e=>e[0]),datasets:[{data:topF.map(e=>e[1]),backgroundColor:'rgba(56,189,248,.7)',borderColor:'#38bdf8',borderWidth:1,borderRadius:4}]},options:barOpts});
-
-  var statoColors=Object.values(ORDF_STATO_COLORS).map(s=>s.bg.replace('.15','.8'));
+  if(typeof Chart==='undefined') return;
+  var cs=getComputedStyle(document.documentElement);
+  var tx=(cs.getPropertyValue('--ink-3')||'').trim()||'#9a8878', grid='rgba(255,255,255,.06)';
+  var brand=(cs.getPropertyValue('--brand')||'').trim()||'#c0392b';
+  var scal={x:{ticks:{color:tx,font:{size:10}},grid:{display:false}},y:{beginAtZero:true,ticks:{color:tx,font:{size:10},precision:0},grid:{color:grid}}};
+  var hscal={x:{beginAtZero:true,ticks:{color:tx,font:{size:10},precision:0},grid:{color:grid}},y:{ticks:{color:tx,font:{size:10}},grid:{display:false}}};
+  var MESI=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  // 1. consegne previste: ritardi + prossimi 6 mesi
+  var lab=['In ritardo'], val=[ap.filter(function(r){return parseInt(r.gg)>0;}).length], col=[ORDF_STATO_COLORS['In Ritardo'].color];
+  var now=new Date();
+  for(var i=0;i<6;i++){
+    var d=new Date(now.getFullYear(),now.getMonth()+i,1), k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    lab.push(MESI[d.getMonth()]+(d.getMonth()===0||i===0?' '+String(d.getFullYear()).slice(2):''));
+    val.push(ap.filter(function(r){return (r.dataConsegna||'').substring(0,7)===k&&!(parseInt(r.gg)>0);}).length);
+    col.push(brand);
+  }
+  var c1=document.getElementById('chartOrdfMesi');
+  if(c1) _ordfCharts.m=new Chart(c1,{type:'bar',data:{labels:lab,datasets:[{data:val,backgroundColor:col,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:scal}});
+  // 2. per stato effettivo
+  var stati=['In Ordine','In Consegna','In Ritardo','Consegnato'];
   var c2=document.getElementById('chartOrdfStato');
-  if(c2) _ordfCharts.s=new Chart(c2.getContext('2d'),{type:'doughnut',
-    data:{labels:Object.keys(byS),datasets:[{data:Object.values(byS),backgroundColor:Object.keys(byS).map(s=>(ORDF_STATO_COLORS[s]||{bg:'rgba(148,152,168,.8)'}).bg.replace('.15','.8')),borderColor:'#0d0d0d',borderWidth:3}]},options:dOpts});
-
-  var c3=document.getElementById('chartOrdfClienti');
-  if(c3) _ordfCharts.c=new Chart(c3.getContext('2d'),{type:'bar',
-    data:{labels:topC.map(e=>e[0]),datasets:[{data:topC.map(e=>e[1]),backgroundColor:'rgba(192,57,43,.7)',borderColor:'#c0392b',borderWidth:1,borderRadius:4}]},options:barOpts});
-
-  var c4=document.getElementById('chartOrdfMesi');
-  if(c4) _ordfCharts.m=new Chart(c4.getContext('2d'),{type:'bar',
-    data:{labels:mesi.map(m=>{var p=m.split('-');return p[1]+'/'+p[0];}),datasets:[{data:mesi.map(m=>byM[m]),backgroundColor:'rgba(62,207,142,.7)',borderColor:'#2ecc71',borderWidth:1,borderRadius:4}]},options:barOpts});
+  if(c2) _ordfCharts.s=new Chart(c2,{type:'doughnut',
+    data:{labels:stati,datasets:[{data:stati.map(function(s){return data.filter(function(r){return ordfStatoEff(r)===s;}).length;}),backgroundColor:stati.map(function(s){return ORDF_STATO_COLORS[s].color;}),borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{color:tx,font:{size:10},boxWidth:9,padding:8}}}}});
+  // 3-4. top fornitori / clienti con ordini aperti
+  function top(key,canvas,slot){
+    var m={}; ap.forEach(function(r){var k=r[key]||'(nessuno)'; m[k]=(m[k]||0)+1;});
+    var t=Object.keys(m).sort(function(a,b){return m[b]-m[a];}).slice(0,8);
+    var el=document.getElementById(canvas);
+    if(el) _ordfCharts[slot]=new Chart(el,{type:'bar',data:{labels:t.map(function(x){return x.length>24?x.substring(0,23)+'…':x;}),datasets:[{data:t.map(function(x){return m[x];}),backgroundColor:brand,borderRadius:4}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:hscal}});
+  }
+  top('title','chartOrdfFornitori','f');
+  top('cliente','chartOrdfClienti','c');
 }
 
 /* -- Form aggiunta/modifica ordine -- */
@@ -7824,6 +8027,7 @@ function openOrdfForm(id) {
   document.getElementById('of-nota2').value         = r ? r.nota2 : '';
   document.getElementById('of-note2').value         = r ? r.note2 : '';
   document.getElementById('of-error').style.display = 'none';
+  document.getElementById('of-del-btn').style.display = r ? '' : 'none';
 
   // Imposta cliente: usa clienteId dall'ordine se disponibile
   var clienteName = r ? (r.cliente||'') : '';
@@ -7872,8 +8076,8 @@ function ofFilterClienti(){
   var lista=_spClienti.filter(c=>!q||c.name.toLowerCase().includes(q));
   var dd=document.getElementById('of-cliente-dd');
   dd.innerHTML=lista.length?lista.map(c=>
-    '<div onclick="ofSelCliente('+c.id+',\''+c.name.replace(/'/g,"\\'")+'\')"+' +
-    '" style="padding:7px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border)" '+
+    '<div onmousedown="ofSelCliente('+c.id+',this.dataset.n)" data-n="'+escHtml(c.name)+'"'+
+    ' style="padding:7px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border)" '+
     'onmouseenter="this.style.background=\'var(--bg4)\'" onmouseleave="this.style.background=\'\'">' +
     escHtml(c.name)+'</div>'
   ).join(''):'<div style="padding:8px 12px;font-size:11px;color:var(--text3)">Nessun risultato</div>';
@@ -10038,15 +10242,6 @@ function generateTktId() {
   return 'TKT_' + dd + '_' + rnd;
 }
 
-function tktStatoColor(s) {
-  var m = {'Nuovo':'#e74c3c','In lavorazione':'#e67e22','Attesa cliente':'#8e44ad','Risolto':'#27ae60','Chiuso':'#7f8c8d'};
-  return m[s]||'#7f8c8d';
-}
-
-function tktPriorColor(p) {
-  return p==='Alta'?'#e74c3c': p==='Bassa'?'#27ae60':'#e67e22';
-}
-
 async function loadTicket() {
   var dot=document.getElementById('tkt-dot'), stxt=document.getElementById('tkt-status-txt');
   if(dot) dot.style.background='#e67e22';
@@ -10083,37 +10278,6 @@ async function loadTicket() {
   }
 }
 
-function renderTicket() {
-  var list=document.getElementById('tkt-list');
-  if(!list||!_tktData) return;
-  var filtroStato=(document.getElementById('tkt-filtro-stato')||{}).value||'';
-  var filtroPrior=(document.getElementById('tkt-filtro-priorita')||{}).value||'';
-  var search=((document.getElementById('tkt-search')||{}).value||'').toLowerCase();
-  var filtered=_tktData.filter(function(t){
-    if(filtroStato && t.Stato!==filtroStato) return false;
-    if(filtroPrior && t.Priorita!==filtroPrior) return false;
-    if(search){var hay=(t.Title||'')+(t.Cliente||'')+(t.Oggetto||''); if(hay.toLowerCase().indexOf(search)<0) return false;}
-    return true;
-  });
-  var cnt=document.getElementById('tkt-list-count');
-  if(cnt) cnt.textContent=filtered.length+' ticket';
-  list.innerHTML=filtered.map(function(t){
-    var sc=tktStatoColor(t.Stato||''), pc=tktPriorColor(t.Priorita||'Media');
-    var dataStr=t.DataApertura?new Date(t.DataApertura).toLocaleDateString('it-IT'):'';
-    var isSel=_tktSel && _tktSel.id===t.id;
-    return '<div class="list-item'+(isSel?' active':'')+'" onclick="selezionaTicket(\''+t.id+'\')" style="padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s">'+
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">'+
-      '<div style="font-size:10px;font-weight:700;color:var(--accent);font-family:monospace">'+(t.Title||'')+'</div>'+
-      '<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:'+sc+'22;color:'+sc+';white-space:nowrap">'+(t.Stato||'')+'</span></div>'+
-      '<div style="font-size:12px;font-weight:600;color:var(--text);margin:3px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(t.Oggetto||'')+'</div>'+
-      '<div style="display:flex;justify-content:space-between;align-items:center">'+
-      '<span style="font-size:11px;color:var(--text2)">'+(t.Cliente||'')+'</span>'+
-      '<div style="display:flex;gap:5px;align-items:center">'+
-      '<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:20px;background:'+pc+'22;color:'+pc+'">'+(t.Priorita||'')+'</span>'+
-      '<span style="font-size:10px;color:var(--text3)">'+dataStr+'</span></div></div></div>';
-  }).join('');
-}
-
 function selezionaTicket(id) {
   if(!_tktData) return;
   var t=_tktData.find(function(x){return x.id===id;});
@@ -10123,44 +10287,220 @@ function selezionaTicket(id) {
   renderTktDetail(t);
 }
 
+var TKT_STATI=['Nuovo','In lavorazione','Attesa cliente','Risolto','Chiuso'];
+var _tktKpi=null, _tktCharts={};
+function tktStatoColor(s) {
+  var m = {'Nuovo':'#06b6d4','In lavorazione':'#f5a623','Attesa cliente':'#a78bfa','Risolto':'#3ecf8e','Chiuso':'#9a8878'};
+  return m[s]||'#9a8878';
+}
+function tktPriorColor(p) {
+  return p==='Alta'?'#f05c5c': p==='Bassa'?'#9a8878':'#f5a623';
+}
+function tktIsAperto(t){ return t.Stato!=='Risolto' && t.Stato!=='Chiuso'; }
+function tktGiorni(da,a){ if(!da) return null; var d=(new Date(a||Date.now())-new Date(da))/86400000; return d<0?0:d; }
+function tktFmtDur(g){ if(g==null) return '-'; if(g<1){var h=Math.round(g*24);return (h<1?'<1':h)+' h';} return (g<10?g.toFixed(1).replace('.',','):Math.round(g))+' g'; }
+function tktEsc(s){ return (typeof escHtml==='function')?escHtml(s||''):String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function tktBadge(txt,c){ return '<span class="tkt-badge" style="background:'+c+'1f;border-color:'+c+'55;color:'+c+'">'+tktEsc(txt)+'</span>'; }
+
+function tktToggleStats(){
+  var el=document.getElementById('tkt-charts'); if(!el) return;
+  var hide=el.style.display!=='none';
+  el.style.display=hide?'none':'';
+  try{localStorage.setItem('anyma_tkt_stats',hide?'0':'1');}catch(e){}
+  if(!hide) tktRenderCharts();
+}
+
+function tktSetKpiFilter(key,fromSelect){
+  var fs=document.getElementById('tkt-filtro-stato'), fp=document.getElementById('tkt-filtro-priorita');
+  if(fromSelect){ _tktKpi=null; }
+  else if(_tktKpi===key){ _tktKpi=null; if(fs) fs.value=''; if(fp) fp.value=''; }
+  else {
+    _tktKpi=key;
+    if(fs) fs.value=''; if(fp) fp.value='';
+    if(key==='aperti'&&fs) fs.value='_aperti';
+    else if(key==='alta'){ if(fs) fs.value='_aperti'; if(fp) fp.value='Alta'; }
+    else if(TKT_STATI.indexOf(key)>=0&&fs) fs.value=key;
+  }
+  renderTicket();
+}
+
+function tktRenderKpis(){
+  var box=document.getElementById('tkt-kpis'); if(!box||!_tktData) return;
+  var D=_tktData, ap=D.filter(tktIsAperto);
+  var cnt=function(s){return D.filter(function(t){return t.Stato===s;}).length;};
+  var oltre7=ap.filter(function(t){return (tktGiorni(t.DataApertura)||0)>7;}).length;
+  var lim90=Date.now()-90*86400000, lim30=Date.now()-30*86400000;
+  var chiusi=D.filter(function(t){return t.DataChiusura;});
+  var c90=chiusi.filter(function(t){return new Date(t.DataChiusura)>=lim90;});
+  var media=c90.length?c90.reduce(function(s,t){return s+(tktGiorni(t.DataApertura,t.DataChiusura)||0);},0)/c90.length:null;
+  var c30=chiusi.filter(function(t){return new Date(t.DataChiusura)>=lim30;}).length;
+  var K=[
+    {k:'aperti',v:ap.length,l:'Aperti',s:oltre7?oltre7+' da oltre 7 g':'tutti recenti',c:'var(--text)'},
+    {k:'Nuovo',v:cnt('Nuovo'),l:'Nuovi',s:'da prendere in carico',c:tktStatoColor('Nuovo')},
+    {k:'In lavorazione',v:cnt('In lavorazione'),l:'In lavorazione',s:'',c:tktStatoColor('In lavorazione')},
+    {k:'Attesa cliente',v:cnt('Attesa cliente'),l:'Attesa cliente',s:'',c:tktStatoColor('Attesa cliente')},
+    {k:'alta',v:ap.filter(function(t){return t.Priorita==='Alta';}).length,l:'Priorità alta',s:'aperti',c:tktPriorColor('Alta')},
+    {k:null,v:tktFmtDur(media),l:'Tempo medio',s:'di chiusura · 90 g',c:'var(--text)'},
+    {k:'chiusi30',v:c30,l:'Chiusi 30 giorni',s:'risolti o chiusi',c:tktStatoColor('Risolto')}
+  ];
+  box.innerHTML=K.map(function(x){
+    return '<div class="tkt-kpi'+(x.k&&_tktKpi===x.k?' on':'')+'"'+(x.k?' onclick="tktSetKpiFilter(\''+x.k+'\')"':' style="cursor:default"')+'>'+
+      '<div class="tkt-kpi-v" style="color:'+x.c+'">'+x.v+'</div><div class="tkt-kpi-l">'+x.l+'</div>'+
+      (x.s?'<div class="tkt-kpi-s">'+x.s+'</div>':'')+'</div>';
+  }).join('');
+}
+
+function tktRenderCharts(){
+  var wrap=document.getElementById('tkt-charts');
+  if(!wrap||wrap.style.display==='none'||!_tktData||typeof Chart==='undefined') return;
+  var cs=getComputedStyle(document.documentElement);
+  var tx=(cs.getPropertyValue('--ink-3')||'').trim()||'#9a8878', grid='rgba(255,255,255,.06)';
+  var brand=(cs.getPropertyValue('--brand')||'').trim()||'#c0392b', ok=(cs.getPropertyValue('--success')||'').trim()||'#3ecf8e';
+  Object.keys(_tktCharts).forEach(function(k){try{_tktCharts[k].destroy();}catch(e){}});
+  _tktCharts={};
+  var D=_tktData;
+  // 1. per stato (ciambella)
+  var st=TKT_STATI.map(function(s){return D.filter(function(t){return t.Stato===s;}).length;});
+  _tktCharts.stato=new Chart(document.getElementById('tkt-ch-stato'),{type:'doughnut',
+    data:{labels:TKT_STATI,datasets:[{data:st,backgroundColor:TKT_STATI.map(tktStatoColor),borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{color:tx,boxWidth:8,font:{size:10},padding:6}}}}});
+  // 2. aperti vs chiusi per mese
+  var lab=[],ap=[],ch=[],now=new Date();
+  for(var i=5;i>=0;i--){
+    var d=new Date(now.getFullYear(),now.getMonth()-i,1), key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    lab.push(['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][d.getMonth()]);
+    ap.push(D.filter(function(t){return (t.DataApertura||'').substring(0,7)===key;}).length);
+    ch.push(D.filter(function(t){return (t.DataChiusura||'').substring(0,7)===key;}).length);
+  }
+  _tktCharts.mesi=new Chart(document.getElementById('tkt-ch-mesi'),{type:'bar',
+    data:{labels:lab,datasets:[{label:'Aperti',data:ap,backgroundColor:brand,borderRadius:3},{label:'Chiusi',data:ch,backgroundColor:ok,borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',align:'end',labels:{color:tx,boxWidth:8,font:{size:10}}}},
+      scales:{x:{ticks:{color:tx,font:{size:10}},grid:{display:false}},y:{beginAtZero:true,ticks:{color:tx,font:{size:10},precision:0},grid:{color:grid}}}}});
+  // 3. clienti con più ticket aperti
+  var m={}; D.filter(tktIsAperto).forEach(function(t){var c=t.Cliente||'—';m[c]=(m[c]||0)+1;});
+  var top=Object.keys(m).sort(function(a,b){return m[b]-m[a];}).slice(0,6);
+  _tktCharts.clienti=new Chart(document.getElementById('tkt-ch-clienti'),{type:'bar',
+    data:{labels:top.map(function(c){return c.length>22?c.substring(0,21)+'…':c;}),datasets:[{data:top.map(function(c){return m[c];}),backgroundColor:brand,borderRadius:3}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{beginAtZero:true,ticks:{color:tx,font:{size:10},precision:0},grid:{color:grid}},y:{ticks:{color:tx,font:{size:10}},grid:{display:false}}}}});
+}
+
+function renderTicket() {
+  var list=document.getElementById('tkt-list');
+  if(!list||!_tktData) return;
+  tktRenderKpis();
+  var _cw=document.getElementById('tkt-charts'); if(_cw&&!_cw.dataset.init){_cw.dataset.init='1'; try{if(localStorage.getItem('anyma_tkt_stats')==='0')_cw.style.display='none';}catch(e){}}
+  var filtroStato=(document.getElementById('tkt-filtro-stato')||{}).value||'';
+  var filtroPrior=(document.getElementById('tkt-filtro-priorita')||{}).value||'';
+  var search=((document.getElementById('tkt-search')||{}).value||'').toLowerCase();
+  var lim30=Date.now()-30*86400000;
+  var filtered=_tktData.filter(function(t){
+    if(_tktKpi==='chiusi30' && !(t.DataChiusura && new Date(t.DataChiusura)>=lim30)) return false;
+    if(filtroStato==='_aperti' && !tktIsAperto(t)) return false;
+    if(filtroStato && filtroStato!=='_aperti' && t.Stato!==filtroStato) return false;
+    if(filtroPrior && t.Priorita!==filtroPrior) return false;
+    if(search){var hay=(t.Title||'')+' '+(t.Cliente||'')+' '+(t.Oggetto||'')+' '+(t.Tecnico||''); if(hay.toLowerCase().indexOf(search)<0) return false;}
+    return true;
+  });
+  var pr={'Alta':0,'Media':1,'Bassa':2};
+  var aperti=filtered.filter(tktIsAperto).sort(function(a,b){
+    var d=(pr[a.Priorita]!=null?pr[a.Priorita]:1)-(pr[b.Priorita]!=null?pr[b.Priorita]:1);
+    return d!==0?d:((a.DataApertura||'')<(b.DataApertura||'')?-1:1);
+  });
+  var chiusi=filtered.filter(function(t){return !tktIsAperto(t);}).sort(function(a,b){
+    var da=a.DataChiusura||a.DataApertura||'', db=b.DataChiusura||b.DataApertura||''; return da<db?1:-1;});
+  var cnt=document.getElementById('tkt-list-count');
+  if(cnt) cnt.textContent=filtered.length+' ticket';
+  var item=function(t){
+    var sc=tktStatoColor(t.Stato||''), pc=tktPriorColor(t.Priorita||'Media');
+    var isSel=_tktSel && _tktSel.id===t.id, op=tktIsAperto(t);
+    var g=op?tktGiorni(t.DataApertura):tktGiorni(t.DataApertura,t.DataChiusura);
+    var ageCls=op&&g>14?' d':(op&&g>7?' w':'');
+    return '<div class="tkt-item'+(isSel?' active':'')+'" onclick="selezionaTicket(\''+t.id+'\')">'+
+      '<div class="tkt-pdot" style="background:'+pc+'" title="Priorità '+tktEsc(t.Priorita||'')+'"></div>'+
+      '<div class="tkt-item-b">'+
+        '<div class="tkt-row"><span class="tkt-id">'+tktEsc(t.Title)+'</span>'+tktBadge(t.Stato||'-',sc)+'</div>'+
+        '<div class="tkt-subj">'+tktEsc(t.Oggetto||'(senza oggetto)')+'</div>'+
+        '<div class="tkt-row"><span class="tkt-meta">'+tktEsc(t.Cliente||'')+(t.Tecnico?' · '+tktEsc(t.Tecnico):'')+'</span>'+
+        '<span class="tkt-age'+ageCls+'" title="'+(op?'Aperto da':'Durata')+'">'+(op?'⏱ ':'✓ ')+tktFmtDur(g)+'</span></div>'+
+      '</div></div>';
+  };
+  var h='';
+  if(aperti.length) h+='<div class="tkt-group">Aperti · '+aperti.length+'</div>'+aperti.map(item).join('');
+  if(chiusi.length) h+='<div class="tkt-group">Risolti e chiusi · '+chiusi.length+'</div>'+chiusi.map(item).join('');
+  list.innerHTML=h||'<div style="padding:30px 14px;text-align:center;color:var(--text3);font-size:12px">Nessun ticket con questi filtri</div>';
+  tktRenderCharts();
+}
+
 function renderTktDetail(t) {
   var empty=document.getElementById('tkt-empty'), detail=document.getElementById('tkt-detail');
   if(!detail) return;
   if(empty) empty.style.display='none';
   detail.style.display='block';
-  var sc=tktStatoColor(t.Stato||''), pc=tktPriorColor(t.Priorita||'Media');
-  var dataStr=t.DataApertura?new Date(t.DataApertura).toLocaleString('it-IT'):'';
-  var dataChiStr=t.DataChiusura?new Date(t.DataChiusura).toLocaleString('it-IT'):'-';
-  var stati=['Nuovo','In lavorazione','Attesa cliente','Risolto','Chiuso'];
-  var statiBtns=stati.map(function(s){
-    var c=tktStatoColor(s);
-    return '<button onclick="cambiaStatoTicket(\''+t.id+'\',\''+s+'\')" style="padding:5px 12px;border-radius:20px;border:1px solid '+c+'55;background:'+(t.Stato===s?c+'22':'var(--bg3)')+';color:'+(t.Stato===s?c:'var(--text2)')+';font-size:11px;font-weight:600;cursor:pointer">'+s+'</button>';
+  var sc=tktStatoColor(t.Stato||''), pc=tktPriorColor(t.Priorita||'Media'), op=tktIsAperto(t);
+  var dataStr=t.DataApertura?new Date(t.DataApertura).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'}):'-';
+  var dataChiStr=t.DataChiusura?new Date(t.DataChiusura).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'}):'-';
+  var g=op?tktGiorni(t.DataApertura):tktGiorni(t.DataApertura,t.DataChiusura);
+  var idx=TKT_STATI.indexOf(t.Stato);
+  var steps=TKT_STATI.map(function(s,i){
+    var c=tktStatoColor(s), cls=i===idx?' cur':(i<idx?' done':'');
+    return '<div class="tkt-step'+cls+'" onclick="cambiaStatoTicket(\''+t.id+'\',\''+s+'\')" style="'+(i===idx?'background:'+c:'')+'" title="Imposta: '+s+'">'+
+      '<span class="n">'+(i<idx?'✓':(i+1))+'</span>'+s+'</div>';
   }).join('');
-  var descHtml=t.Descrizione?'<div style="margin-bottom:16px"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:8px">Descrizione</div><div style="font-size:13px;color:var(--text);line-height:1.6;padding:14px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);white-space:pre-wrap">'+(t.Descrizione||'').replace(/</g,'&lt;')+'</div></div>':'';
-  var noteHtml=t.NoteInterne?'<div style="margin-bottom:16px"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:8px">Note Interne</div><div style="font-size:13px;color:var(--text2);line-height:1.6;padding:14px;background:rgba(255,165,0,.06);border-radius:8px;border:1px solid rgba(255,165,0,.2);white-space:pre-wrap">'+(t.NoteInterne||'').replace(/</g,'&lt;')+'</div></div>':'';
+  var cell=function(l,v,mono){return '<div class="tkt-cell"><div class="tkt-cell-l">'+l+'</div><div class="tkt-cell-v"'+(mono?' style="font-family:var(--mono);font-size:12px"':'')+' title="'+tktEsc(v)+'">'+(v?tktEsc(v):'-')+'</div></div>';};
   detail.innerHTML=
-    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:10px">'+
-    '<div><div style="font-size:11px;color:var(--text3);font-family:monospace;margin-bottom:4px">'+(t.Title||'')+'</div>'+
-    '<h2 style="font-size:18px;font-weight:700;color:var(--text);margin:0 0 6px">'+(t.Oggetto||'')+'</h2>'+
-    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
-    '<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:'+sc+'22;color:'+sc+'">'+(t.Stato||'')+'</span>'+
-    '<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:'+pc+'22;color:'+pc+'">'+(t.Priorita||'')+'</span>'+
-    '<span style="font-size:11px;color:var(--text3)">Canale: '+(t.Canale||'-')+'</span></div></div>'+
-    '<div style="display:flex;gap:8px">'+
-    '<button class="btn btn-sm btn-primary" onclick="apriModificaTicket(\''+t.id+'\')">Modifica</button>'+
-    (t.Stato!=='Chiuso'?'<button class="btn btn-sm" onclick="chiudiTicket(\''+t.id+'\')">Chiudi ticket</button>':'')+
+    '<div class="tkt-d-head"><div style="min-width:0;flex:1">'+
+      '<div class="tkt-id" style="font-size:11px">'+tktEsc(t.Title)+'</div>'+
+      '<h2 class="tkt-d-title">'+tktEsc(t.Oggetto||'(senza oggetto)')+'</h2>'+
+      '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+tktBadge(t.Stato||'-',sc)+tktBadge('Priorità '+(t.Priorita||'-'),pc)+
+      '<span style="font-size:11px;color:var(--text3)">Canale: '+tktEsc(t.Canale||'-')+' · '+(op?'aperto da ':'risolto in ')+tktFmtDur(g)+'</span></div>'+
+    '</div><div style="display:flex;gap:6px;flex-shrink:0">'+
+      '<button class="btn btn-sm" onclick="tktCreaRapportino(\''+t.id+'\')" title="Apre Rapportini con cliente e descrizione già compilati">'+
+        '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M4 1.5h5.5L13 5v9.5H4z"/><path d="M9 1.5V5h4M6.5 8.5h4M6.5 11h4"/></svg> Crea rapportino</button>'+
+      '<button class="btn btn-sm" onclick="apriModificaTicket(\''+t.id+'\')">Modifica</button>'+
+      (t.Stato!=='Chiuso'?'<button class="btn btn-sm btn-primary" onclick="chiudiTicket(\''+t.id+'\')">Chiudi ticket</button>':'')+
     '</div></div>'+
-    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;padding:16px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)">'+
-    '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:4px">Cliente</div><div style="font-size:13px;color:var(--text)">'+(t.Cliente||'-')+'</div></div>'+
-    '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:4px">Email</div><div style="font-size:13px;color:var(--text)">'+(t.EmailMittente||'-')+'</div></div>'+
-    '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:4px">Tecnico</div><div style="font-size:13px;color:var(--text)">'+(t.Tecnico||'-')+'</div></div>'+
-    '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:4px">Apertura</div><div style="font-size:13px;color:var(--text)">'+dataStr+'</div></div>'+
-    '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:4px">Chiusura</div><div style="font-size:13px;color:var(--text)">'+dataChiStr+'</div></div>'+
-    '<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:4px">RT Collegato</div><div style="font-size:13px;color:var(--text)">'+(t.RTCollegato||'-')+'</div></div>'+
-    '</div>'+descHtml+noteHtml+
-    '<div style="margin-top:16px;padding:14px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)">'+
-    '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);font-weight:700;margin-bottom:10px">Cambia stato rapido</div>'+
-    '<div style="display:flex;gap:8px;flex-wrap:wrap">'+statiBtns+'</div></div>';
+    '<div class="tkt-steps">'+steps+'</div>'+
+    '<div class="tkt-grid">'+
+      cell('Cliente',t.Cliente)+cell('Email',t.EmailMittente)+cell('Tecnico',t.Tecnico)+
+      cell('Apertura',dataStr)+cell('Chiusura',dataChiStr)+cell('RT collegato',t.RTCollegato,true)+
+    '</div>'+
+    (t.Descrizione?'<div class="tkt-sec-l">Descrizione</div><div class="tkt-box">'+tktEsc(t.Descrizione)+'</div>':'')+
+    (t.NoteInterne?'<div class="tkt-sec-l">Note interne</div><div class="tkt-box note">'+tktEsc(t.NoteInterne)+'</div>':'');
+}
+
+var RAPPORTINI_URL='https://serviceanyma.github.io/anyma-rapportini/';
+function tktCreaRapportino(id){
+  var t=_tktData&&_tktData.find(function(x){return x.id===id;}); if(!t) return;
+  var q=new URLSearchParams();
+  q.set('tkt',t.Title||''); q.set('tktId',t._spId||t.id||'');
+  q.set('cliente',t.Cliente||''); q.set('ogg',t.Oggetto||'');
+  q.set('desc',(t.Descrizione||'').substring(0,1500));
+  if(t.Canale==='Telefono') q.set('tipo','Assistenza Telefonica');
+  window.open(RAPPORTINI_URL+'?'+q.toString(),'_blank');
+  if(t.Stato==='Nuovo') cambiaStatoTicket(id,'In lavorazione');
+}
+
+async function eliminaTicket(){
+  var id=_tktEditId; if(!id) return;
+  var t=_tktData&&_tktData.find(function(x){return (x._spId||x.id)===id;});
+  var nome=t?(t.Title+' — '+(t.Oggetto||'')):id;
+  if(!confirm('Eliminare il ticket '+nome+'?\n\nVerrà rimosso dalla lista AnymaTicket su SharePoint.')) return;
+  var tok; try{tok=await anGetToken();}catch(e){tok=null;}
+  if(!tok){showToast('Token non disponibile','err');return;}
+  var btn=document.getElementById('tkt-modal-del-btn'); if(btn){btn.disabled=true;btn.textContent='Eliminazione…';}
+  try{
+    var r=await fetch(GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+TICKET_LIST_ID+'/items/'+id,
+      {method:'DELETE',headers:{'Authorization':'Bearer '+tok}});
+    if(!r.ok && r.status!==204) throw new Error('HTTP '+r.status);
+    chiudiTktModal();
+    _tktSel=null;
+    var det=document.getElementById('tkt-detail'), emp=document.getElementById('tkt-empty');
+    if(det) det.style.display='none'; if(emp) emp.style.display='';
+    showToast('Ticket eliminato');
+    await loadTicket();
+  }catch(e){ showToast('Errore eliminazione: '+e.message,'err'); }
+  finally{ if(btn){btn.disabled=false;btn.textContent='Elimina ticket';} }
 }
 
 async function cambiaStatoTicket(id, nuovoStato) {
@@ -10169,7 +10509,8 @@ async function cambiaStatoTicket(id, nuovoStato) {
   var t=_tktData&&_tktData.find(function(x){return (x._spId||x.id)===id;});
   if(!t) return;
   var body={Stato:nuovoStato};
-  if(nuovoStato==='Chiuso') body.DataChiusura=new Date().toISOString();
+  if((nuovoStato==='Chiuso'||nuovoStato==='Risolto') && !t.DataChiusura) body.DataChiusura=new Date().toISOString();
+  if(nuovoStato!=='Chiuso' && nuovoStato!=='Risolto' && t.DataChiusura) body.DataChiusura=null;
   try{
     var r=await fetch(GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+TICKET_LIST_ID+'/items/'+id+'/fields',
       {method:'PATCH',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body)});
@@ -10186,7 +10527,8 @@ function apriNuovoTicket(){
   _tktEditId=null;
   document.getElementById('tkt-modal-title').textContent='Nuovo Ticket';
   document.getElementById('tkt-modal-save-btn').textContent='Crea Ticket';
-  ['tkt-f-cliente','tkt-f-email','tkt-f-oggetto','tkt-f-desc','tkt-f-tecnico','tkt-f-note'].forEach(function(id){document.getElementById(id).value='';});
+  ['tkt-f-cliente','tkt-f-email','tkt-f-oggetto','tkt-f-desc','tkt-f-tecnico','tkt-f-note','tkt-f-rt'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('tkt-modal-del-btn').style.display='none';
   document.getElementById('tkt-f-canale').value='Manuale';
   document.getElementById('tkt-f-priorita').value='Media';
   document.getElementById('tkt-modal').classList.remove('hidden');
@@ -10206,6 +10548,8 @@ function apriModificaTicket(id){
   document.getElementById('tkt-f-priorita').value=t.Priorita||'Media';
   document.getElementById('tkt-f-tecnico').value=t.Tecnico||'';
   document.getElementById('tkt-f-note').value=t.NoteInterne||'';
+  document.getElementById('tkt-f-rt').value=t.RTCollegato||'';
+  document.getElementById('tkt-modal-del-btn').style.display='';
   document.getElementById('tkt-modal').classList.remove('hidden');
 }
 
@@ -10231,6 +10575,9 @@ async function salvaTktModal(){
     Tecnico:document.getElementById('tkt-f-tecnico').value.trim(),
     NoteInterne:document.getElementById('tkt-f-note').value.trim()
   };
+  var _rtv=document.getElementById('tkt-f-rt').value.trim();
+  var _tOld=_tktEditId&&_tktData?_tktData.find(function(x){return (x._spId||x.id)===_tktEditId;}):null;
+  if(_rtv || (_tOld&&_tOld.RTCollegato)) fields.RTCollegato=_rtv;
   try{
     var url, method;
     if(_tktEditId){
