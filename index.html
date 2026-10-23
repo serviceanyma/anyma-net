@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v174';</script>
+<script>const APP_VERSION = 'v175';</script>
 <!-- ANYMA Design System: colori, misure e componenti condivisi con Rapportini -->
 <link href="https://serviceanyma.github.io/anyma-ds/anyma-ds.css" rel="stylesheet">
 <style>
@@ -2113,6 +2113,45 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 
   <!-- VIEW: GESTIONE CONTRATTI -->
   <div id="view-contratti" class="content-view">
+    <style>
+      /* ── Contratti SP (token design system ANYMA) ── */
+      .cc-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;padding:10px 0;flex-shrink:0}
+      .cc-kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md,10px);padding:10px 12px;min-width:0;transition:border-color .15s,background .15s}
+      .cc-kpi.click{cursor:pointer}.cc-kpi.click:hover{border-color:var(--border2);background:var(--bg3)}
+      .cc-kpi.on{border-color:var(--accent);background:var(--cr-bg)}
+      .cc-kpi-v{font-family:var(--cond);font-size:24px;font-weight:800;line-height:1.05}
+      .cc-kpi-l{font-size:9.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text3);margin-top:3px}
+      .cc-kpi-s{font-size:10px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .cc-cli{display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+      .cc-cli:hover{background:var(--bg3)}
+      .cc-cli.active{background:var(--cr-bg);box-shadow:inset 3px 0 0 var(--accent)}
+      .cc-cli-n{font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .cc-tags{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+      .cc-tag{font-size:9px;font-weight:700;letter-spacing:.4px;padding:1px 6px;border-radius:20px;border:1px solid}
+      .cc-head{padding:2px 0 4px}
+      .cc-head-l{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text3)}
+      .cc-head-n{font-size:22px;font-weight:700;color:var(--text);margin:2px 0}
+      .cc-head-s{font-size:12px;color:var(--text2)}
+      .cc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+      .cc-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md,10px);padding:16px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden}
+      .cc-card::before{content:'';position:absolute;left:0;top:0;right:0;height:3px;background:var(--cc)}
+      .cc-card.spot{gap:10px;padding:12px 14px;background:var(--bg);align-self:start}
+      .cc-warn{font-style:normal;font-weight:700;font-size:11px;white-space:nowrap}.cc-card.spot::before{background:var(--border2)}.cc-card.spot .cc-tipo{font-size:13px;color:var(--text2)}
+      .cc-card-h{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+      .cc-dot{width:9px;height:9px;border-radius:50%;background:var(--cc);flex-shrink:0}
+      .cc-tipo{font-weight:800;font-size:15px;color:var(--text);margin-right:auto}
+      .cc-pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid var(--border2);color:var(--text2)}
+      .cc-big{font-family:var(--cond);font-size:30px;font-weight:800;line-height:1}
+      .cc-big-s{font-size:11px;color:var(--text3);margin-top:4px}
+      .cc-bar{height:6px;border-radius:6px;background:var(--bg4);overflow:hidden;margin-top:10px}
+      .cc-bar>div{height:100%;border-radius:6px;transition:width .4s}
+      .cc-info{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;border-top:1px solid var(--border);padding-top:12px;font-size:12px;color:var(--text)}
+      .cc-info span{display:block;font-size:9.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text3);margin-bottom:3px}
+      .cc-note{font-size:12px;color:var(--text2);line-height:1.5;background:var(--bg3);border-radius:var(--radius-sm,7px);padding:8px 10px}
+      .cc-act{display:flex;gap:6px;margin-top:auto}
+      #contrFormOverlay .filter-input,#contrFormOverlay .sel{max-width:none}
+      @media(max-width:1300px){.cc-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    </style>
     <div class="proj-view" id="contr-inner" style="gap:0">
 
       <!-- Toolbar -->
@@ -2126,11 +2165,11 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>
           Genera contratti
         </button>
-        <button class="btn btn-sm" id="btn-resoconto-globale" onclick="apriModalResocontoGlobale()" style="display:none;background:rgba(139,26,26,.15);color:#c0392b;border-color:rgba(139,26,26,.3)">
+        <button class="btn btn-sm" id="btn-resoconto-globale" onclick="apriModalResocontoGlobale()" style="display:none">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><rect x="2" y="2" width="12" height="12" rx="1.5"/><line x1="5" y1="5" x2="11" y2="5"/><line x1="5" y1="8" x2="11" y2="8"/><line x1="5" y1="11" x2="9" y2="11"/></svg>
           Resoconto mensile
         </button>
-        <button class="btn btn-sm" id="btn-resoconto-cliente" onclick="apriModalResocontoCliente()" style="display:none;background:rgba(139,26,26,.15);color:#c0392b;border-color:rgba(139,26,26,.3)">
+        <button class="btn btn-sm" id="btn-resoconto-cliente" onclick="apriModalResocontoCliente()" style="display:none">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><circle cx="8" cy="5" r="2.5"/><path d="M3 14c0-2.8 2.2-5 5-5s5 2.2 5 5"/></svg>
           Resoconto cliente
         </button>
@@ -2144,9 +2183,12 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         </select>
       </div>
 
+      <!-- KPI / filtri rapidi -->
+      <div class="cc-kpis" id="contr-kpis" style="display:none"></div>
+
       <!-- Split: lista clienti | card contratti | pannello PDF resoconto -->
       <div id="contr-split" style="display:none;flex:1;min-height:0;overflow:hidden">
-        <div style="display:grid;grid-template-columns:220px 1fr 0px;transition:grid-template-columns .3s ease;gap:0;height:100%;overflow:hidden" id="contr-grid">
+        <div style="display:grid;grid-template-columns:270px 1fr 0px;transition:grid-template-columns .3s ease;gap:0;height:100%;width:100%;overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-md,10px)" id="contr-grid">
           <!-- Col 1: lista clienti -->
           <div style="background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
             <div class="list-header"><span>Clienti</span><span id="contr-cli-count" style="color:var(--accent);font-size:10px"></span></div>
@@ -2265,7 +2307,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
             <input id="cf-saldo-min" type="number" class="filter-input" style="width:100%" min="0" placeholder="0">
           </div>
           <div id="cf-ore-wrap">
-            <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Saldo Ore</label>
+            <label class="an-lbl" id="cf-ore-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Saldo Ore</label>
             <input id="cf-saldo-ore" type="number" class="filter-input" style="width:100%" min="0" step="0.5" placeholder="0">
           </div>
         </div>
@@ -2274,9 +2316,16 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
             <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">N. Contratto</label>
             <input id="cf-num" class="filter-input" style="width:100%" placeholder="Es. CONTR-2026-001">
           </div>
+          <div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div>
             <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Data Inizio</label>
             <input id="cf-data-inizio" type="date" class="filter-input" style="width:100%">
+          </div>
+          <div>
+            <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Data Scadenza</label>
+            <input id="cf-data-fine" type="date" class="filter-input" style="width:100%">
           </div>
         </div>
         <div>
@@ -8417,6 +8466,7 @@ async function loadContratti() {
     document.getElementById('btn-contr-load').disabled = false;
     document.getElementById('btn-contr-load').textContent = '↻ Aggiorna';
     document.getElementById('btn-contr-gen').style.display = '';
+    document.getElementById('contr-kpis').style.display = '';
     document.getElementById('btn-resoconto-globale').style.display = '';
     document.getElementById('btn-resoconto-cliente').style.display = '';
     document.getElementById('contr-count').style.display = '';
@@ -8512,34 +8562,90 @@ async function generaContratti() {
 }
 
 // -- Render lista clienti --
+// ── Contratti SP: helper grafici e calcolo saldi ──
+var _contrQuick = '';
+var _contrConsumoCache = {};
+var CONTR_TIPO_SIGLA = {Telefonica:'TEL', Teleassistenza:'TA', 'On-Site':'ON-SITE', Manutenzione:'ON-SITE'};
+function contrHasPack(c){ return c.attivo && c.pacchetto!=='Spot'; }
+function contrHasSaldo(c){ return c.pacchetto!=='Spot' && c.pacchetto!=='Premium'; }
+function contrGiorniScad(c){
+  if(!c.dataFine) return null;
+  var p=c.dataFine.split('-'), f=new Date(+p[0],+p[1]-1,+p[2]), t=new Date(); t.setHours(0,0,0,0);
+  return Math.round((f-t)/86400000);
+}
+function contrDimPacchetto(c){
+  if(c.tipo==='On-Site') return c.saldoOre||0;
+  var d=getContrDefault(c.tipo,c.pacchetto);
+  return c.tipo==='Telefonica' ? (d.saldoMinuti||0) : (d.saldoOre||0);
+}
+function contrSaldoBasso(c){
+  if(!contrHasPack(c)||!contrHasSaldo(c)||c.tipo==='On-Site') return false;
+  var dim=contrDimPacchetto(c), v=c.tipo==='Telefonica'?c.saldoMinuti:c.saldoOre;
+  return dim>0 && v/dim<0.2;
+}
+function contrMatchQuick(cs){
+  if(!_contrQuick) return true;
+  if(_contrQuick==='pacchetto') return cs.some(contrHasPack);
+  if(_contrQuick==='scadenza') return cs.some(function(c){var g=contrGiorniScad(c);return contrHasPack(c)&&g!==null&&g>=0&&g<=60;});
+  if(_contrQuick==='scaduti') return cs.some(function(c){var g=contrGiorniScad(c);return contrHasPack(c)&&g!==null&&g<0;});
+  if(_contrQuick==='basso') return cs.some(contrSaldoBasso);
+  return true;
+}
+function setContrQuick(k){ _contrQuick=(_contrQuick===k?'':k); renderContratti(); }
+function contrRenderKpis(clientiMap){
+  var box=document.getElementById('contr-kpis'); if(!box) return;
+  var D=_contrData, pk=D.filter(contrHasPack);
+  var nCli=Object.keys(clientiMap).length;
+  var nCliPack=Object.keys(clientiMap).filter(function(n){return clientiMap[n].some(contrHasPack);}).length;
+  var per=function(t){return pk.filter(function(c){return c.tipo===t;}).length;};
+  var scad=pk.filter(function(c){var g=contrGiorniScad(c);return g!==null&&g>=0&&g<=60;}).length;
+  var scaduti=pk.filter(function(c){var g=contrGiorniScad(c);return g!==null&&g<0;}).length;
+  var basso=D.filter(contrSaldoBasso).length;
+  var K=[
+    {k:null,v:nCli,l:'Clienti',s:'in anagrafica contratti',c:'var(--text)'},
+    {k:'pacchetto',v:nCliPack,l:'Con pacchetto',s:'almeno un contratto attivo',c:'var(--text)'},
+    {k:'pacchetto',v:pk.length,l:'Pacchetti attivi',s:'TEL '+per('Telefonica')+' · TA '+per('Teleassistenza')+' · ON-SITE '+per('On-Site'),c:'var(--accent)'},
+    {k:'scadenza',v:scad,l:'In scadenza',s:'entro 60 giorni',c:'var(--amber)'},
+    {k:'scaduti',v:scaduti,l:'Scaduti',s:'ancora attivi in lista',c:'var(--red)'},
+    {k:'basso',v:basso,l:'Saldo basso',s:'sotto il 20% (TEL/TA)',c:'var(--amber)'}
+  ];
+  box.innerHTML=K.map(function(x,i){
+    var on=x.k&&_contrQuick===x.k;
+    return '<div class="cc-kpi'+(x.k?' click':'')+(on?' on':'')+'"'+(x.k?' onclick="setContrQuick(\''+x.k+'\')"':'')+'>'+
+      '<div class="cc-kpi-v" style="color:'+x.c+'">'+x.v+'</div><div class="cc-kpi-l">'+x.l+'</div><div class="cc-kpi-s">'+x.s+'</div></div>';
+  }).join('');
+}
+
 function renderContratti() {
   var q = (document.getElementById('contr-search')?.value||'').toLowerCase();
-  // Raccogli clienti unici
   var clientiMap = {};
-  _contrData.forEach(function(c){
-    if(!clientiMap[c.cliente]) clientiMap[c.cliente] = [];
-    clientiMap[c.cliente].push(c);
-  });
+  _contrData.forEach(function(c){ (clientiMap[c.cliente]=clientiMap[c.cliente]||[]).push(c); });
+  contrRenderKpis(clientiMap);
   var clienti = Object.keys(clientiMap).filter(function(n){
-    return !q || n.toLowerCase().includes(q);
+    return (!q || n.toLowerCase().includes(q)) && contrMatchQuick(clientiMap[n]);
   });
-  // Ordina
   clienti.sort(function(a,b){
-    if(_contrSortKey==='cliente') return _contrSortAsc ? a.localeCompare(b) : b.localeCompare(a);
-    return _contrSortAsc ? a.localeCompare(b) : b.localeCompare(a);
+    if(_contrSortKey==='saldo'){
+      var pa=clientiMap[a].filter(contrHasPack).length, pb=clientiMap[b].filter(contrHasPack).length;
+      if(pa!==pb) return pb-pa;
+    }
+    return _contrSortAsc ? a.localeCompare(b,'it') : b.localeCompare(a,'it');
   });
   document.getElementById('contr-count').textContent = clienti.length+' clienti';
   document.getElementById('contr-cli-count').textContent = clienti.length+' clienti';
   document.getElementById('contr-cli-list').innerHTML = clienti.length ? clienti.map(function(nome){
-    var contratti = clientiMap[nome];
-    var attivi = contratti.filter(function(c){return c.attivo;}).length;
+    var cs = clientiMap[nome], pk = cs.filter(contrHasPack);
     var isSelected = _contrSelCliente === nome;
-    return '<div class="row-item '+(isSelected?'active':'')+'" onclick="selectContrCliente(\''+escHtml(nome)+'\')">' +
+    var warn = cs.some(function(c){var g=contrGiorniScad(c);return contrHasPack(c)&&g!==null&&g<=60;})||cs.some(contrSaldoBasso);
+    var tags = pk.length ? pk.map(function(c){
+      var col=CONTR_TIPO_COLORS[c.tipo]||'#9a8878';
+      return '<span class="cc-tag" style="color:'+col+';border-color:'+col+'55;background:'+col+'14">'+(CONTR_TIPO_SIGLA[c.tipo]||c.tipo)+'</span>';
+    }).join('') : '<span class="cc-tag" style="color:var(--text3);border-color:var(--border2)">Spot</span>';
+    return '<div class="cc-cli'+(isSelected?' active':'')+'" data-n="'+escHtml(nome)+'" onclick="selectContrCliente(this.dataset.n)">' +
       '<div class="row-avatar">'+initials(nome)+'</div>' +
-      '<div class="row-info"><div class="row-name">'+escHtml(nome)+'</div>' +
-      '<div class="row-meta">'+attivi+'/'+contratti.length+' contratti attivi</div></div>' +
-      '</div>';
-  }).join('') : '<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px">Nessun cliente</div>';
+      '<div style="flex:1;min-width:0"><div class="cc-cli-n">'+escHtml(nome)+(warn?' <span title="Scadenza vicina o saldo basso" style="color:var(--amber)">⚠</span>':'')+'</div>' +
+      '<div class="cc-tags">'+tags+'</div></div></div>';
+  }).join('') : '<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px">Nessun cliente con questi filtri</div>';
   if(_contrSelCliente) renderContrDettaglio(_contrSelCliente);
 }
 
@@ -8551,40 +8657,90 @@ function selectContrCliente(nome) {
   renderContrDettaglio(nome);
 }
 
-// -- Dettaglio contratti per cliente --
+// Ore scalate dai RT On-Site del cliente nella validità del contratto (stessa regola dei resoconti)
+async function contrConsumoOnSite(nome, c){
+  var key=nome+'|'+(c.dataInizio||'')+'|'+(c.dataFine||'');
+  var hit=_contrConsumoCache[key];
+  if(hit && Date.now()-hit.at<5*60000) return hit.v;
+  var rapListId=getSpRappId(); if(!rapListId) throw new Error('GUID AnymaRapportini mancante');
+  var tok=await anGetToken(); if(!tok) throw new Error('Token scaduto');
+  var filt=encodeURIComponent("fields/Cliente eq '"+nome.replace(/'/g,"''")+"' and fields/TipoServizio ne 'Telefonica' and fields/TipoServizio ne 'Teleassistenza'");
+  var url=GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+rapListId+'/items?expand=fields(select=Title,Cliente,TipoServizio,Tipo0,Tecnici,GiornateJSON)&$filter='+filt+'&$top=500';
+  var r=await fetch(url,{headers:{'Authorization':'Bearer '+tok,'Accept':'application/json','Prefer':'HonorNonIndexedQueriesWarningMayFailRandomly'}});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  var d=await r.json();
+  var v=(d.value||[]).reduce(function(s,it){return s+anScalOnSite(it.fields||{},c.dataInizio,c.dataFine).tot;},0);
+  _contrConsumoCache[key]={v:v,at:Date.now()};
+  return v;
+}
+function contrFmtVal(c,v){ return c.tipo==='Telefonica' ? Math.round(v)+' min' : (Math.round(v*100)/100).toLocaleString('it-IT')+' h'; }
+function contrBarHtml(id,res,dim){
+  var pct=dim>0?Math.max(0,Math.min(100,res/dim*100)):0;
+  var col=pct<20?'var(--red)':(pct<40?'var(--amber)':'var(--green)');
+  return '<div class="cc-bar"><div id="'+id+'" style="width:'+pct+'%;background:'+col+'"></div></div>';
+}
+
 function renderContrDettaglio(nome) {
   var contratti = _contrData.filter(function(c){return c.cliente===nome;});
-  // Ordina per tipo
   var tipoOrder = {Telefonica:0,Teleassistenza:1,'On-Site':2,Manutenzione:2};
-  contratti.sort(function(a,b){return (tipoOrder[a.tipo]||9)-(tipoOrder[b.tipo]||9);});
+  var ord=function(c){return (c.pacchetto==='Spot'?10:0)+(c.tipo in tipoOrder?tipoOrder[c.tipo]:9);};
+  contratti.sort(function(a,b){return ord(a)-ord(b);});
+  var pk=contratti.filter(contrHasPack).length;
   var det = document.getElementById('contr-detail');
-  det.innerHTML = contratti.map(function(c){
+  var head='<div class="cc-head"><div><div class="cc-head-l">Cliente</div><div class="cc-head-n">'+escHtml(nome)+'</div>'+
+    '<div class="cc-head-s">'+contratti.length+' contratti · '+(pk?pk+' con pacchetto attivo':'solo interventi a consumo (Spot)')+'</div></div></div>';
+  var cards = contratti.map(function(c){
     var col = CONTR_TIPO_COLORS[c.tipo]||'var(--text)';
-    var saldoStr = '';
-    if(c.tipo==='Telefonica') saldoStr = c.pacchetto!=='Spot'&&c.pacchetto!=='Premium' ? c.saldoMinuti+' min' : 'N/A';
-    else saldoStr = c.pacchetto!=='Spot' && !(c.tipo==='On-Site'&&c.pacchetto==='Premium') ? c.saldoOre+' h'+(c.tipo==='On-Site'?' acquistate':'') : 'N/A';
-    var saldoColor = saldoStr==='N/A' ? 'var(--text3)' : col;
-    return '<div style="background:var(--bg3);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:12px;padding:20px 22px;display:flex;flex-direction:column;gap:14px">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">' +
-        '<div style="display:flex;align-items:center;gap:10px">' +
-          '<span style="width:12px;height:12px;border-radius:50%;background:'+col+';display:inline-block;flex-shrink:0;box-shadow:0 0 8px '+col+'66"></span>' +
-          '<span style="font-weight:800;font-size:16px;color:'+col+'">'+c.tipo+'</span>' +
-          '<span style="font-size:11px;background:rgba(255,255,255,.07);padding:3px 10px;border-radius:20px;color:var(--text2);border:1px solid var(--border)">'+c.pacchetto+'</span>' +
-          (c.attivo ? '<span style="font-size:10px;color:var(--green);font-weight:700;background:rgba(62,207,142,.1);padding:3px 8px;border-radius:10px">● ATTIVO</span>' : '<span style="font-size:10px;color:var(--text3);font-weight:700;background:rgba(255,255,255,.05);padding:3px 8px;border-radius:10px">● INATTIVO</span>') +
-        '</div>' +
-        '<div style="display:flex;gap:8px">' +
-          '<button class="btn btn-sm" style="padding:6px 12px;font-size:11px" onclick="openContrForm(\''+c._spId+'\')">✎ Modifica</button>' +
-          '<button class="btn btn-sm" style="padding:6px 12px;font-size:11px;background:rgba(56,189,248,.12);color:#38bdf8;border:1px solid rgba(56,189,248,.25)" onclick="openResoconto(\''+escHtml(nome)+'\',\''+c.tipo+'\')">📋 Resoconto</button>' +
-        '</div>' +
+    var spot = c.pacchetto==='Spot', g=contrGiorniScad(c);
+    var stato = !c.attivo ? ['Non attivo','var(--text3)'] : (g!==null&&g<0 ? ['Scaduto','var(--red)'] : ['Attivo','var(--green)']);
+    var big, bar='';
+    if(spot){
+      return '<div class="cc-card spot" style="--cc:'+col+'">' +
+        '<div class="cc-card-h"><span class="cc-dot"></span><span class="cc-tipo">'+escHtml(c.tipo)+'</span><span class="cc-pill">Spot · a consumo</span></div>' +
+        '<div class="cc-act"><button class="btn btn-sm" onclick="openContrForm(\''+c._spId+'\')">✎ Attiva pacchetto</button>' +
+        '<button class="btn btn-sm" data-n="'+escHtml(nome)+'" onclick="openResoconto(this.dataset.n,\''+c.tipo+'\')">Resoconto</button></div></div>';
+    }
+    else if(!contrHasSaldo(c)){ big='<div class="cc-big" style="color:'+col+'">Senza saldo</div><div class="cc-big-s">pacchetto '+escHtml(c.pacchetto)+'</div>'; }
+    else if(c.tipo==='On-Site'){
+      big='<div class="cc-big" id="cc-os-v-'+c._spId+'" style="color:'+col+'">…</div><div class="cc-big-s" id="cc-os-s-'+c._spId+'">calcolo ore scalate…</div>';
+      bar=contrBarHtml('cc-os-b-'+c._spId,0,1);
+    } else {
+      var res=c.tipo==='Telefonica'?c.saldoMinuti:c.saldoOre, dim=contrDimPacchetto(c);
+      big='<div class="cc-big" style="color:'+col+'">'+contrFmtVal(c,res)+'</div><div class="cc-big-s">residuo'+(dim?' di '+contrFmtVal(c,dim):'')+'</div>';
+      if(dim) bar=contrBarHtml('',res,dim);
+    }
+    var scad = !c.dataFine ? '—' : fmtDate(c.dataFine)+(g===null?'':(g<0?' <em class="cc-warn" style="color:var(--red)">· scaduto</em>':(g<=60?' <em class="cc-warn" style="color:var(--amber)">· tra '+g+' g</em>':'')));
+    return '<div class="cc-card'+(spot?' spot':'')+'" style="--cc:'+col+'">' +
+      '<div class="cc-card-h"><span class="cc-dot"></span><span class="cc-tipo">'+escHtml(c.tipo)+'</span>' +
+        '<span class="cc-pill">'+escHtml(c.pacchetto)+'</span>' +
+        '<span class="cc-pill" style="color:'+stato[1]+';border-color:'+stato[1]+'55">'+stato[0]+'</span></div>' +
+      '<div>'+big+bar+'</div>' +
+      '<div class="cc-info">' +
+        '<div><span>Contratto</span>'+escHtml(c.numContratto||'—')+'</div>' +
+        '<div><span>Inizio</span>'+(c.dataInizio?fmtDate(c.dataInizio):'—')+'</div>' +
+        '<div><span>Scadenza</span>'+scad+'</div>' +
       '</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">' +
-        '<div style="background:var(--bg4);border-radius:8px;padding:12px 14px"><div style="color:var(--text3);font-size:9px;text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:6px">Saldo corrente</div><div style="font-weight:800;font-size:22px;color:'+saldoColor+'">'+saldoStr+'</div></div>' +
-        '<div style="background:var(--bg4);border-radius:8px;padding:12px 14px"><div style="color:var(--text3);font-size:9px;text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:6px">N. Contratto</div><div style="font-weight:600;font-size:14px">'+escHtml(c.numContratto||'—')+'</div></div>' +
-        '<div style="background:var(--bg4);border-radius:8px;padding:12px 14px"><div style="color:var(--text3);font-size:9px;text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:6px">Data inizio</div><div style="font-weight:600;font-size:14px">'+escHtml(c.dataInizio||'—')+'</div></div>' +
-      '</div>' +
-      (c.note ? '<div style="font-size:12px;color:var(--text3);border-top:1px solid var(--border);padding-top:12px;line-height:1.6">'+escHtml(c.note)+'</div>' : '') +
-    '</div>';
+      (c.note ? '<div class="cc-note">'+escHtml(c.note)+'</div>' : '') +
+      '<div class="cc-act">' +
+        '<button class="btn btn-sm" onclick="openContrForm(\''+c._spId+'\')">✎ Modifica</button>' +
+        '<button class="btn btn-sm" data-n="'+escHtml(nome)+'" onclick="openResoconto(this.dataset.n,\''+c.tipo+'\')">Resoconto</button>' +
+      '</div></div>';
   }).join('');
+  det.innerHTML = head + '<div class="cc-grid">'+cards+'</div>';
+  // saldo On-Site calcolato dai rapportini
+  contratti.filter(function(c){return c.tipo==='On-Site'&&contrHasSaldo(c);}).forEach(function(c){
+    contrConsumoOnSite(nome,c).then(function(cons){
+      var acq=c.saldoOre||0, res=acq-cons;
+      var v=document.getElementById('cc-os-v-'+c._spId), s=document.getElementById('cc-os-s-'+c._spId), b=document.getElementById('cc-os-b-'+c._spId);
+      if(v) v.textContent=contrFmtVal(c,res);
+      if(s) s.textContent='residuo di '+contrFmtVal(c,acq)+' · scalate '+contrFmtVal(c,cons);
+      if(b){ var pct=acq>0?Math.max(0,Math.min(100,res/acq*100)):0; b.style.width=pct+'%'; b.style.background=pct<20?'var(--red)':(pct<40?'var(--amber)':'var(--green)'); }
+    }).catch(function(e){
+      var s=document.getElementById('cc-os-s-'+c._spId), v=document.getElementById('cc-os-v-'+c._spId);
+      if(v) v.textContent=contrFmtVal(c,c.saldoOre||0);
+      if(s) s.textContent='ore acquistate (saldo non calcolato: '+e.message+')';
+    });
+  });
 }
 
 // -- Form modifica contratto --
@@ -8602,6 +8758,8 @@ function openContrForm(spId) {
   document.getElementById('cf-saldo-ore').value = c.saldoOre||0;
   document.getElementById('cf-num').value = c.numContratto||'';
   document.getElementById('cf-data-inizio').value = c.dataInizio||'';
+  document.getElementById('cf-data-fine').value = c.dataFine||'';
+  document.getElementById('cf-ore-lbl').textContent = c.tipo==='On-Site' ? 'Ore acquistate' : 'Saldo Ore';
   document.getElementById('cf-note').value = c.note||'';
   // Mostra/nascondi campi saldo in base al tipo
   var isPac = c.pacchetto!=='Spot'&&c.pacchetto!=='Premium';
@@ -8639,6 +8797,7 @@ async function saveContrForm() {
   var attivo = document.getElementById('cf-attivo').value === 'true';
   var num    = document.getElementById('cf-num').value.trim();
   var dI     = document.getElementById('cf-data-inizio').value;
+  var dF     = document.getElementById('cf-data-fine').value;
   var note   = document.getElementById('cf-note').value.trim();
   // Saldo: usa il valore del campo (già aggiornato dall'onchange o modificato manualmente)
   var sMin   = parseInt(document.getElementById('cf-saldo-min').value)||0;
@@ -8656,7 +8815,8 @@ async function saveContrForm() {
   }
   var fields = {Pacchetto:pac, Attivo:attivo, SaldoMinuti:sMin, SaldoOre:sOre,
     NumContratto:num, Note:note};
-  if(dI) fields.DataInizio = dI+'T00:00:00Z';
+  if(dI) fields.DataInizio = dI+'T12:00:00Z';
+  if(dF) fields.DataFine = dF+'T12:00:00Z';
   try {
     var tok = await anGetToken();
     var resp = await fetch(GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+'/items/'+_contrEditId+'/fields',{
@@ -8683,7 +8843,7 @@ var _resocontoStato = { cliente: '', tipo: '', items: [] };
 async function openResoconto(cliente, tipo) {
   var grid = document.getElementById('contr-grid');
   var panel = document.getElementById('contr-pdf-panel');
-  if(grid) grid.style.gridTemplateColumns = '220px 1fr 820px';
+  if(grid) grid.style.gridTemplateColumns = '270px 1fr 820px';
   if(panel) panel.style.opacity = '1';
   var sub = document.getElementById('pdf-panel-subtitle');
   var tit = document.getElementById('pdf-panel-title');
