@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v177';</script>
+<script>const APP_VERSION = 'v178';</script>
 <!-- ANYMA Design System: colori, misure e componenti condivisi con Rapportini -->
 <link href="https://serviceanyma.github.io/anyma-ds/anyma-ds.css" rel="stylesheet">
 <style>
@@ -3042,25 +3042,67 @@ function anAfterLogin(){
   anRevealApp();
   anAfterLoginInit();
 }
+function anWithTimeout(p, ms, fallback){
+  return Promise.race([p, new Promise(function(res){ setTimeout(function(){ res(fallback); }, ms); })]);
+}
+var _anPendingHandles = [];
 async function anAfterLoginInit(){
-  showLoading('Ripristino cartelle...');
-  var loaded = false;
-  try {
-    var sv = await loadHandle('service');
-    var av = await loadHandle('admin');
-    if(sv){ var r1 = await restoreHandle('service', sv.handle, false); if(r1) loaded = true; }
-    if(av){ var r2 = await restoreHandle('admin', av.handle, false); if(r2) loaded = true; }
-  } catch(e){ console.error('anAfterLoginInit:', e); }
-  hideLoading(); updateDots();
-  if(!loaded){ showView('setup'); } else { if(state.serviceHandle) showView('interventi'); else showView('preventivi'); }
+  // 1. Impostazioni SharePoint: indipendenti dalle cartelle, sempre caricate per prime
   var cfg = anLoadCfg();
   if(cfg.spUrl){ var inp=document.getElementById('settings-sp-url'); if(inp){ inp.value=cfg.spUrl; if(typeof updateSPStatus==='function') updateSPStatus(cfg.spUrl); } }
   if(typeof emInit==='function') emInit();
   loadSpSettings();
   loadPrefs();
   renderContrDefaultsGrid();
-  // Auto-carica le sezioni SharePoint se i GUID sono configurati
   spAutoLoad();
+
+  // 2. Cartelle OneDrive: si ripristinano solo se il browser ha già il permesso.
+  //    Senza un clic dell'utente non si chiede il permesso (Brave altrimenti blocca l'avvio).
+  showLoading('Ripristino cartelle...');
+  var loaded = false; _anPendingHandles = [];
+  try {
+    var tipi = ['service','admin'];
+    for(var i=0;i<tipi.length;i++){
+      var rec = await anWithTimeout(loadHandle(tipi[i]), 3000, null);
+      if(!rec || !rec.handle) continue;
+      var perm = 'prompt';
+      try{ perm = await anWithTimeout(rec.handle.queryPermission({mode:'read'}), 3000, 'prompt'); }catch(e){}
+      if(perm === 'granted'){
+        var ok = await anWithTimeout(restoreHandle(tipi[i], rec.handle, false), 60000, false);
+        if(ok) loaded = true;
+      } else {
+        _anPendingHandles.push({type:tipi[i], handle:rec.handle});
+      }
+    }
+  } catch(e){ console.error('anAfterLoginInit:', e); }
+  hideLoading(); updateDots();
+  anShowRiattiva();
+  if(loaded){ if(state.serviceHandle) showView('interventi'); else showView('preventivi'); }
+  else if(_anPendingHandles.length || getSpContrId()){ showView('contratti'); }
+  else { showView('setup'); }
+}
+// Avviso "cartelle da riattivare" (Brave non conserva il permesso tra una sessione e l'altra)
+function anShowRiattiva(){
+  var b = document.getElementById('an-riattiva');
+  if(!_anPendingHandles.length){ if(b) b.remove(); return; }
+  if(!b){
+    b = document.createElement('div'); b.id='an-riattiva';
+    b.style.cssText='position:fixed;right:18px;bottom:18px;z-index:900;display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--accent);border-radius:var(--radius-md,10px);padding:12px 14px;box-shadow:var(--cr-shadow);max-width:420px';
+    b.innerHTML='<div style="font-size:12px;color:var(--text2);line-height:1.45"><b style="color:var(--text);display:block;font-size:12.5px">Cartelle OneDrive da riattivare</b>Il browser chiede il consenso a ogni avvio per Interventi e Amministrazione.</div>'+
+      '<button class="btn btn-sm btn-primary" onclick="anRiattivaCartelle()">Riattiva</button>'+
+      '<button class="btn btn-sm" title="Chiudi" onclick="this.parentNode.remove()">✕</button>';
+    document.body.appendChild(b);
+  }
+}
+async function anRiattivaCartelle(){
+  var todo = _anPendingHandles.slice(); _anPendingHandles = [];
+  var ok = false;
+  for(var i=0;i<todo.length;i++){
+    try{ if(await restoreHandle(todo[i].type, todo[i].handle, true)) ok = true; else _anPendingHandles.push(todo[i]); }
+    catch(e){ _anPendingHandles.push(todo[i]); }
+  }
+  hideLoading(); updateDots(); anShowRiattiva();
+  if(ok){ showToast('Cartelle riattivate'); if(state.serviceHandle) showView('interventi'); else showView('preventivi'); }
 }
 
 function spAutoLoad() {
