@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v178';</script>
+<script>const APP_VERSION = 'v179';</script>
 <!-- ANYMA Design System: colori, misure e componenti condivisi con Rapportini -->
 <link href="https://serviceanyma.github.io/anyma-ds/anyma-ds.css" rel="stylesheet">
 <style>
@@ -2100,7 +2100,18 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
       .cc-info{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;border-top:1px solid var(--border);padding-top:12px;font-size:12px;color:var(--text)}
       .cc-info span{display:block;font-size:9.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text3);margin-bottom:3px}
       .cc-note{font-size:12px;color:var(--text2);line-height:1.5;background:var(--bg3);border-radius:var(--radius-sm,7px);padding:8px 10px}
-      .cc-act{display:flex;gap:6px;margin-top:auto}
+      .cc-act{display:flex;gap:6px;margin-top:auto;flex-wrap:wrap}
+      .cc-sto{margin-top:18px}
+      .cc-sto-t{font-family:var(--cond);font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+      .cc-sto-t::after{content:'';flex:1;height:1px;background:var(--border2)}
+      .cc-sto-tbl{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md,10px);overflow:hidden}
+      .cc-sto-r{display:grid;grid-template-columns:1.1fr 1.2fr .8fr 1.8fr .8fr .8fr .8fr 90px;gap:8px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text)}
+      .cc-sto-r:last-child{border-bottom:none}
+      .cc-sto-r.h{font-size:9.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text3);background:var(--bg)}
+      .rn-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm,7px);padding:12px 14px}
+      .rn-box-t{font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:6px}
+      .rn-l{display:block;font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text3);margin-bottom:5px}
+      .rn-in{width:100%;max-width:none;box-sizing:border-box}
       #contrFormOverlay .filter-input,#contrFormOverlay .sel{max-width:none}
       @media(max-width:1300px){.cc-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
     </style>
@@ -8671,23 +8682,26 @@ function contrBarHtml(id,res,dim){
 }
 
 function renderContrDettaglio(nome) {
-  var contratti = _contrData.filter(function(c){return c.cliente===nome;});
+  var tutti = _contrData.filter(function(c){return c.cliente===nome;});
+  var contratti = tutti.filter(function(c){return c.attivo;});
+  var storico = tutti.filter(function(c){return !c.attivo && c.pacchetto!=='Spot';})
+    .sort(function(a,b){return (b.dataFine||b.dataInizio||'').localeCompare(a.dataFine||a.dataInizio||'');});
   var tipoOrder = {Telefonica:0,Teleassistenza:1,'On-Site':2,Manutenzione:2};
   var ord=function(c){return (c.pacchetto==='Spot'?10:0)+(c.tipo in tipoOrder?tipoOrder[c.tipo]:9);};
   contratti.sort(function(a,b){return ord(a)-ord(b);});
   var pk=contratti.filter(contrHasPack).length;
   var det = document.getElementById('contr-detail');
   var head='<div class="cc-head"><div><div class="cc-head-l">Cliente</div><div class="cc-head-n">'+escHtml(nome)+'</div>'+
-    '<div class="cc-head-s">'+contratti.length+' contratti · '+(pk?pk+' con pacchetto attivo':'solo interventi a consumo (Spot)')+'</div></div></div>';
+    '<div class="cc-head-s">'+(pk?pk+(pk===1?' pacchetto attivo':' pacchetti attivi'):'solo interventi a consumo (Spot)')+(storico.length?' · '+storico.length+(storico.length===1?' contratto chiuso':' contratti chiusi'):'')+'</div></div></div>';
   var cards = contratti.map(function(c){
     var col = CONTR_TIPO_COLORS[c.tipo]||'var(--text)';
     var spot = c.pacchetto==='Spot', g=contrGiorniScad(c);
-    var stato = !c.attivo ? ['Non attivo','var(--text3)'] : (g!==null&&g<0 ? ['Scaduto','var(--red)'] : ['Attivo','var(--green)']);
+    var stato = g!==null&&g<0 ? ['Scaduto','var(--red)'] : ['Attivo','var(--green)'];
     var big, bar='';
     if(spot){
       return '<div class="cc-card spot" style="--cc:'+col+'">' +
         '<div class="cc-card-h"><span class="cc-dot"></span><span class="cc-tipo">'+escHtml(c.tipo)+'</span><span class="cc-pill">Spot · a consumo</span></div>' +
-        '<div class="cc-act"><button class="btn btn-sm" onclick="openContrForm(\''+c._spId+'\')">✎ Attiva pacchetto</button>' +
+        '<div class="cc-act"><button class="btn btn-sm" onclick="openRinnovoContr(\''+c._spId+'\',true)">+ Nuovo pacchetto</button>' +
         '<button class="btn btn-sm" data-n="'+escHtml(nome)+'" onclick="openResoconto(this.dataset.n,\''+c.tipo+'\')">Resoconto</button></div></div>';
     }
     else if(!contrHasSaldo(c)){ big='<div class="cc-big" style="color:'+col+'">Senza saldo</div><div class="cc-big-s">pacchetto '+escHtml(c.pacchetto)+'</div>'; }
@@ -8696,7 +8710,7 @@ function renderContrDettaglio(nome) {
       bar=contrBarHtml('cc-os-b-'+c._spId,0,1);
     }
     var scad = !c.dataFine ? '—' : fmtDate(c.dataFine)+(g===null?'':(g<0?' <em class="cc-warn" style="color:var(--red)">· scaduto</em>':(g<=60?' <em class="cc-warn" style="color:var(--amber)">· tra '+g+' g</em>':'')));
-    return '<div class="cc-card'+(spot?' spot':'')+'" style="--cc:'+col+'">' +
+    return '<div class="cc-card" style="--cc:'+col+'">' +
       '<div class="cc-card-h"><span class="cc-dot"></span><span class="cc-tipo">'+escHtml(c.tipo)+'</span>' +
         '<span class="cc-pill">'+escHtml(c.pacchetto)+'</span>' +
         '<span class="cc-pill" style="color:'+stato[1]+';border-color:'+stato[1]+'55">'+stato[0]+'</span></div>' +
@@ -8710,10 +8724,29 @@ function renderContrDettaglio(nome) {
       '<div class="cc-act">' +
         '<button class="btn btn-sm" onclick="openContrForm(\''+c._spId+'\')">✎ Modifica</button>' +
         '<button class="btn btn-sm" data-n="'+escHtml(nome)+'" onclick="openResoconto(this.dataset.n,\''+c.tipo+'\')">Resoconto</button>' +
+        '<button class="btn btn-sm btn-primary" style="margin-left:auto" onclick="openRinnovoContr(\''+c._spId+'\',false)">Chiudi / rinnova</button>' +
       '</div></div>';
   }).join('');
-  det.innerHTML = head + '<div class="cc-grid">'+cards+'</div>';
-  // saldo On-Site calcolato dai rapportini
+  var st = '';
+  if(storico.length){
+    st = '<div class="cc-sto"><div class="cc-sto-t">Storico contratti</div><div class="cc-sto-tbl">' +
+      '<div class="cc-sto-r h"><div>Tipo</div><div>Contratto</div><div>Pacchetto</div><div>Periodo</div><div>Acquistate</div><div>Usate</div><div>Residuo</div><div></div></div>' +
+      storico.map(function(c){
+        var col = CONTR_TIPO_COLORS[c.tipo]||'var(--text)';
+        return '<div class="cc-sto-r">' +
+          '<div><span class="cc-dot" style="--cc:'+col+';display:inline-block;margin-right:6px"></span>'+escHtml(c.tipo)+'</div>' +
+          '<div style="font-family:var(--mono);font-size:11.5px">'+escHtml(c.numContratto||'—')+'</div>' +
+          '<div>'+escHtml(c.pacchetto)+'</div>' +
+          '<div>'+(c.dataInizio?fmtDate(c.dataInizio):'—')+' → '+(c.dataFine?fmtDate(c.dataFine):'—')+'</div>' +
+          '<div>'+(contrHasSaldo(c)?contrFmtVal(c,contrDimPacchetto(c)):'—')+'</div>' +
+          '<div id="cc-st-u-'+c._spId+'">'+(contrHasSaldo(c)?'…':'—')+'</div>' +
+          '<div id="cc-st-r-'+c._spId+'" style="font-weight:700">'+(contrHasSaldo(c)?'…':'—')+'</div>' +
+          '<div style="text-align:right"><button class="btn btn-sm" data-n="'+escHtml(nome)+'" onclick="openResoconto(this.dataset.n,\''+c.tipo+'\',\''+c._spId+'\')">Sessioni</button></div>' +
+        '</div>';
+      }).join('') + '</div></div>';
+  }
+  det.innerHTML = head + '<div class="cc-grid">'+cards+'</div>' + st;
+  // saldi calcolati dai rapportini (contratti attivi e storico)
   contratti.filter(function(c){return contrHasSaldo(c);}).forEach(function(c){
     contrConsumoOnSite(nome,c).then(function(cons){
       var acq=contrDimPacchetto(c), res=acq-cons;
@@ -8727,6 +8760,143 @@ function renderContrDettaglio(nome) {
       if(s) s.textContent='acquistate (residuo non calcolato: '+e.message+')';
     });
   });
+  storico.filter(function(c){return contrHasSaldo(c);}).forEach(function(c){
+    contrConsumoOnSite(nome,c).then(function(cons){
+      var acq=contrDimPacchetto(c), res=acq-cons;
+      var u=document.getElementById('cc-st-u-'+c._spId), r=document.getElementById('cc-st-r-'+c._spId);
+      if(u) u.textContent=contrFmtVal(c,cons);
+      if(r){ r.textContent=contrFmtVal(c,res); r.style.color=res<0?'var(--red)':(res>0?'var(--amber)':'var(--text2)'); }
+    }).catch(function(){ var u=document.getElementById('cc-st-u-'+c._spId); if(u) u.textContent='n.d.'; });
+  });
+}
+
+// ── Chiusura e rinnovo di un contratto (lo storico resta su SharePoint con Attivo = No) ──
+var _rinnovoId = null;
+function contrAddDays(d, n){ var p=d.split('-'), x=new Date(+p[0],+p[1]-1,+p[2]); x.setDate(x.getDate()+n); return x.toLocaleDateString('sv-SE'); }
+function contrAddMonths(d, n){ var p=d.split('-'), x=new Date(+p[0],+p[1]-1+n,+p[2]); x.setDate(x.getDate()-1); return x.toLocaleDateString('sv-SE'); }
+function openRinnovoContr(spId, daSpot){
+  var c=_contrData.find(function(x){return x._spId===spId;}); if(!c) return;
+  _rinnovoId=spId;
+  var ov=document.getElementById('rinnovoOverlay');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='rinnovoOverlay'; ov.className='proj-modal-overlay hidden';
+    ov.onclick=function(ev){ if(ev.target===ov) ov.classList.add('hidden'); };
+    ov.innerHTML='<div class="proj-modal" style="max-width:560px;width:94vw;padding-bottom:16px">'+
+      '<div class="pm-hdr"><div><div class="pm-client" id="rn-sub"></div><div class="pm-title" id="rn-tit"></div></div>'+
+      '<button class="pm-close" onclick="document.getElementById(\'rinnovoOverlay\').classList.add(\'hidden\')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>'+
+      '<div style="display:flex;flex-direction:column;gap:14px;padding:4px 0">'+
+        '<div id="rn-box-chiudi" class="rn-box"><div class="rn-box-t">1 · Chiusura del contratto attuale</div>'+
+          '<div id="rn-attuale" style="font-size:12px;color:var(--text2);margin-bottom:8px"></div>'+
+          '<label class="rn-l">Data di chiusura</label><input type="date" id="rn-chiusura" class="filter-input rn-in" onchange="rnSyncDate()">'+
+          '<div style="font-size:11px;color:var(--text3);margin-top:6px">Il contratto resta nello storico con le sue sessioni. Il residuo resta sul contratto chiuso: se va riportato, sommalo alla quantità del nuovo.</div></div>'+
+        '<div class="rn-box"><label style="display:flex;gap:8px;align-items:center;font-size:12.5px;font-weight:700;color:var(--text);cursor:pointer"><input type="checkbox" id="rn-nuovo" checked onchange="rnToggleNuovo()"> <span id="rn-nuovo-lbl">2 · Crea il nuovo contratto</span></label>'+
+          '<div id="rn-nuovo-box" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">'+
+            '<div><label class="rn-l">Pacchetto</label><select id="rn-pac" class="sel rn-in" onchange="rnPacDefault()"></select></div>'+
+            '<div><label class="rn-l" id="rn-q-lbl">Ore acquistate</label><input type="number" min="0" step="0.5" id="rn-qta" class="filter-input rn-in"></div>'+
+            '<div><label class="rn-l">Data inizio</label><input type="date" id="rn-inizio" class="filter-input rn-in"></div>'+
+            '<div><label class="rn-l">Data scadenza</label><input type="date" id="rn-fine" class="filter-input rn-in"></div>'+
+            '<div><label class="rn-l">N. contratto</label><input type="text" id="rn-num" class="filter-input rn-in" style="font-family:var(--mono)"></div>'+
+            '<div><label class="rn-l">Durata</label><select id="rn-durata" class="sel rn-in" onchange="rnSyncDate()"><option value="12">12 mesi</option><option value="24">24 mesi</option><option value="0">manuale</option></select></div>'+
+            '<div style="grid-column:1/-1"><label class="rn-l">Note</label><input type="text" id="rn-note" class="filter-input rn-in"></div>'+
+          '</div></div>'+
+        '<div id="rn-err" style="display:none;color:var(--red);font-size:12px"></div>'+
+        '<div style="display:flex;gap:8px;justify-content:flex-end">'+
+          '<button class="btn" onclick="document.getElementById(\'rinnovoOverlay\').classList.add(\'hidden\')">Annulla</button>'+
+          '<button class="btn btn-primary" id="rn-save" onclick="salvaRinnovoContr()">Conferma</button></div>'+
+      '</div></div>';
+    document.body.appendChild(ov);
+  }
+  var oggi=new Date().toLocaleDateString('sv-SE');
+  var chi = c.dataFine && c.dataFine<oggi ? c.dataFine : oggi;
+  document.getElementById('rn-sub').textContent=c.cliente;
+  document.getElementById('rn-tit').textContent=c.tipo+(daSpot?' — nuovo pacchetto':' — chiudi e rinnova');
+  document.getElementById('rn-box-chiudi').style.display=daSpot?'none':'';
+  document.getElementById('rn-attuale').innerHTML=escHtml(c.pacchetto)+(c.numContratto?' · '+escHtml(c.numContratto):'')+' · dal '+(c.dataInizio?fmtDate(c.dataInizio):'—')+(c.dataFine?' al '+fmtDate(c.dataFine):'');
+  document.getElementById('rn-chiusura').value=chi;
+  var pacs = c.tipo==='On-Site' ? ['Base','Standard'] : ['Base','Standard','Premium'];
+  document.getElementById('rn-pac').innerHTML=pacs.map(function(p){return '<option'+(p===c.pacchetto?' selected':'')+'>'+p+'</option>';}).join('');
+  if(c.pacchetto==='Spot') document.getElementById('rn-pac').value='Base';
+  document.getElementById('rn-q-lbl').textContent = c.tipo==='Telefonica' ? 'Minuti acquistati' : 'Ore acquistate';
+  document.getElementById('rn-qta').value = c.pacchetto!=='Spot' ? contrDimPacchetto(c) : '';
+  if(c.pacchetto==='Spot') rnPacDefault();
+  document.getElementById('rn-durata').value = (c.dataInizio&&c.dataFine&&(new Date(c.dataFine)-new Date(c.dataInizio))/86400000>400)?'24':'12';
+  document.getElementById('rn-num').value=''; document.getElementById('rn-num').placeholder=c.numContratto?('precedente: '+c.numContratto):'es. CTR-221-260002';
+  document.getElementById('rn-note').value='';
+  document.getElementById('rn-nuovo').checked=true; document.getElementById('rn-nuovo').disabled=!!daSpot;
+  document.getElementById('rn-err').style.display='none';
+  rnToggleNuovo(); rnSyncDate(daSpot?oggi:null);
+  ov.classList.remove('hidden');
+}
+function rnToggleNuovo(){
+  var on=document.getElementById('rn-nuovo').checked;
+  document.getElementById('rn-nuovo-box').style.display=on?'grid':'none';
+  document.getElementById('rn-nuovo-lbl').textContent = on ? '2 · Crea il nuovo contratto' : '2 · Nessun nuovo pacchetto (il cliente torna a Spot)';
+}
+function rnPacDefault(){
+  var c=_contrData.find(function(x){return x._spId===_rinnovoId;}); if(!c) return;
+  var d=getContrDefault(c.tipo, document.getElementById('rn-pac').value)||{};
+  var q = c.tipo==='Telefonica' ? d.saldoMinuti : d.saldoOre;
+  if(q) document.getElementById('rn-qta').value=q;
+}
+function rnSyncDate(inizio){
+  var chi=document.getElementById('rn-chiusura').value;
+  var ini=inizio || (chi?contrAddDays(chi,1):new Date().toLocaleDateString('sv-SE'));
+  document.getElementById('rn-inizio').value=ini;
+  var m=parseInt(document.getElementById('rn-durata').value)||0;
+  if(m) document.getElementById('rn-fine').value=contrAddMonths(ini,m);
+}
+async function salvaRinnovoContr(){
+  var c=_contrData.find(function(x){return x._spId===_rinnovoId;}); if(!c) return;
+  var daSpot=c.pacchetto==='Spot';
+  var err=document.getElementById('rn-err'), btn=document.getElementById('rn-save');
+  var chi=document.getElementById('rn-chiusura').value, nuovo=document.getElementById('rn-nuovo').checked;
+  var pac=document.getElementById('rn-pac').value, qta=parseFloat(document.getElementById('rn-qta').value);
+  var ini=document.getElementById('rn-inizio').value, fin=document.getElementById('rn-fine').value;
+  var e='';
+  if(!daSpot && !chi) e='Indica la data di chiusura.';
+  else if(nuovo && !(qta>0) && !(pac==='Premium')) e='Indica la quantità acquistata.';
+  else if(nuovo && !ini) e='Indica la data di inizio del nuovo contratto.';
+  else if(nuovo && fin && fin<ini) e='La scadenza è precedente all\'inizio.';
+  else if(nuovo && !daSpot && chi && ini<=chi) e='Il nuovo contratto deve iniziare dopo la chiusura del precedente.';
+  if(e){ err.textContent=e; err.style.display='block'; return; }
+  err.style.display='none';
+  var listId=decodeURIComponent(getSpContrId()).replace(/[{}]/g,'');
+  btn.disabled=true; btn.textContent='Salvataggio…';
+  try{
+    var tok=await anGetToken(); if(!tok) throw new Error('Token scaduto');
+    var H={'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'};
+    var base=GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+listId+'/items';
+    var nf={Title:c.cliente, TipoContratto:c.tipo, Attivo:true};
+    if(nuovo){
+      nf.Pacchetto=pac;
+      nf.SaldoMinuti = c.tipo==='Telefonica' ? Math.round(qta||0) : 0;
+      nf.SaldoOre    = c.tipo==='Telefonica' ? 0 : (qta||0);
+      nf.DataInizio=ini+'T12:00:00Z'; if(fin) nf.DataFine=fin+'T12:00:00Z';
+      var num=document.getElementById('rn-num').value.trim(); if(num) nf.NumContratto=num;
+      var note=document.getElementById('rn-note').value.trim(); if(note) nf.Note=note;
+    } else { nf.Pacchetto='Spot'; nf.SaldoMinuti=0; nf.SaldoOre=0; nf.Note='Dopo chiusura del '+fmtDate(chi); }
+    // 1. crea il nuovo (se fallisce, il vecchio resta com'è)
+    var r1=await fetch(base,{method:'POST',headers:H,body:JSON.stringify({fields:nf})});
+    if(!r1.ok){ var t=await r1.text().catch(function(){return '';}); var m='HTTP '+r1.status; try{m=JSON.parse(t).error.message||m;}catch(x){} throw new Error('creazione nuovo contratto: '+m); }
+    // 2. archivia il vecchio: Attivo = No (lo Spot da cui si parte non serve nello storico)
+    var old = daSpot ? {Attivo:false} : {Attivo:false, DataFine:chi+'T12:00:00Z'};
+    var r2=await fetch(base+'/'+c._spId+'/fields',{method:'PATCH',headers:H,body:JSON.stringify(old)});
+    if(!r2.ok) throw new Error('il nuovo contratto è stato creato, ma la chiusura del precedente non è riuscita (HTTP '+r2.status+'): disattivalo da SharePoint');
+    document.getElementById('rinnovoOverlay').classList.add('hidden');
+    showToast(daSpot?'Pacchetto attivato':'Contratto chiuso'+(nuovo?' e rinnovato':''));
+    _contrConsumoCache={};
+    var sel=_contrSelCliente;
+    await loadContratti();
+    if(sel) selectContrCliente(sel);
+  }catch(x){ err.textContent='Errore: '+x.message; err.style.display='block'; }
+  finally{ btn.disabled=false; btn.textContent='Conferma'; }
+}
+// Contratto da usare nei resoconti: quello scelto dallo storico, altrimenti quello attivo
+function contrPerResoconto(cliente, tipo){
+  var id=_resocontoStato&&_resocontoStato.contrId;
+  if(id){ var x=_contrData.find(function(c){return c._spId===id;}); if(x&&x.cliente===cliente&&x.tipo===tipo) return x; }
+  var l=_contrData.filter(function(c){return c.cliente===cliente&&c.tipo===tipo;});
+  return l.find(function(c){return c.attivo;}) || l.sort(function(a,b){return (b.dataInizio||'').localeCompare(a.dataInizio||'');})[0];
 }
 
 // -- Form modifica contratto --
@@ -8825,9 +8995,11 @@ async function saveContrForm() {
 
 // -- Resoconto: apre pannello PDF a destra --
 // Stato corrente del resoconto aperto
-var _resocontoStato = { cliente: '', tipo: '', items: [] };
+var _resocontoStato = { cliente: '', tipo: '', items: [], contrId: null };
 
-async function openResoconto(cliente, tipo) {
+async function openResoconto(cliente, tipo, contrId) {
+  _resocontoStato.contrId = contrId || null;
+  var _cSel = contrId ? _contrData.find(function(x){return x._spId===contrId;}) : null;
   var grid = document.getElementById('contr-grid');
   var panel = document.getElementById('contr-pdf-panel');
   if(grid) grid.style.gridTemplateColumns = '270px 1fr 820px';
@@ -8835,7 +9007,7 @@ async function openResoconto(cliente, tipo) {
   var sub = document.getElementById('pdf-panel-subtitle');
   var tit = document.getElementById('pdf-panel-title');
   if(sub) sub.textContent = cliente;
-  if(tit) tit.textContent = tipo + ' — Resoconto';
+  if(tit) tit.textContent = tipo + ' — Resoconto' + (_cSel ? ' · contratto chiuso '+(_cSel.numContratto||'')+' ('+(_cSel.dataInizio?fmtDate(_cSel.dataInizio):'')+' → '+(_cSel.dataFine?fmtDate(_cSel.dataFine):'')+')' : '');
   var btnS = document.getElementById('btn-stampa-pdf');
   if(btnS) btnS.style.display = 'none';
 
@@ -8851,6 +9023,10 @@ async function openResoconto(cliente, tipo) {
       annoSel.appendChild(opt);
     }
     annoSel.value = String(curY);
+    if(_cSel){
+      var oc=document.createElement('option'); oc.value='contr';
+      oc.textContent='Periodo contratto'; annoSel.insertBefore(oc, annoSel.firstChild); annoSel.value='contr';
+    }
   }
   // Mese corrente come default
   var meseSel = document.getElementById('pdf-filtro-mese');
@@ -8915,6 +9091,12 @@ function _applicaFiltriResoconto() {
   var filtrati = items.filter(function(item) {
     var data = (item.fields && item.fields.DataIntervento) ? item.fields.DataIntervento.split('T')[0] : '';
     if(!data) return false;
+    if(anno === 'contr'){
+      var cc = contrPerResoconto(cliente, tipo);
+      if(cc && cc.dataInizio && data < cc.dataInizio) return false;
+      if(cc && cc.dataFine && data > cc.dataFine) return false;
+      return true;
+    }
     if(anno && !data.startsWith(anno)) return false;
     if(mese && data.substring(5,7) !== mese) return false;
     return true;
@@ -9356,7 +9538,7 @@ function _renderPdfPanelInner(items, cliente, tipo) {
     return ore+'h '+m+'min';
   }
 
-  var contr      = _contrData.find(function(c){return c.cliente===cliente && c.tipo===tipo;});
+  var contr      = contrPerResoconto(cliente, tipo);
   var numContr   = contr ? (contr.numContratto||'-') : '-';
   var dataInizio = contr ? (contr.dataInizio||'-') : '-';
   var pacchetto  = contr ? (contr.pacchetto||'Spot') : 'Spot';
@@ -9738,7 +9920,7 @@ function renderResoconto(items, tipo) {
   var isTel = tipo==='Telefonica';
   var totMin = rows.reduce(function(s,r){return s+(parseFloat(r.minuti)||0);},0);
   var totOre = rows.reduce(function(s,r){return s+(parseFloat(r.ore)||0);},0);
-  var contr = _contrData.find(function(c){return c.cliente===document.getElementById('res-subtitle').textContent && c.tipo===tipo;});
+  var contr = contrPerResoconto(document.getElementById('res-subtitle').textContent, tipo);
   var saldoCorrente = contr ? (isTel ? contr.saldoMinuti : contr.saldoOre) : null;
   var unitaLabel = isTel ? 'min' : 'h';
   var totLabel = isTel ? totMin+' min' : totOre.toFixed(2)+' h';
@@ -10133,7 +10315,7 @@ function _buildPaginaResocontoGlobale(items, cliente, tipo, _lang, allItemsCli) 
   var isTel=tipo==='Telefonica', isTeleass=tipo==='Teleassistenza', isOnSite=!isTel&&!isTeleass;
   var unitaLabel=isTel?'min':'h';
   var L={ita:{cliente:'Cliente',tipoInt:'Tipo intervento',data:'Data',nrt:'N. RT',pacchetto:'Pacchetto',inizio:'Inizio',fine:'Fine',referente:'Referente',durata:'Durata',coeff:'Coeff.',totAdd:'Tot. Add.',totale:'TOTALE',subtotale:'Subtotale',nessunoInt:'Nessun intervento',saldoRes:'Saldo residuo',contratto:'Contratto',estrattoAl:'Estratto al',scadenza:'Scadenza',oreLav:'Ore Lav.',oreViag:'Ore Viag.',sovrFasce:'Sovrapposizione fasce'},eng:{cliente:'Client',tipoInt:'Service type',data:'Date',nrt:'RT No.',pacchetto:'Package',inizio:'Start',fine:'End',referente:'Technician',durata:'Duration',coeff:'Coeff.',totAdd:'Charged',totale:'TOTAL',subtotale:'Subtotal',nessunoInt:'No interventions',saldoRes:'Balance',contratto:'Contract',estrattoAl:'Extracted',scadenza:'Expiry',oreLav:'Work h',oreViag:'Travel h',sovrFasce:'Overlapping bands'}}[_lang]||{data:'Data',nrt:'N. RT',pacchetto:'Pacchetto',inizio:'Inizio',fine:'Fine',referente:'Referente',durata:'Durata',coeff:'Coeff.',totAdd:'Tot. Add.',totale:'TOTALE',subtotale:'Subtotale',nessunoInt:'Nessun intervento',saldoRes:'Saldo residuo',contratto:'Contratto',estrattoAl:'Estratto al',scadenza:'Scadenza',oreLav:'Ore Lav.',oreViag:'Ore Viag.',sovrFasce:'Sovrapposizione fasce'};
-  var contr=_contrData.find(function(c){return c.cliente===cliente&&((isTel&&c.tipo==='Telefonica')||(isTeleass&&c.tipo==='Teleassistenza')||(isOnSite&&c.tipo==='On-Site'));});
+  var contr=(function(){ var k=_resocontoStato.contrId; _resocontoStato.contrId=null; var r=contrPerResoconto(cliente, isTel?'Telefonica':(isTeleass?'Teleassistenza':'On-Site')); _resocontoStato.contrId=k; return r; })();
   var numContr=contr?(contr.numContratto||'—'):'—', dataInizio=contr?(contr.dataInizio||'—'):'—', pacchetto=contr?(contr.pacchetto||'Spot'):'Spot';
   var logoSrc=typeof LOGO_RESOCONTO!=='undefined'&&LOGO_RESOCONTO?LOGO_RESOCONTO:'';
   var oggi=new Date().toLocaleDateString('it-IT');
