@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v179';</script>
+<script>const APP_VERSION = 'v180';</script>
 <!-- ANYMA Design System: colori, misure e componenti condivisi con Rapportini -->
 <link href="https://serviceanyma.github.io/anyma-ds/anyma-ds.css" rel="stylesheet">
 <style>
@@ -2520,7 +2520,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 
   <!-- MODALE Nuovo/Modifica Ticket -->
   <div class="proj-modal-overlay hidden" id="tkt-modal" onclick="if(event.target===this)chiudiTktModal()">
-    <div class="proj-modal" style="max-width:560px" onclick="event.stopPropagation()">
+    <div class="proj-modal" style="max-width:620px" onclick="event.stopPropagation()">
       <div class="pm-hdr">
         <div>
           <div class="pm-client" id="tkt-modal-subtitle">Assistenza</div>
@@ -2560,11 +2560,17 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           <textarea id="tkt-f-desc" class="filter-input" rows="3" style="width:100%;resize:vertical;font-family:var(--font);box-sizing:border-box" placeholder="Dettagli del problema..."></textarea>
         </div>
 
-        <!-- Canale / Priorità / Tecnico -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <!-- Stato / Canale / Priorità / Tecnico -->
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">
+          <div>
+            <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Stato</label>
+            <select id="tkt-f-stato" class="sel" style="width:100%;min-width:0;max-width:none" onchange="tktStatoForm()">
+              <option>Nuovo</option><option>In lavorazione</option><option>Attesa cliente</option><option>Risolto</option><option>Chiuso</option>
+            </select>
+          </div>
           <div>
             <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Canale</label>
-            <select id="tkt-f-canale" class="sel" style="width:100%">
+            <select id="tkt-f-canale" class="sel" style="width:100%;min-width:0;max-width:none">
               <option value="Manuale">Manuale</option>
               <option value="Email">Email</option>
               <option value="Telefono">Telefono</option>
@@ -2572,7 +2578,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           </div>
           <div>
             <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Priorità</label>
-            <select id="tkt-f-priorita" class="sel" style="width:100%">
+            <select id="tkt-f-priorita" class="sel" style="width:100%;min-width:0;max-width:none">
               <option value="Media">Media</option>
               <option value="Alta">Alta</option>
               <option value="Bassa">Bassa</option>
@@ -2580,7 +2586,19 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           </div>
           <div>
             <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Tecnico</label>
-            <input type="text" id="tkt-f-tecnico" class="filter-input" style="width:100%;box-sizing:border-box" placeholder="Nome tecnico">
+            <input type="text" id="tkt-f-tecnico" class="filter-input" style="width:100%;min-width:0;max-width:none;box-sizing:border-box" placeholder="Nome tecnico">
+          </div>
+        </div>
+
+        <!-- Apertura / Chiusura -->
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+          <div>
+            <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Apertura</label>
+            <input type="datetime-local" id="tkt-f-apertura" class="filter-input" style="width:100%;min-width:0;max-width:none;box-sizing:border-box">
+          </div>
+          <div>
+            <label class="an-lbl" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);display:block;margin-bottom:5px">Chiusura</label>
+            <input type="datetime-local" id="tkt-f-chiusura" class="filter-input" style="width:100%;min-width:0;max-width:none;box-sizing:border-box">
           </div>
         </div>
 
@@ -10917,6 +10935,18 @@ async function cambiaStatoTicket(id, nuovoStato) {
 
 function chiudiTicket(id){cambiaStatoTicket(id,'Chiuso');}
 
+// Data ISO ↔ campo data/ora locale del modulo
+function tktToLocalInput(iso){ if(!iso) return ''; var d=new Date(iso); if(isNaN(d)) return ''; var p=function(n){return String(n).padStart(2,'0');};
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes()); }
+function tktFromLocalInput(v){ if(!v) return null; var d=new Date(v); return isNaN(d)?null:d.toISOString(); }
+// Chiusura: proposta quando lo stato è Risolto/Chiuso, svuotata se il ticket è aperto
+function tktStatoForm(){
+  var st=document.getElementById('tkt-f-stato').value, ch=document.getElementById('tkt-f-chiusura');
+  var chiuso=(st==='Risolto'||st==='Chiuso');
+  if(chiuso && !ch.value) ch.value=tktToLocalInput(new Date().toISOString());
+  if(!chiuso) ch.value='';
+  ch.disabled=!chiuso; ch.style.opacity=chiuso?'1':'.45';
+}
 function apriNuovoTicket(){
   _tktEditId=null;
   document.getElementById('tkt-modal-title').textContent='Nuovo Ticket';
@@ -10925,6 +10955,10 @@ function apriNuovoTicket(){
   document.getElementById('tkt-modal-del-btn').style.display='none';
   document.getElementById('tkt-f-canale').value='Manuale';
   document.getElementById('tkt-f-priorita').value='Media';
+  document.getElementById('tkt-f-stato').value='Nuovo';
+  document.getElementById('tkt-f-apertura').value=tktToLocalInput(new Date().toISOString());
+  document.getElementById('tkt-f-chiusura').value='';
+  tktStatoForm();
   document.getElementById('tkt-modal').classList.remove('hidden');
 }
 
@@ -10943,6 +10977,10 @@ function apriModificaTicket(id){
   document.getElementById('tkt-f-tecnico').value=t.Tecnico||'';
   document.getElementById('tkt-f-note').value=t.NoteInterne||'';
   document.getElementById('tkt-f-rt').value=t.RTCollegato||'';
+  document.getElementById('tkt-f-stato').value=t.Stato||'Nuovo';
+  document.getElementById('tkt-f-apertura').value=tktToLocalInput(t.DataApertura);
+  document.getElementById('tkt-f-chiusura').value=tktToLocalInput(t.DataChiusura);
+  tktStatoForm();
   document.getElementById('tkt-modal-del-btn').style.display='';
   document.getElementById('tkt-modal').classList.remove('hidden');
 }
@@ -10972,12 +11010,22 @@ async function salvaTktModal(){
   var _rtv=document.getElementById('tkt-f-rt').value.trim();
   var _tOld=_tktEditId&&_tktData?_tktData.find(function(x){return (x._spId||x.id)===_tktEditId;}):null;
   if(_rtv || (_tOld&&_tOld.RTCollegato)) fields.RTCollegato=_rtv;
+  // Stato e orari modificabili
+  var _st=document.getElementById('tkt-f-stato').value;
+  var _ap=tktFromLocalInput(document.getElementById('tkt-f-apertura').value);
+  var _ch=tktFromLocalInput(document.getElementById('tkt-f-chiusura').value);
+  var _chiuso=(_st==='Risolto'||_st==='Chiuso');
+  if(_ap && _ch && _ch<_ap){ showToast('La chiusura è precedente all\'apertura','wrn'); btn.disabled=false; btn.textContent=_tktEditId?'Salva modifiche':'Crea Ticket'; return; }
+  fields.Stato=_st;
+  if(_ap) fields.DataApertura=_ap;
+  if(_chiuso) fields.DataChiusura=_ch||new Date().toISOString();
+  else if(_tOld&&_tOld.DataChiusura) fields.DataChiusura=null;
   try{
     var url, method;
     if(_tktEditId){
       url=GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+TICKET_LIST_ID+'/items/'+_tktEditId+'/fields'; method='PATCH';
     } else {
-      fields.Title=generateTktId(); fields.Stato='Nuovo'; fields.DataApertura=new Date().toISOString();
+      fields.Title=generateTktId(); if(!fields.Stato) fields.Stato='Nuovo'; if(!fields.DataApertura) fields.DataApertura=new Date().toISOString();
       url=GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+TICKET_LIST_ID+'/items'; method='POST';
     }
     var r=await fetch(url,{method:method,headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'},
