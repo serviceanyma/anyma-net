@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v180';</script>
+<script>const APP_VERSION = 'v181';</script>
 <!-- ANYMA Design System: colori, misure e componenti condivisi con Rapportini -->
 <link href="https://serviceanyma.github.io/anyma-ds/anyma-ds.css" rel="stylesheet">
 <style>
@@ -2444,6 +2444,9 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
       .tkt-sec-l{font-family:var(--cond);font-size:10.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text2);margin:0 0 8px}
       .tkt-box{font-size:13px;color:var(--text);line-height:1.6;padding:14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm,7px);white-space:pre-wrap;margin-bottom:16px}
       .tkt-box.note{background:rgba(245,166,35,.06);border-color:rgba(245,166,35,.25);color:var(--text2)}
+      .tkt-box.diag{background:rgba(62,207,142,.06);border-color:rgba(62,207,142,.28)}
+      .tkt-sec-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px}
+      .tkt-sec-row .tkt-sec-l{margin:0}
       #tkt-modal .filter-input,#tkt-modal .sel{max-width:none}
       .btn-danger{background:var(--cr-bg);border-color:var(--accent);color:var(--brand-text,#e74c3c)}
       .btn-danger:hover{background:var(--accent);color:#fff}
@@ -10878,7 +10881,37 @@ function renderTktDetail(t) {
       cell('Apertura',dataStr)+cell('Chiusura',dataChiStr)+cell('RT collegato',t.RTCollegato,true)+
     '</div>'+
     (t.Descrizione?'<div class="tkt-sec-l">Descrizione</div><div class="tkt-box">'+tktEsc(t.Descrizione)+'</div>':'')+
-    (t.NoteInterne?'<div class="tkt-sec-l">Note interne</div><div class="tkt-box note">'+tktEsc(t.NoteInterne)+'</div>':'');
+    (t.NoteInterne?'<div class="tkt-sec-l">Note interne</div><div class="tkt-box note">'+tktEsc(t.NoteInterne)+'</div>':'')+
+    tktDiagnosiHtml(t);
+}
+
+// Diagnosi con Claude: campi scritti dal flusso Power Automate "Diagnosi - Ticket" (Ticket/_queue)
+var TKT_DIAG_URL='https://claude.ai/artifact/CpxC3nsqP9gfGEdeMjz1bs';
+var TKT_CHAT_URL='https://anymapack.sharepoint.com/sites/SERVICE/Documenti%20condivisi/Ticket/Chat/';
+function tktDiagnosiHtml(t){
+  var id=t._spId||t.id;
+  var ore=(t.OreDiagnosi!=null&&t.OreDiagnosi!=='')?String(t.OreDiagnosi).replace('.',',')+' h':'';
+  var hasDiag=!!(t.RiepilogoInterno||t.TestoRapportino);
+  var head='<div class="tkt-sec-row"><div class="tkt-sec-l">Diagnosi'+(ore?' · '+ore:'')+'</div><div style="display:flex;gap:6px;flex-wrap:wrap">'+
+    (hasDiag?'<a class="btn btn-sm" href="'+TKT_CHAT_URL+encodeURIComponent(t.Title||'')+'.md" target="_blank" rel="noopener">Storico chat</a>':'')+
+    '<button class="btn btn-sm" onclick="tktApriDiagnosi(\''+id+'\')" title="Copia il numero ticket e apre la diagnosi con Claude">'+(hasDiag?'Riapri diagnosi':'Diagnosi con Claude')+'</button>'+
+  '</div></div>';
+  if(!hasDiag) return head+'<div class="tkt-box" style="color:var(--text3)">Nessuna diagnosi inviata per questo ticket.</div>';
+  return head+
+    (t.RiepilogoInterno?'<div class="tkt-box diag">'+tktEsc(t.RiepilogoInterno)+'</div>':'')+
+    (t.TestoRapportino?'<div class="tkt-sec-row"><div class="tkt-sec-l">Testo per il rapportino</div>'+
+      '<button class="btn btn-sm" onclick="tktCopiaRapportino(\''+id+'\')">Copia</button></div>'+
+      '<div class="tkt-box">'+tktEsc(t.TestoRapportino)+'</div>':'');
+}
+function tktFind(id){ return _tktData&&_tktData.find(function(x){return (x._spId||x.id)===id;}); }
+function tktCopiaRapportino(id){
+  var t=tktFind(id); if(!t||!t.TestoRapportino) return;
+  navigator.clipboard.writeText(t.TestoRapportino).then(function(){showToast('Testo rapportino copiato');},function(){showToast('Copia non riuscita','err');});
+}
+function tktApriDiagnosi(id){
+  var t=tktFind(id); if(!t) return;
+  var go=function(){ window.open(TKT_DIAG_URL,'_blank'); };
+  navigator.clipboard.writeText(t.Title||'').then(function(){showToast('Numero '+t.Title+' copiato: incollalo in “Nuova diagnosi”');go();},go);
 }
 
 var RAPPORTINI_URL='https://serviceanyma.github.io/anyma-rapportini/';
@@ -10887,7 +10920,7 @@ function tktCreaRapportino(id){
   var q=new URLSearchParams();
   q.set('tkt',t.Title||''); q.set('tktId',t._spId||t.id||'');
   q.set('cliente',t.Cliente||''); q.set('ogg',t.Oggetto||'');
-  q.set('desc',(t.Descrizione||'').substring(0,1500));
+  q.set('desc',(t.TestoRapportino||t.Descrizione||'').substring(0,1500));
   if(t.Canale==='Telefono') q.set('tipo','Assistenza Telefonica');
   window.open(RAPPORTINI_URL+'?'+q.toString(),'_blank');
   if(t.Stato==='Nuovo') cambiaStatoTicket(id,'In lavorazione');
