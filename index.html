@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v187';</script>
+<script>const APP_VERSION = 'v188';</script>
 <!-- ANYMA Design System: colori, misure e componenti condivisi con Rapportini -->
 <link href="https://serviceanyma.github.io/anyma-ds/anyma-ds.css" rel="stylesheet">
 <style>
@@ -6313,7 +6313,7 @@ table.doc{width:100%;border-collapse:collapse}
 .sec-h .n{color:${RED};font-size:12pt}
 .b{list-style:none;margin:0 0 0 1mm;padding:0}
 .b li{position:relative;padding-left:5mm;margin:0 0 1.3mm 0;line-height:1.45;break-inside:avoid}
-.b li::before{content:"";position:absolute;left:.6mm;top:1.9mm;width:1.6mm;height:.45mm;background:${RED}}
+.b li::before{content:"\\2013";position:absolute;left:.2mm;top:0;color:${RED};font-weight:700;line-height:inherit}
 .b li strong{font-weight:600;color:#1a1a1a}
 .commercial{page-break-before:always}
 /* quotazione */
@@ -6351,7 +6351,7 @@ table.doc{width:100%;border-collapse:collapse}
 .cgv-p{font-size:8pt;color:#444;line-height:1.45;text-align:justify;hyphens:auto}
 .cgv-b{list-style:none;margin:1mm 0 0 0;padding:0}
 .cgv-b li{position:relative;padding-left:4mm;margin:0 0 .7mm 0;font-size:8pt;color:#444;line-height:1.4}
-.cgv-b li::before{content:"";position:absolute;left:.5mm;top:1.7mm;width:1.4mm;height:.4mm;background:${RED}}
+.cgv-b li::before{content:"\\2013";position:absolute;left:0;top:0;color:${RED};font-weight:700;line-height:inherit}
 `;
 
   var headRef = L.offertaCol + ' ' + escHtml(d.numero||'') + (dataFmt ? ' \u00b7 ' + escHtml(dataFmt) : '');
