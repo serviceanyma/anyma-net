@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v188';</script>
+<script>const APP_VERSION = 'v189';</script>
 <!-- ANYMA Design System: colori, misure e componenti condivisi con Rapportini -->
 <link href="https://serviceanyma.github.io/anyma-ds/anyma-ds.css" rel="stylesheet">
 <style>
@@ -6264,8 +6264,16 @@ function _buildOffertaPDF(d){
     return '<li>'+escHtml(t)+'</li>';
   }
 
+  var _cssq=function(x){ return String(x).replace(/\\/g,'').replace(/"/g,"'"); };
+  var FOOT_ADDR='ANYMA SRL \u00b7 Via Val di Sole 31, 36010 Zan\u00e8 (VI) \u00b7 sales@anymapack.it \u00b7 anymapack.it';
+  var FOOT_REF=_cssq(L.offertaCol+' '+(d.numero||''));
+  var PAG=(LANG==='EN')?'Page':'Pagina';
   var css = `
-@page{size:A4 portrait;margin:12mm 14mm 11mm 14mm}
+@page{size:A4 portrait;margin:12mm 14mm 15mm 14mm;
+  @bottom-left{content:"${FOOT_ADDR}";font-family:"Barlow",Arial,sans-serif;font-size:7pt;color:#9a9a9a;vertical-align:top;padding-top:2.5mm;border-top:.2mm solid #ddd;white-space:nowrap;width:120mm}
+  @bottom-center{content:" ";vertical-align:top;border-top:.2mm solid #ddd}
+  @bottom-right{content:"${FOOT_REF} \\00b7  ${PAG} " counter(page) " / " counter(pages);font-family:"Barlow",Arial,sans-serif;font-size:7.5pt;font-weight:600;color:#777;vertical-align:top;padding-top:2.5mm;border-top:.2mm solid #ddd;white-space:nowrap}
+}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:#fff}
 body{font-family:"Barlow","Segoe UI","Helvetica Neue",Arial,sans-serif;font-size:9.6pt;color:#222;line-height:1.45;font-weight:400;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -6549,7 +6557,6 @@ table.doc{width:100%;border-collapse:collapse}
 
   var bodyTbl = '<table class="doc">'
     + '<thead><tr><td class="hcell">'+headerCell+'</td></tr></thead>'
-    + '<tfoot><tr><td class="fcell">'+footerCell+'</td></tr></tfoot>'
     + '<tbody><tr><td class="bcell">'+cover+desc+commercial+'</td></tr></tbody>'
     + '</table>';
 
