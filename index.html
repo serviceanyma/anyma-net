@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v186';</script>
+<script>const APP_VERSION = 'v187';</script>
 <!-- ANYMA Design System: colori, misure e componenti condivisi con Rapportini -->
 <link href="https://serviceanyma.github.io/anyma-ds/anyma-ds.css" rel="stylesheet">
 <style>
@@ -1449,7 +1449,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
               <th style="width:110px" class="sp-th-sort" onclick="offToggleSort('data')" data-col="data">Data <span class="sp-sort-ind"></span></th>
               <th style="width:140px;text-align:right" class="sp-th-sort" onclick="offToggleSort('totale')" data-col="totale">Totale <span class="sp-sort-ind"></span></th>
               <th style="width:130px" class="sp-th-sort" onclick="offToggleSort('stato')" data-col="stato">Stato <span class="sp-sort-ind"></span></th>
-              <th style="width:150px"></th>
+              <th style="width:250px"></th>
             </tr>
           </thead>
           <tbody id="off-list-body"></tbody>
@@ -1713,7 +1713,13 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
     </div>
 
     <div class="off-mod-foot">
-      <button class="btn btn-sm" onclick="offWizardClose()">Annulla</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="offWizardClose()">Annulla</button>
+        <button class="btn btn-sm" id="off-btn-commessa" style="display:none" onclick="if(OFF_STATE.editId) offCreaCommessa(OFF_STATE.editId)" title="Apre una nuova commessa con cliente e macchine di questa offerta (salva prima le modifiche)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><path d="M2 5h12v8H2zM5 5V3h6v2"/></svg>
+          Crea commessa
+        </button>
+      </div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-sm" onclick="offSalva(false)">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><path d="M3 8l3 3 7-7"/></svg>
@@ -4974,6 +4980,8 @@ async function offLoad(){
     console.log('Offerte caricate:', OFF_STATE.list.length, OFF_STATE.list);
     document.getElementById('cnt-offerte').textContent = OFF_STATE.list.length;
     offRender();
+    // carica anche le commesse per mostrare quelle già create dalle offerte
+    if(getSpCommesseId() && !COM_STATE.list.length){ comLoad().then(function(){ offRender(); }).catch(function(){}); }
     showToast(OFF_STATE.list.length+' offerte caricate');
     console.groupEnd();
   }catch(e){
@@ -5071,6 +5079,10 @@ function offRender(){
       <td class="ofx-tot">${offFmtMoney(o.totale)}</td>
       <td><span class="ofx-badge" style="color:${c};border-color:${c}55;background:${c}18">${offEsc(o.stato)||'Bozza'}</span>${age}</td>
       <td onclick="event.stopPropagation()"><div class="ofx-act">
+        ${(function(){ const cm=offCommessaDi(o.id);
+          return cm ? `<button class="btn btn-sm" onclick="comEdit('${cm.id}')" title="Apri la commessa collegata" style="color:var(--green)">→ ${offEsc(cm.codice)}</button>`
+                    : `<button class="btn btn-sm" onclick="offCreaCommessa('${o.id}')" title="Crea la commessa da questa offerta"${o.stato==='Accettata'?' style="color:var(--green);border-color:rgba(62,207,142,.4)"':''}>
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M2 5h12v8H2zM5 5V3h6v2"/></svg> Commessa</button>`; })()}
         <button class="btn btn-sm" onclick="offGeneraPDF('${o.id}')" title="Genera PDF" style="color:var(--brand-text,#e74c3c)">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M4 6V2h8v4M2 6h12a1 1 0 0 1 1 1v5H1V7a1 1 0 0 1 1-1zM4 11v3h8v-3"/></svg> PDF
         </button>
@@ -5486,6 +5498,7 @@ async function offNuova(id){
   document.getElementById('off-modal-overlay').classList.add('open');
   document.getElementById('off-modal-wizard').classList.add('open');
   var _m=document.getElementById('ofw-main'); if(_m) _m.scrollTop=0;
+  var _bc=document.getElementById('off-btn-commessa'); if(_bc) _bc.style.display=OFF_STATE.editId?'':'none';
   ofwSpy(); ofwUpdate();
 }
 
@@ -5951,6 +5964,7 @@ async function offDuplica(id){
   document.getElementById('off-modal-overlay').classList.add('open');
   document.getElementById('off-modal-wizard').classList.add('open');
   var _m=document.getElementById('ofw-main'); if(_m) _m.scrollTop=0;
+  var _bc=document.getElementById('off-btn-commessa'); if(_bc) _bc.style.display=OFF_STATE.editId?'':'none';
   ofwSpy(); ofwUpdate();
 }
 
@@ -6028,6 +6042,7 @@ async function offCreaDaTemplate(tmplId){
   document.getElementById('off-modal-overlay').classList.add('open');
   document.getElementById('off-modal-wizard').classList.add('open');
   var _m=document.getElementById('ofw-main'); if(_m) _m.scrollTop=0;
+  var _bc=document.getElementById('off-btn-commessa'); if(_bc) _bc.style.display=OFF_STATE.editId?'':'none';
   ofwSpy(); ofwUpdate();
 }
 
@@ -7644,6 +7659,68 @@ var COM_GROUPS = [
   ]}
 ];
 
+// ── Da offerta a commessa ──
+function comProssimoCodice(){
+  var best=null;
+  (COM_STATE.list||[]).forEach(function(c){
+    var m=(c.codice||'').trim().match(/^(.*?)(\d+)$/); if(!m) return;
+    var n=parseInt(m[2],10);
+    if(!best || n>best.n) best={pre:m[1],n:n,len:m[2].length};
+  });
+  if(!best) return '';
+  return best.pre+String(best.n+1).padStart(best.len,'0');
+}
+function offCommessaDi(offId){
+  return (COM_STATE.list||[]).find(function(c){ return c.offertaRif && String(c.offertaRif.id)===String(offId); });
+}
+async function offCreaCommessa(id){
+  var o=OFF_STATE.list.find(function(x){return x.id===id;});
+  if(!o){ showToast('Offerta non trovata'); return; }
+  if(!getSpCommesseId()){ showToast('Configura il GUID della lista AnymaCommesse in Impostazioni'); return; }
+  if(!COM_STATE.list.length){ try{ await comLoad(); }catch(e){} }
+  var gia=offCommessaDi(id);
+  if(gia && !confirm('Da questa offerta è già stata creata la commessa '+gia.codice+'.\n\nCrearne un\'altra?')) return;
+  await offCaricaClienti();
+  var cont={}; try{ cont=JSON.parse(o.contenuto||'{}')||{}; }catch(e){}
+  var q=cont.quotazione||{}, base=(q.base||[]).filter(function(r){ return (r.desc||r.descrizione||'').trim(); });
+  var opz=(q.opz||[]).filter(function(r){ return (r.desc||r.descrizione||'').trim(); });
+  var srv=(q.srv||[]).filter(function(r){ return (r.desc||r.descrizione||'').trim(); });
+  var cliNome=o.cliente||''; if(!cliNome&&o.clienteId){ var cc=(_spClienti||[]).find(function(x){return x.id===o.clienteId;}); if(cc) cliNome=cc.name; }
+  var macchine=(base.length?base:[{desc:o.oggetto||''}]).map(function(r){
+    var m=comNewMac(); m.descrizione=(r.desc||r.descrizione||'').trim(); return m;
+  });
+  var righe=function(a){ return a.map(function(r){ return '• '+(r.desc||r.descrizione||'').trim(); }).join('\n'); };
+  var note='Da offerta N° '+(o.numero||'')+' del '+offFmtDate(o.data)+(o.oggetto?' — '+o.oggetto:'');
+  if(opz.length) note+='\n\nOptional compresi nell\'offerta:\n'+righe(opz);
+  if(srv.length) note+='\n\nServizi:\n'+righe(srv);
+  COM_STATE.editId=null;
+  COM_STATE.draft={
+    codice:comProssimoCodice(), clienteId:o.clienteId||null, cliente:cliNome, stato:'Aperta',
+    agente:'', consegna:((o.consegna||'').split(/[.\n]/)[0]||'').trim(), utilFinale:'', commInterna:'', layout:'',
+    data:new Date().toISOString().split('T')[0], noteGenerali:note, macchine:macchine,
+    offertaRif:{id:o.id, numero:o.numero||'', statoPrima:o.stato||''}
+  };
+  offWizardClose();
+  document.getElementById('com-ed-title').textContent='Nuova commessa da offerta '+(o.numero||'');
+  comRenderEditor();
+  comOpen();
+  showToast(COM_STATE.draft.codice?'Codice proposto: '+COM_STATE.draft.codice+' — verifica e salva':'Inserisci il codice commessa e salva');
+}
+// dopo il salvataggio di una commessa nata da un'offerta: propone di segnarla Accettata
+async function offSegnaAccettata(rif){
+  if(!rif||rif.statoPrima==='Accettata') return;
+  if(!confirm('Segnare l\'offerta '+rif.numero+' come Accettata?')) return;
+  try{
+    var tok=await anGetToken(); if(!tok) throw new Error('Token scaduto');
+    var r=await fetch(GRAPH_BASE+'/sites/'+SP_SERVICE_SITE_ID+'/lists/'+getSpOfferteId()+'/items/'+rif.id+'/fields',
+      {method:'PATCH',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({Stato:'Accettata'})});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    var o=OFF_STATE.list.find(function(x){return String(x.id)===String(rif.id);}); if(o) o.stato='Accettata';
+    if(document.getElementById('off-list-body')) offRender();
+    showToast('Offerta '+rif.numero+' segnata come Accettata');
+  }catch(e){ showToast('Stato offerta non aggiornato: '+e.message); }
+}
+
 function comNewMac(){
   var campi = {};
   COM_GROUPS.forEach(function(g){ g.fields.forEach(function(f){ if(f.d) campi[f.k]=f.d; }); });
@@ -7682,6 +7759,7 @@ async function comLoad(){
         agente: dati.agente||'', consegna: dati.consegna||'', utilFinale: dati.utilFinale||'',
         commInterna: dati.commInterna||'', layout: dati.layout||'', data: dati.data||'',
         noteGenerali: dati.noteGenerali||'',
+        offertaRif: dati.offertaRif||null,
         macchine: Array.isArray(dati.macchine) ? dati.macchine : []
       };
     });
@@ -7705,7 +7783,7 @@ function comRender(){
   }
   tb.innerHTML = rows.map(function(c){
     return '<tr>'+
-      '<td style="font-family:var(--mono);font-weight:600;color:#c0392b">'+comEsc(c.codice)+'</td>'+
+      '<td style="font-family:var(--mono);font-weight:600;color:#c0392b">'+comEsc(c.codice)+(c.offertaRif?'<div style="font-family:var(--font);font-weight:500;font-size:10.5px;color:var(--text3)">da offerta '+comEsc(c.offertaRif.numero)+'</div>':'')+'</td>'+
       '<td>'+comEsc(c.cliente)+'</td>'+
       '<td>'+(c.macchine?c.macchine.length:0)+' macchina/e</td>'+
       '<td>'+(c.stato?('<span class="mac-badge">'+comEsc(c.stato)+'</span>'):'')+'</td>'+
@@ -7904,6 +7982,7 @@ async function comSalva(){
     commInterna: d.commInterna||'', layout: d.layout||'', data: d.data||'',
     noteGenerali: d.noteGenerali||'', macchine: d.macchine
   };
+  if(d.offertaRif) dati.offertaRif = {id:d.offertaRif.id, numero:d.offertaRif.numero};
   const fields = {
     Title: codice,
     ClienteLookupId: d.clienteId || null,
@@ -7930,9 +8009,11 @@ async function comSalva(){
       try{ msg = JSON.parse(t).error?.message || msg; }catch(e){}
       console.error('comSalva:',r.status,t); showToast('Errore salvataggio: '+msg); return;
     }
+    var _nuova=!COM_STATE.editId, _rif=d.offertaRif;
     showToast(COM_STATE.editId ? 'Commessa aggiornata' : 'Commessa creata');
     comClose();
     await comLoad();
+    if(_nuova && _rif) await offSegnaAccettata(_rif);
   }catch(e){ console.error('comSalva:',e); showToast('Errore: '+e.message); }
 }
 
