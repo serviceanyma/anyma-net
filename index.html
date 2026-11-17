@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v182';</script>
+<script>const APP_VERSION = 'v186';</script>
 <!-- ANYMA Design System: colori, misure e componenti condivisi con Rapportini -->
 <link href="https://serviceanyma.github.io/anyma-ds/anyma-ds.css" rel="stylesheet">
 <style>
@@ -1523,12 +1523,21 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
       .ofq table{width:100%;border-collapse:collapse}
       .ofq td{border-bottom:1px solid var(--border)}
       .ofq tr:last-child td{border-bottom:none}
-      .ofq td:first-child{width:56px;text-align:center;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--qc) !important;background:transparent !important}
+      .ofq td:first-child{width:70px;white-space:nowrap;text-align:center;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--qc) !important;background:transparent !important}
       .ofq td input{background:transparent !important;border:1px solid transparent !important;font-size:12.5px !important}
       .ofq td input:hover{border-color:var(--border2) !important}
       .ofq td input:focus{border-color:var(--accent) !important;background:var(--bg2) !important}
       .ofq td:nth-child(3){width:170px}
       .ofq-f{padding:8px 14px 10px 16px;border-top:1px solid var(--border)}
+      .ofq-handle{cursor:grab;color:var(--text3);margin-right:6px;user-select:none;letter-spacing:-2px;font-family:var(--font)}
+      .ofq-handle:hover{color:var(--text)}
+      .ofq-handle:active{cursor:grabbing}
+      .ofq tr.ofq-dragging{opacity:.4}
+      .ofq tr.ofq-over-top td{box-shadow:inset 0 2px 0 var(--accent)}
+      .ofq tr.ofq-over-bot td{box-shadow:inset 0 -2px 0 var(--accent)}
+      .ofq.ofq-over-sez{border-color:var(--accent);background:var(--cr-bg)}
+      .ofq tbody:empty{display:block;min-height:38px}
+      .ofq tbody:empty::before{content:'Nessuna voce: aggiungila o trascinala qui';display:block;padding:11px 16px;font-size:11.5px;color:var(--text3)}
       .ofq-empty{padding:12px 16px;font-size:11.5px;color:var(--text3)}
       #off-modal-wizard .off-quot-totale{background:var(--cr-bg);border:1px solid var(--accent);border-radius:var(--radius-sm,7px);padding:14px 16px;margin-top:4px}
       /* riepilogo */
@@ -1618,24 +1627,24 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 
         <!-- 3. QUOTAZIONE -->
         <section class="ofw-sec" id="ofw-s3">
-          <div class="ofw-sec-h"><span class="ofw-sec-n">3</span><div><div class="ofw-sec-t">Quotazione</div><div class="ofw-sec-d">Importi in euro, IVA esclusa. Gli optional sono sommati al totale</div></div></div>
+          <div class="ofw-sec-h"><span class="ofw-sec-n">3</span><div><div class="ofw-sec-t">Quotazione</div><div class="ofw-sec-d">Importi in euro, IVA esclusa. Trascina ⋮⋮ per riordinare le voci o spostarle tra le sezioni</div></div></div>
           <div class="ofw-sec-b">
             <div class="ofq" style="--qc:var(--brand-text,#e74c3c)">
               <div class="ofq-h"><span class="ofq-n">1</span><div><div class="ofq-t">Fornitura / Macchina base</div><div class="ofq-d">cosa viene consegnato</div></div>
                 <div class="ofq-sub"><b id="off-sub-base">€ 0,00</b><span id="ofq-pct-base"></span></div></div>
-              <table><tbody id="off-q-base"></tbody></table>
+              <table><tbody id="off-q-base" ondragover="offQDragOverSez(event,'base')" ondragleave="offQDragLeave(event)" ondrop="offQDropSez(event,'base')"></tbody></table>
               <div class="ofq-f"><button class="off-add-punto" onclick="offAddQuotRow('base')">+ Voce fornitura</button></div>
             </div>
             <div class="ofq" style="--qc:var(--amber)">
               <div class="ofq-h"><span class="ofq-n">2</span><div><div class="ofq-t">Optional / Accessori</div><div class="ofq-d">aggiunte su richiesta</div></div>
                 <div class="ofq-sub"><b id="off-sub-opz">€ 0,00</b><span id="ofq-pct-opz"></span></div></div>
-              <table><tbody id="off-q-opz"></tbody></table>
+              <table><tbody id="off-q-opz" ondragover="offQDragOverSez(event,'opz')" ondragleave="offQDragLeave(event)" ondrop="offQDropSez(event,'opz')"></tbody></table>
               <div class="ofq-f"><button class="off-add-punto" onclick="offAddQuotRow('opz')">+ Optional</button></div>
             </div>
             <div class="ofq" style="--qc:#06b6d4">
               <div class="ofq-h"><span class="ofq-n">3</span><div><div class="ofq-t">Servizi / Installazione</div><div class="ofq-d">montaggio, avviamento, formazione</div></div>
                 <div class="ofq-sub"><b id="off-sub-srv">€ 0,00</b><span id="ofq-pct-srv"></span></div></div>
-              <table><tbody id="off-q-srv"></tbody></table>
+              <table><tbody id="off-q-srv" ondragover="offQDragOverSez(event,'srv')" ondragleave="offQDragLeave(event)" ondrop="offQDropSez(event,'srv')"></tbody></table>
               <div class="ofq-f"><button class="off-add-punto" onclick="offAddQuotRow('srv')">+ Servizio</button></div>
             </div>
             <div class="off-quot-totale"><span>Totale complessivo (IVA esclusa)</span><span id="off-totale-out">€ 0,00</span></div>
@@ -5705,8 +5714,8 @@ function offRenderQuotazione(){
     console.log(`Sezione ${sez}: ${OFF_WIZ.quotazione[sez].length} righe`);
     tbody.innerHTML = OFF_WIZ.quotazione[sez].map((r,idx)=>{
       const numProg = sezPrefix[sez] + '.' + (idx+1);
-      return `<tr data-rowid="${r.id}">
-        <td style="font-weight:700;color:var(--accent);text-align:center;padding:6px 8px;background:var(--bg3)">${numProg}</td>
+      return `<tr data-rowid="${r.id}" data-sez="${sez}" ondragover="offQDragOver(event,'${sez}','${r.id}')" ondragleave="offQDragLeave(event)" ondrop="offQDrop(event,'${sez}','${r.id}')">
+        <td style="font-weight:700;color:var(--accent);text-align:center;padding:6px 8px;background:var(--bg3)"><span class="ofq-handle" draggable="true" title="Trascina per riordinare o spostare in un'altra sezione" ondragstart="offQDragStart(event,'${sez}','${r.id}')" ondragend="offQDragEnd(event)">⋮⋮</span>${numProg}</td>
         <td style="padding:5px 8px"><input type="text" value="${offEsc(r.desc)}" oninput="offUpdQuotRow('${sez}','${r.id}','desc',this.value)" placeholder="Descrizione voce" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:6px 8px;font-size:12px;outline:none"></td>
         <td style="padding:5px 8px"><input type="number" class="off-importo" value="${r.importo||0}" step="0.01" min="0" oninput="offUpdQuotRow('${sez}','${r.id}','importo',this.value)" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:6px 8px;font-size:12px;outline:none;text-align:right;font-family:var(--mono);font-weight:600"></td>
         <td class="off-quot-row-act" style="padding:5px 8px;text-align:center"><button onclick="offDelQuotRow('${sez}','${r.id}')" title="Rimuovi" style="background:transparent;border:none;color:var(--text3);cursor:pointer;padding:4px 6px;border-radius:3px;font-size:12px">✕</button></td>
@@ -5715,6 +5724,48 @@ function offRenderQuotazione(){
   });
   console.groupEnd();
 }
+
+// ── Drag & drop voci quotazione (anche tra Fornitura / Optional / Servizi) ──
+var _offQDrag=null;
+function offQDragStart(ev,sez,id){
+  _offQDrag={sez:sez,id:id};
+  try{ ev.dataTransfer.effectAllowed='move'; ev.dataTransfer.setData('text/plain',id); }catch(e){}
+  var tr=ev.target.closest('tr'); if(tr){ tr.classList.add('ofq-dragging'); try{ ev.dataTransfer.setDragImage(tr,20,20); }catch(e){} }
+}
+function offQDragEnd(){
+  _offQDrag=null;
+  document.querySelectorAll('.ofq-dragging,.ofq-over-top,.ofq-over-bot,.ofq-over-sez').forEach(function(e){ e.classList.remove('ofq-dragging','ofq-over-top','ofq-over-bot','ofq-over-sez'); });
+}
+function offQClearOver(){ document.querySelectorAll('.ofq-over-top,.ofq-over-bot,.ofq-over-sez').forEach(function(e){ e.classList.remove('ofq-over-top','ofq-over-bot','ofq-over-sez'); }); }
+function offQDragOver(ev,sez,id){
+  if(!_offQDrag) return;
+  ev.preventDefault(); ev.stopPropagation();
+  var tr=ev.currentTarget, r=tr.getBoundingClientRect(), dopo=(ev.clientY-r.top)>r.height/2;
+  offQClearOver(); tr.classList.add(dopo?'ofq-over-bot':'ofq-over-top');
+}
+function offQDragOverSez(ev,sez){
+  if(!_offQDrag) return;
+  ev.preventDefault();
+  if(ev.target.closest('tr')) return;
+  offQClearOver(); var b=ev.currentTarget.closest('.ofq'); if(b) b.classList.add('ofq-over-sez');
+}
+function offQDragLeave(ev){ if(!ev.currentTarget.contains(ev.relatedTarget)) ev.currentTarget.classList.remove('ofq-over-top','ofq-over-bot'); }
+function offQMove(dstSez,dstId,dopo){
+  if(!_offQDrag) return;
+  var src=OFF_WIZ.quotazione[_offQDrag.sez], i=src.findIndex(function(x){return x.id===_offQDrag.id;});
+  if(i<0) return;
+  if(dstId===_offQDrag.id){ offQDragEnd(); return; }
+  var row=src.splice(i,1)[0], dst=OFF_WIZ.quotazione[dstSez];
+  var j=dstId?dst.findIndex(function(x){return x.id===dstId;}):-1;
+  if(j<0) dst.push(row); else dst.splice(dopo?j+1:j,0,row);
+  offQDragEnd(); offRenderQuotazione(); offCalcTotale();
+}
+function offQDrop(ev,sez,id){
+  ev.preventDefault(); ev.stopPropagation();
+  var r=ev.currentTarget.getBoundingClientRect();
+  offQMove(sez,id,(ev.clientY-r.top)>r.height/2);
+}
+function offQDropSez(ev,sez){ ev.preventDefault(); offQMove(sez,null,true); }
 
 function offAddQuotRow(sez){
   OFF_WIZ.quotazione[sez].push({ id: offUid(), desc:'', importo: 0 });
@@ -6029,7 +6080,9 @@ async function offGeneraPDF(id){
     if(!w) { showToast('Popup bloccato dal browser'); return; }
     w.document.write(html);
     w.document.close();
-    setTimeout(function(){ try{ w.focus(); w.print(); }catch(e){} },600);
+    var _stampato=false, _stampa=function(){ if(_stampato) return; _stampato=true; try{ w.focus(); w.print(); }catch(e){} };
+    try{ w.document.fonts.ready.then(function(){ setTimeout(_stampa,250); }); }catch(e){}
+    setTimeout(_stampa,2500);
   } catch(e) {
     console.error('offGeneraPDF:',e);
     showToast('Errore generazione PDF: '+(e.message||e));
@@ -6168,7 +6221,7 @@ function _buildOffertaPDF(d){
     totale:'TOTAL', ivaEsc:'(VAT excluded)', termini:'Terms and conditions',
     validita:'Offer validity', consegna:'Delivery', garanzia:'Warranty', prezzi:'Prices', collaudo:'Testing',
     installazione:'Installation', trasporto:'Transport', porto:'Carriage', imballo:'Packaging',
-    pagamenti:'Invoicing and payments', tariffa:'Service rate', vittoAlloggio:'Board & lodging', leggeApplicabile:'Applicable law', foroCompetente:'Jurisdiction', condizioniGenerali:'General conditions', giorni:'days', condizioni:'Conditions', saluti:'Best regards,'
+    pagamenti:'Invoicing and payments', perAnyma:'For ANYMA S.r.l.', perAccett:'For acceptance', timbro:'Stamp and signature', dataL:'Date', totOff:'Offer total', validaFino:'Valid until', alla:'To the attention of', indice:'Contents', tariffa:'Service rate', vittoAlloggio:'Board & lodging', leggeApplicabile:'Applicable law', foroCompetente:'Jurisdiction', condizioniGenerali:'General conditions', giorni:'days', condizioni:'Conditions', saluti:'Best regards,'
   } : {
     offerta:'OFFERTA', cliente:'Cliente', offertaCol:'Offerta', oggetto:'Oggetto', riferimento:'Riferimento',
     descr:'Descrizione della fornitura:', quotTitle:'Quotazione per la fornitura', descrCol:'Descrizione', importoCol:'Importo',
@@ -6176,7 +6229,7 @@ function _buildOffertaPDF(d){
     totale:'TOTALE', ivaEsc:'(IVA esclusa)', termini:'Termini e condizioni',
     validita:'Validità offerta', consegna:'Consegna', garanzia:'Garanzia', prezzi:'Prezzi', collaudo:'Collaudo',
     installazione:'Installazione', trasporto:'Trasporto', porto:'Porto', imballo:'Imballo',
-    pagamenti:'Fatturazione e pagamenti', tariffa:'Tariffa assistenza', vittoAlloggio:'Vitto e alloggio', leggeApplicabile:'Legge applicabile', foroCompetente:'Foro competente', condizioniGenerali:'Condizioni generali', giorni:'giorni', condizioni:'Condizioni', saluti:'Cordiali saluti,'
+    pagamenti:'Fatturazione e pagamenti', perAnyma:'Per ANYMA S.r.l.', perAccett:'Per accettazione', timbro:'Timbro e firma', dataL:'Data', totOff:'Totale offerta', validaFino:'Valida fino al', alla:'Alla cortese attenzione di', indice:'Indice', tariffa:'Tariffa assistenza', vittoAlloggio:'Vitto e alloggio', leggeApplicabile:'Legge applicabile', foroCompetente:'Foro competente', condizioniGenerali:'Condizioni generali', giorni:'giorni', condizioni:'Condizioni', saluti:'Cordiali saluti,'
   };
 
   var logoSrc = (typeof LOGO_RESOCONTO!=='undefined' && LOGO_RESOCONTO) ? LOGO_RESOCONTO : '';
@@ -6197,62 +6250,93 @@ function _buildOffertaPDF(d){
   }
 
   var css = `
-@page{size:A4 portrait;margin:11mm 13mm 11mm 13mm}
+@page{size:A4 portrait;margin:12mm 14mm 11mm 14mm}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:#fff}
-body{font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;font-size:9.5pt;color:#1f2937;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:"Barlow","Segoe UI","Helvetica Neue",Arial,sans-serif;font-size:9.6pt;color:#222;line-height:1.45;font-weight:400;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cd{font-family:"Barlow Condensed","Barlow",Arial,sans-serif}
 table.doc{width:100%;border-collapse:collapse}
 .doc>thead{display:table-header-group}
 .doc>tfoot{display:table-footer-group}
-.hcell{padding:0 0 5mm 0}
+.hcell{padding:0 0 6mm 0}
 .fcell{padding:5mm 0 0 0}
 .bcell{padding:0;vertical-align:top}
-.hdr{display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:2.5mm;border-bottom:2px solid ${RED}}
-.hdr .logo img{height:10mm;width:auto;display:block}
-.hdr .logo .wm{font-size:18pt;font-weight:800;color:#1f2937;letter-spacing:1px}
+.hdr{display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:2.6mm;border-bottom:.6mm solid ${RED}}
+.hdr .logo img{height:9mm;width:auto;display:block}
+.hdr .logo .wm{font-family:"Barlow Condensed",Arial,sans-serif;font-size:20pt;font-weight:800;color:#222;letter-spacing:2px}
 .hdr .meta{text-align:right}
-.hdr .meta .t{font-size:10pt;font-weight:700;color:#1f2937;text-transform:uppercase;letter-spacing:1px}
-.hdr .meta .r{font-size:7.5pt;color:#9ca3af;margin-top:.6mm}
-.ftr{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e5e7eb;padding-top:2mm;font-size:7pt;color:#9ca3af}
-.ftr .r{white-space:nowrap}
-.title{font-size:20pt;font-weight:800;color:${RED};letter-spacing:1px;margin:1mm 0 5mm 0}
-.cover{page-break-after:always}
-.card{width:100%;border-collapse:collapse;table-layout:fixed;border:1px solid #e5e7eb}
-.card td{width:50%;padding:3mm 4mm;vertical-align:top;border:1px solid #eef0f2}
-.card td.k{background:${RED};color:#fff;font-weight:700;font-size:8.5pt;text-transform:uppercase;letter-spacing:.6px;border-color:${RED}}
-.card .big{font-weight:700;font-size:11pt;color:#111827}
-.card .num{color:${RED};font-weight:700;font-size:10.5pt;display:block}
-.card .sub{color:#6b7280;font-size:9pt;display:block;margin-top:.5mm}
-.card .ogg{font-size:10pt;color:#111827}
-.dtitle{font-size:15pt;font-weight:800;color:${RED};letter-spacing:.5px;margin:0 0 3mm 0}
-.sec{margin:0 0 2mm 0}
-.sec-h{font-size:10.5pt;font-weight:700;color:${RED};margin:3mm 0 1.2mm 0;break-after:avoid;page-break-after:avoid}
-.b{list-style:none;margin:0;padding:0}
-.b li{position:relative;padding-left:5mm;margin:0 0 1mm 0;line-height:1.4}
-.b li::before{content:"";position:absolute;left:1mm;top:1.7mm;width:1.4mm;height:1.4mm;background:${RED};border-radius:50%}
+.hdr .meta .t{font-family:"Barlow Condensed",Arial,sans-serif;font-size:12pt;font-weight:700;color:${RED};text-transform:uppercase;letter-spacing:2.5px;line-height:1}
+.hdr .meta .r{font-size:7.8pt;color:#8a8a8a;margin-top:1mm;letter-spacing:.3px}
+.ftr{display:flex;justify-content:space-between;align-items:center;border-top:.2mm solid #ddd;padding-top:2mm;font-size:7pt;color:#9a9a9a;letter-spacing:.2px}
+.ftr .r{white-space:nowrap;font-weight:600;color:#777}
+/* copertina */
+.cover{page-break-after:always;padding-top:6mm}
+.kick{font-family:"Barlow Condensed",Arial,sans-serif;font-size:10pt;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:${RED}}
+.ctitle{font-family:"Barlow Condensed",Arial,sans-serif;font-size:30pt;font-weight:700;line-height:1.05;color:#1a1a1a;margin:2.5mm 0 4mm 0;letter-spacing:.2px}
+.cbar{width:22mm;height:1.2mm;background:${RED};margin-bottom:9mm}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;border-top:.25mm solid #e2e2e2}
+.cgrid>div{padding:4mm 0 4mm 0;border-bottom:.25mm solid #e2e2e2}
+.cgrid>div:nth-child(odd){padding-right:6mm}
+.cgrid>div:nth-child(even){padding-left:6mm;border-left:.25mm solid #e2e2e2}
+.cl{font-family:"Barlow Condensed",Arial,sans-serif;font-size:8pt;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:#9a9a9a;margin-bottom:1.2mm}
+.cv{font-size:11.5pt;font-weight:600;color:#1a1a1a;line-height:1.3}
+.cs{font-size:9pt;color:#666;margin-top:.6mm}
+.csum{margin-top:10mm;display:flex;align-items:stretch;border:.25mm solid #e2e2e2;border-left:1.4mm solid ${RED}}
+.csum>div{padding:5mm 6mm;flex:1}
+.csum>div+div{border-left:.25mm solid #e2e2e2}
+.csum .big{font-family:"Barlow Condensed",Arial,sans-serif;font-size:22pt;font-weight:700;color:${RED};line-height:1}
+.csum .mid{font-family:"Barlow Condensed",Arial,sans-serif;font-size:15pt;font-weight:600;color:#1a1a1a;line-height:1.1}
+.cidx{margin-top:12mm}
+.cidx-r{display:flex;align-items:baseline;gap:3mm;padding:2.2mm 0;border-bottom:.2mm dotted #cfcfcf;font-size:10pt;color:#333}
+.cidx-r b{font-family:"Barlow Condensed",Arial,sans-serif;font-size:11pt;color:${RED};width:7mm}
+/* titoli capitolo */
+.dtitle{display:flex;align-items:center;gap:3mm;font-family:"Barlow Condensed",Arial,sans-serif;font-size:17pt;font-weight:700;color:#1a1a1a;letter-spacing:.3px;margin:0 0 4.5mm 0;padding-bottom:2mm;border-bottom:.25mm solid #e2e2e2;break-after:avoid;page-break-after:avoid}
+.dtitle .n{display:inline-flex;align-items:center;justify-content:center;width:8mm;height:8mm;background:${RED};color:#fff;font-size:12pt;border-radius:1mm}
+/* descrizione */
+.sec{margin:0 0 3.5mm 0;break-inside:auto}
+.sec-h{display:flex;align-items:baseline;gap:2.5mm;font-family:"Barlow Condensed",Arial,sans-serif;font-size:12pt;font-weight:700;color:#1a1a1a;text-transform:uppercase;letter-spacing:.8px;margin:4mm 0 1.6mm 0;break-after:avoid;page-break-after:avoid}
+.sec-h .n{color:${RED};font-size:12pt}
+.b{list-style:none;margin:0 0 0 1mm;padding:0}
+.b li{position:relative;padding-left:5mm;margin:0 0 1.3mm 0;line-height:1.45;break-inside:avoid}
+.b li::before{content:"";position:absolute;left:.6mm;top:1.9mm;width:1.6mm;height:.45mm;background:${RED}}
+.b li strong{font-weight:600;color:#1a1a1a}
 .commercial{page-break-before:always}
-.qtbl{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9.5pt;border:1px solid #e5e7eb;margin-bottom:5mm}
-.qtbl th{background:#f3f4f6;color:#6b7280;font-weight:700;font-size:8pt;text-transform:uppercase;letter-spacing:.5px;text-align:left;padding:2.2mm 4mm;border-bottom:1px solid #e5e7eb}
-.qtbl th.r,.qtbl td.r{text-align:right;width:38mm}
-.qtbl td{padding:2.2mm 4mm;border-bottom:1px solid #eef0f2;vertical-align:top;overflow-wrap:anywhere}
-.qtbl td.imp{font-weight:600;white-space:nowrap;color:#111827}
-.qtbl tr.sub td{background:#fbeae8;color:${RED};font-weight:700;font-size:8pt;text-transform:uppercase;letter-spacing:.5px;padding:1.8mm 4mm}
-.qtbl tr.tot td{background:${RED};color:#fff;font-weight:700;font-size:11pt;border:none;padding:3mm 4mm}
-.qtbl tr.tot td .iva{font-size:7pt;font-weight:400;opacity:.85;margin-left:2mm}
-.ttbl{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9.5pt;border:1px solid #e5e7eb;margin-bottom:5mm}
-.ttbl td{padding:2.4mm 4mm;border-bottom:1px solid #eef0f2;vertical-align:top;overflow-wrap:anywhere}
-.ttbl tr:last-child td{border-bottom:none}
-.ttbl td.lbl{background:${RED};color:#fff;font-weight:700;font-size:8.5pt;width:46mm;border-color:${RED}}
-.cond-h{font-weight:700;font-size:9pt;color:#374151;margin:3mm 0 1.2mm 0}
-.cond-t{font-size:8.5pt;color:#6b7280;line-height:1.5}
-.saluti{margin-top:5mm;font-size:9.5pt;color:#1f2937}
+/* quotazione */
+.qtbl{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9.6pt;margin-bottom:7mm}
+.qtbl th{font-family:"Barlow Condensed",Arial,sans-serif;color:#8a8a8a;font-weight:600;font-size:8pt;text-transform:uppercase;letter-spacing:1.4px;text-align:left;padding:0 3mm 1.8mm 3mm;border-bottom:.45mm solid #1a1a1a}
+.qtbl th.r,.qtbl td.r{text-align:right;width:36mm}
+.qtbl th.n,.qtbl td.n{width:12mm;text-align:left}
+.qtbl td{padding:2.4mm 3mm;border-bottom:.2mm solid #e6e6e6;vertical-align:top;overflow-wrap:anywhere;break-inside:avoid}
+.qtbl td.n{font-family:"Barlow Condensed",Arial,sans-serif;font-weight:600;color:#9a9a9a}
+.qtbl td.imp{font-weight:600;white-space:nowrap;color:#1a1a1a;font-variant-numeric:tabular-nums}
+.qtbl tr.sub td{font-family:"Barlow Condensed",Arial,sans-serif;color:${RED};font-weight:700;font-size:9.5pt;text-transform:uppercase;letter-spacing:1.2px;padding:4.5mm 3mm 1.6mm 3mm;border-bottom:.25mm solid ${RED}}
+.qtbl tr.sub td .st{float:right;color:#1a1a1a;letter-spacing:0;font-size:9.5pt}
+.qtbl tr.tot td{background:#1a1a1a;color:#fff;font-weight:600;font-size:11pt;border:none;padding:3.6mm 3mm}
+.qtbl tr.tot td.r{font-family:"Barlow Condensed",Arial,sans-serif;font-size:15pt;font-weight:700;color:#fff;width:auto}
+.qtbl tr.tot td .iva{font-size:7.5pt;font-weight:400;opacity:.7;margin-left:2mm}
+.qtbl tr.tot td:first-child{border-left:1.4mm solid ${RED}}
+/* termini */
+.ttbl{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9.4pt;margin-bottom:6mm}
+.ttbl td{padding:2.5mm 3mm;border-bottom:.2mm solid #e6e6e6;vertical-align:top;overflow-wrap:anywhere;break-inside:avoid}
+.ttbl td.lbl{font-family:"Barlow Condensed",Arial,sans-serif;color:#1a1a1a;font-weight:700;font-size:9.5pt;text-transform:uppercase;letter-spacing:.8px;width:44mm;border-left:.8mm solid ${RED};background:#f7f5f4}
+.cond-h{font-family:"Barlow Condensed",Arial,sans-serif;font-weight:700;font-size:10pt;text-transform:uppercase;letter-spacing:1px;color:#1a1a1a;margin:4mm 0 1.2mm 0}
+.cond-t{font-size:9pt;color:#555;line-height:1.5}
+/* accettazione */
+.sign{margin-top:8mm;display:grid;grid-template-columns:1fr 1fr;gap:10mm;break-inside:avoid;page-break-inside:avoid}
+.sign .sl{font-family:"Barlow Condensed",Arial,sans-serif;font-size:8.5pt;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:#8a8a8a}
+.sign .sv{font-weight:600;color:#1a1a1a;margin-top:1mm}
+.sign .line{border-bottom:.25mm solid #9a9a9a;height:16mm}
+.sign .ls{font-size:7.5pt;color:#9a9a9a;margin-top:1mm}
+.saluti{margin-top:7mm;font-size:9.6pt;color:#333}
+/* CGV */
 .cgv{page-break-before:always}
-.cgv-item{margin:0 0 2.5mm 0}
-.cgv-h{font-size:9.5pt;font-weight:700;color:${RED};margin:2.5mm 0 1mm 0;break-after:avoid;page-break-after:avoid}
-.cgv-p{font-size:8.4pt;color:#374151;line-height:1.45;text-align:justify}
+.cgv-cols{column-count:2;column-gap:8mm}
+.cgv-item{margin:0 0 2.6mm 0;break-inside:avoid-column}
+.cgv-h{font-family:"Barlow Condensed",Arial,sans-serif;font-size:9.5pt;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:${RED};margin:0 0 .8mm 0;break-after:avoid;page-break-after:avoid}
+.cgv-p{font-size:8pt;color:#444;line-height:1.45;text-align:justify;hyphens:auto}
 .cgv-b{list-style:none;margin:1mm 0 0 0;padding:0}
-.cgv-b li{position:relative;padding-left:5mm;margin:0 0 .8mm 0;font-size:8.4pt;color:#374151;line-height:1.4}
-.cgv-b li::before{content:"";position:absolute;left:1.5mm;top:1.5mm;width:1.2mm;height:1.2mm;background:${RED};border-radius:50%}
+.cgv-b li{position:relative;padding-left:4mm;margin:0 0 .7mm 0;font-size:8pt;color:#444;line-height:1.4}
+.cgv-b li::before{content:"";position:absolute;left:.5mm;top:1.7mm;width:1.4mm;height:.4mm;background:${RED}}
 `;
 
   var headRef = L.offertaCol + ' ' + escHtml(d.numero||'') + (dataFmt ? ' \u00b7 ' + escHtml(dataFmt) : '');
@@ -6266,24 +6350,40 @@ table.doc{width:100%;border-collapse:collapse}
     + '</div>';
 
   // ===== COPERTINA =====
-  var cover = '<div class="cover"><h1 class="title">'+L.offerta+'</h1>'
-    + '<table class="card">'
-    + '<tr><td class="k">'+L.cliente+'</td><td class="k">'+L.offertaCol+'</td></tr>'
-    + '<tr><td><span class="big">'+escHtml(d.cliente||'-')+'</span></td>'
-    + '<td><span class="num">'+escHtml(d.numero||'-')+'</span>'+(dataFmt?('<span class="sub">'+escHtml(dataFmt)+'</span>'):'')+'</td></tr>'
-    + '<tr><td class="k">'+L.riferimento+'</td><td class="k">'+L.oggetto+'</td></tr>'
-    + '<tr><td>'+(d.riferimento?(escHtml(d.riferimento)+'<br>'):'')+(d.email?escHtml(d.email):'')+'</td>'
-    + '<td class="ogg">'+escHtml(d.oggetto||'-')+'</td></tr>'
-    + '</table></div>';
+  var t0 = d.termini || {};
+  var scad = '';
+  if(d.data && /^\d+$/.test(''+(t0.validita||''))){ var _p=(''+d.data).split('-'); if(_p.length===3){ var _x=new Date(+_p[0],+_p[1]-1,+_p[2]+parseInt(t0.validita)); scad=String(_x.getDate()).padStart(2,'0')+'/'+String(_x.getMonth()+1).padStart(2,'0')+'/'+_x.getFullYear(); } }
+  var _qq = d.quotazione || {};
+  var totCover = ['base','opz','srv'].reduce(function(s,k){ return s+(_qq[k]||[]).reduce(function(a,r){ return a+(parseFloat(r.importo)||0); },0); },0);
+  var _hasDesc = (d.macrogruppi||[]).length>0, _hasQ = totCover>0 || ['base','opz','srv'].some(function(k){ return (_qq[k]||[]).length; });
+  var _idx=[], _n=0;
+  if(_hasDesc) _idx.push([++_n, L.descr.replace(/:$/,'')]);
+  if(_hasQ) _idx.push([++_n, L.quotTitle]);
+  _idx.push([++_n, L.termini]);
+  _idx.push([++_n, LANG==='EN'?'General Terms and Conditions of Sale':'Condizioni Generali di Vendita']);
+  var CH = {}; _idx.forEach(function(x){ CH[x[1]]=x[0]; });
+  var cover = '<div class="cover">'
+    + '<div class="kick">'+L.offerta+' '+escHtml(d.numero||'')+'</div>'
+    + '<div class="ctitle">'+escHtml(d.oggetto||'-')+'</div><div class="cbar"></div>'
+    + '<div class="cgrid">'
+    + '<div><div class="cl">'+L.cliente+'</div><div class="cv">'+escHtml(d.cliente||'-')+'</div></div>'
+    + '<div><div class="cl">'+L.offertaCol+'</div><div class="cv">N° '+escHtml(d.numero||'-')+'</div>'+(dataFmt?'<div class="cs">'+escHtml(dataFmt)+'</div>':'')+'</div>'
+    + '<div><div class="cl">'+L.alla+'</div><div class="cv">'+(d.riferimento?escHtml(d.riferimento):'—')+'</div>'+(d.email?'<div class="cs">'+escHtml(d.email)+'</div>':'')+'</div>'
+    + '<div><div class="cl">'+L.validaFino+'</div><div class="cv">'+(scad||'—')+'</div>'+(t0.validita?'<div class="cs">'+escHtml(''+t0.validita)+(/^\d+$/.test(''+t0.validita)?' '+L.giorni:'')+'</div>':'')+'</div>'
+    + '</div>'
+    + '<div class="cidx"><div class="cl">'+L.indice+'</div>'
+    + _idx.map(function(x){ return '<div class="cidx-r"><b>'+x[0]+'</b>'+escHtml(x[1])+'</div>'; }).join('')
+    + '</div></div>';
+  function chTitle(lbl){ return '<h1 class="dtitle">'+(CH[lbl]?'<span class="n">'+CH[lbl]+'</span>':'')+escHtml(lbl)+'</h1>'; }
 
   // ===== DESCRIZIONE (flusso continuo) =====
   var desc = '';
   var mgs = d.macrogruppi || [];
   if(mgs.length){
-    desc += '<div class="desc"><h1 class="dtitle">'+L.descr+'</h1>';
+    desc += '<div class="desc">'+chTitle(L.descr.replace(/:$/,''));
     mgs.forEach(function(mg, i){
       var titolo = ((mg.title||'').trim()) || ('Sezione '+(i+1));
-      desc += '<div class="sec"><div class="sec-h">'+(i+1)+'. '+escHtml(titolo)+'</div>';
+      desc += '<div class="sec"><div class="sec-h"><span class="n">'+(i+1)+'</span>'+escHtml(titolo)+'</div>';
       var items = (mg.items||[])
         .map(function(it){ return (typeof it==='string') ? it : (it && (it.text||it.descrizione) || ''); })
         .filter(function(t){ return (''+t).trim(); });
@@ -6299,22 +6399,23 @@ table.doc{width:100%;border-collapse:collapse}
   var qb=rowsFor(q.base), qo=rowsFor(q.opz), qs=rowsFor(q.srv);
   var hasQ = qb.length || qo.length || qs.length;
   var tot = 0;
-  function qSection(arr,label){
+  function qSection(arr,label,ns){
     if(!arr.length) return '';
-    var h = '<tr class="sub"><td colspan="2">'+label+'</td></tr>';
-    arr.forEach(function(r){
+    var st = arr.reduce(function(a,r){ return a+(parseFloat(r.importo)||0); },0);
+    var h = '<tr class="sub"><td colspan="3">'+ns+'&nbsp;&nbsp;'+label+(st>0?'<span class="st">'+money(st)+'</span>':'')+'</td></tr>';
+    arr.forEach(function(r,ri){
       var imp = parseFloat(r.importo||0); tot += imp;
-      h += '<tr><td>'+escHtml(r.desc||r.descrizione||'')+'</td><td class="imp r">'+(imp>0?money(imp):'\u2014')+'</td></tr>';
+      h += '<tr><td class="n">'+ns+'.'+(ri+1)+'</td><td>'+escHtml(r.desc||r.descrizione||'')+'</td><td class="imp r">'+(imp>0?money(imp):'\u2014')+'</td></tr>';
     });
     return h;
   }
 
   var commercial = '<div class="commercial">';
   if(hasQ){
-    commercial += '<h1 class="dtitle">'+L.quotTitle+'</h1>';
-    commercial += '<table class="qtbl"><tr><th>'+L.descrCol+'</th><th class="r">'+L.importoCol+'</th></tr>';
-    commercial += qSection(qb,L.fornitura) + qSection(qo,L.optional) + qSection(qs,L.servizi);
-    commercial += '<tr class="tot"><td>'+L.totale+'<span class="iva">'+L.ivaEsc+'</span></td><td class="r">'+money(tot)+'</td></tr>';
+    commercial += chTitle(L.quotTitle);
+    commercial += '<table class="qtbl"><tr><th class="n">#</th><th>'+L.descrCol+'</th><th class="r">'+L.importoCol+'</th></tr>';
+    commercial += qSection(qb,L.fornitura,1) + qSection(qo,L.optional,2) + qSection(qs,L.servizi,3);
+    commercial += '<tr class="tot"><td colspan="2">'+L.totale+'<span class="iva">'+L.ivaEsc+'</span></td><td class="r">'+money(tot)+'</td></tr>';
     commercial += '</table>';
   }
 
@@ -6335,11 +6436,9 @@ table.doc{width:100%;border-collapse:collapse}
     + tRow(L.porto, t.porto) + tRow(L.imballo, t.imballo)
     + tRow(L.pagamenti, t.pagamenti);
   if(tRows){
-    commercial += '<h1 class="dtitle" style="margin-top:7mm">'+L.termini+'</h1><table class="ttbl">'+tRows+'</table>';
+    commercial += '<div style="margin-top:8mm"></div>'+chTitle(L.termini)+'<table class="ttbl">'+tRows+'</table>';
   }
-  if(t.note && (''+t.note).trim()){
-    commercial += '<div class="cond-h">'+L.condizioni+'</div><div class="cond-t">'+escHtml(t.note).replace(/\n/g,'<br>')+'</div>';
-  }
+  // Le note interne dell'offerta non vanno nel PDF
   // ===== CONDIZIONI GENERALI DI VENDITA (standard ANYMA) =====
   var CGV_IT = [
     { h:"Garanzia",
@@ -6417,16 +6516,20 @@ table.doc{width:100%;border-collapse:collapse}
   ];
   var CGV = (LANG==='EN') ? CGV_EN : CGV_IT;
   var cgvTitle = (LANG==='EN') ? 'General Terms and Conditions of Sale' : 'Condizioni Generali di Vendita';
-  var cgv = '<div class="cgv"><h1 class="dtitle">'+cgvTitle+'</h1>';
+  var cgv = '<div class="cgv">'+chTitle(cgvTitle)+'<div class="cgv-cols">';
   CGV.forEach(function(v){
     cgv += '<div class="cgv-item"><div class="cgv-h">'+escHtml(v.h)+'</div>';
     if(v.p) cgv += '<div class="cgv-p">'+escHtml(v.p)+'</div>';
     if(v.bullets) cgv += '<ul class="cgv-b">'+v.bullets.map(function(b){return '<li>'+escHtml(b)+'</li>';}).join('')+'</ul>';
     cgv += '</div>';
   });
-  cgv += '</div>';
+  cgv += '</div></div>';
+  commercial += '<div class="saluti">'+L.saluti+'</div>';
+  commercial += '<div class="sign">'
+    + '<div><div class="sl">'+L.perAnyma+'</div><div class="line"></div><div class="ls">'+L.dataL+' '+escHtml(dataFmt||'')+'</div></div>'
+    + '<div><div class="sl">'+L.perAccett+' \u2014 '+escHtml(d.cliente||'')+'</div><div class="line"></div><div class="ls">'+L.timbro+' \u00b7 '+L.dataL+'</div></div>'
+    + '</div>';
   commercial += cgv;
-  commercial += '<div class="saluti">'+L.saluti+'<br><strong>ANYMA S.r.l.</strong></div>';
   commercial += '</div>';
 
   var bodyTbl = '<table class="doc">'
@@ -6437,6 +6540,8 @@ table.doc{width:100%;border-collapse:collapse}
 
   var html = '<!DOCTYPE html><html lang="'+(LANG==='EN'?'en':'it')+'"><head><meta charset="UTF-8">'
     + '<title>'+L.offertaCol+' '+escHtml(d.numero||'')+' - '+escHtml(d.cliente||'')+'</title>'
+    + '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
+    + '<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">'
     + '<style>'+css+'</style></head><body>'+bodyTbl+'</body></html>';
   return html;
 }
