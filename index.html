@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ANYMA-NET</title>
-<script>const APP_VERSION = 'v181';</script>
+<script>const APP_VERSION = 'v182';</script>
 <!-- ANYMA Design System: colori, misure e componenti condivisi con Rapportini -->
 <link href="https://serviceanyma.github.io/anyma-ds/anyma-ds.css" rel="stylesheet">
 <style>
@@ -1372,14 +1372,37 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 
   <!-- VIEW: GENERA OFFERTA (v132) -->
   <div id="view-offerte" class="content-view">
+    <style>
+      /* ── Generatore offerte (token design system ANYMA) ── */
+      .ofx-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;flex-shrink:0}
+      .ofx-kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md,10px);padding:10px 12px;min-width:0;transition:border-color .15s,background .15s}
+      .ofx-kpi.click{cursor:pointer}.ofx-kpi.click:hover{border-color:var(--border2);background:var(--bg3)}
+      .ofx-kpi.on{border-color:var(--accent);background:var(--cr-bg)}
+      .ofx-kpi-v{font-family:var(--cond);font-size:22px;font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .ofx-kpi-l{font-size:9.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text3);margin-top:3px}
+      .ofx-kpi-s{font-size:10px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .ofx-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+      .ofx-tbl thead th{position:sticky;top:0;z-index:1;background:var(--bg2);text-align:left;padding:9px 12px;font-size:9.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border2);white-space:nowrap}
+      .ofx-tbl tbody td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+      .ofx-tbl tbody tr{cursor:pointer;transition:background .1s}
+      .ofx-tbl tbody tr:hover td{background:var(--bg3)}
+      .ofx-num{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--brand-text,#e74c3c);white-space:nowrap}
+      .ofx-cli{font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px}
+      .ofx-ogg{font-size:11.5px;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px}
+      .ofx-tot{font-family:var(--mono);font-weight:700;color:var(--text);text-align:right;white-space:nowrap}
+      .ofx-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;border:1px solid;white-space:nowrap}
+      .ofx-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+      .ofx-age{font-size:10.5px;color:var(--text3);margin-top:3px;white-space:nowrap}
+      .ofx-age.w{color:var(--amber)}
+      .ofx-act{display:flex;gap:4px;justify-content:flex-end;opacity:.55;transition:opacity .12s}
+      .ofx-tbl tbody tr:hover .ofx-act{opacity:1}
+      .ofx-act .btn{padding:4px 7px}
+      @media(max-width:1250px){.ofx-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    </style>
     <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;gap:10px">
 
       <!-- Toolbar -->
       <div class="sp-toolbar">
-        <button class="btn btn-sm" onclick="offLoad()">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5M13.5 2.5v3.5h-3.5"/></svg>
-          Aggiorna
-        </button>
         <button class="btn btn-sm btn-primary" onclick="offNuova(null)">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>
           Nuova offerta
@@ -1388,40 +1411,45 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><line x1="2" y1="6" x2="14" y2="6"/></svg>
           Da template
         </button>
-        <button class="btn btn-sm" onclick="offDefaultsOpen()" title="Modifica i valori predefiniti dei Termini e condizioni (salvati su SharePoint)">
+        <button class="btn btn-sm" onclick="offLoad()" title="Ricarica da SharePoint">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5M13.5 2.5v3.5h-3.5"/></svg>
+          Aggiorna
+        </button>
+        <button class="btn btn-sm" onclick="offDefaultsOpen()" title="Valori predefiniti di Termini e condizioni (salvati su SharePoint)">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/></svg>
-          Default offerta
+          Termini predefiniti
         </button>
         <span class="tag-count" id="off-count">-</span>
-
-        <input type="text" class="filter-input" id="off-search" placeholder="Cerca cliente, oggetto, n°..." oninput="offRender()" style="max-width:240px">
-
-        <select class="sel" id="off-stato-filter" onchange="offRender()" style="font-size:12px">
-          <option value="">Tutti gli stati</option>
-          <option value="Bozza">Bozza</option>
-          <option value="Inviata">Inviata</option>
-          <option value="Accettata">Accettata</option>
-          <option value="Rifiutata">Rifiutata</option>
-          <option value="Archiviata">Archiviata</option>
-        </select>
-
-        <select class="sel" id="off-anno-filter" onchange="offRender()" style="font-size:12px;margin-left:auto">
-          <option value="">Tutti gli anni</option>
-        </select>
+        <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+          <input type="text" class="filter-input" id="off-search" placeholder="Cerca cliente, oggetto, n°…" oninput="offRender()" style="max-width:240px">
+          <select class="sel" id="off-stato-filter" onchange="_offQuick='';offRender()" style="font-size:12px">
+            <option value="">Tutti gli stati</option>
+            <option value="Bozza">Bozza</option>
+            <option value="Inviata">Inviata</option>
+            <option value="Accettata">Accettata</option>
+            <option value="Rifiutata">Rifiutata</option>
+            <option value="Archiviata">Archiviata</option>
+          </select>
+          <select class="sel" id="off-anno-filter" onchange="offRender()" style="font-size:12px">
+            <option value="">Tutti gli anni</option>
+          </select>
+        </div>
       </div>
 
+      <!-- KPI -->
+      <div class="ofx-kpis" id="off-kpis" style="display:none"></div>
+
       <!-- Lista offerte -->
-      <div class="sp-list-wrap" id="off-list-wrap" style="display:none">
-        <table class="sp-list">
+      <div id="off-list-wrap" style="display:none;flex:1;min-height:0;overflow:auto;border:1px solid var(--border);border-radius:var(--radius-md,10px);background:var(--bg2)">
+        <table class="ofx-tbl">
           <thead>
             <tr>
-              <th style="width:110px" class="sp-th-sort" onclick="offToggleSort('numero')" data-col="numero">N° Offerta <span class="sp-sort-ind"></span></th>
-              <th class="sp-th-sort" onclick="offToggleSort('cliente')" data-col="cliente">Cliente <span class="sp-sort-ind"></span></th>
-              <th class="sp-th-sort" onclick="offToggleSort('oggetto')" data-col="oggetto">Oggetto <span class="sp-sort-ind"></span></th>
-              <th style="width:100px" class="sp-th-sort" onclick="offToggleSort('data')" data-col="data">Data <span class="sp-sort-ind"></span></th>
-              <th style="width:120px;text-align:right" class="sp-th-sort" onclick="offToggleSort('totale')" data-col="totale">Totale <span class="sp-sort-ind"></span></th>
-              <th style="width:100px" class="sp-th-sort" onclick="offToggleSort('stato')" data-col="stato">Stato <span class="sp-sort-ind"></span></th>
-              <th style="width:140px;text-align:center">Azioni</th>
+              <th style="width:120px" class="sp-th-sort" onclick="offToggleSort('numero')" data-col="numero">N° offerta <span class="sp-sort-ind"></span></th>
+              <th class="sp-th-sort" onclick="offToggleSort('cliente')" data-col="cliente">Cliente · oggetto <span class="sp-sort-ind"></span></th>
+              <th style="width:110px" class="sp-th-sort" onclick="offToggleSort('data')" data-col="data">Data <span class="sp-sort-ind"></span></th>
+              <th style="width:140px;text-align:right" class="sp-th-sort" onclick="offToggleSort('totale')" data-col="totale">Totale <span class="sp-sort-ind"></span></th>
+              <th style="width:130px" class="sp-th-sort" onclick="offToggleSort('stato')" data-col="stato">Stato <span class="sp-sort-ind"></span></th>
+              <th style="width:150px"></th>
             </tr>
           </thead>
           <tbody id="off-list-body"></tbody>
@@ -1438,6 +1466,90 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
   <!-- MODAL WIZARD OFFERTA -->
   <div class="off-modal-overlay" id="off-modal-overlay" onclick="offWizardClose()"></div>
   <div class="off-modal" id="off-modal-wizard">
+    <style>
+      /* ── Editor offerta: indice | contenuto | riepilogo ── */
+      #off-modal-wizard .off-mod-body{padding:0;display:grid;grid-template-columns:210px minmax(0,1fr) 280px;gap:0;overflow:hidden}
+      .ofw-nav{border-right:1px solid var(--border);background:var(--bg2);padding:18px 12px;display:flex;flex-direction:column;gap:4px;overflow-y:auto}
+      .ofw-nav-t{font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);padding:0 8px 8px}
+      .ofw-step{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm,7px);cursor:pointer;color:var(--text2);font-size:12.5px;font-weight:600;transition:background .12s,color .12s}
+      .ofw-step:hover{background:var(--bg3);color:var(--text)}
+      .ofw-step.on{background:var(--cr-bg);color:var(--text)}
+      .ofw-step-n{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;font-family:var(--cond);font-size:12px;font-weight:800;flex-shrink:0;color:var(--text3)}
+      .ofw-step.on .ofw-step-n{border-color:var(--accent);color:var(--brand-text,#e74c3c)}
+      .ofw-step.ok .ofw-step-n{background:var(--green);border-color:var(--green);color:#0d0d0d}
+      .ofw-step-s{display:block;font-size:10.5px;font-weight:500;color:var(--text3);margin-top:1px}
+      .ofw-main{overflow-y:auto;padding:20px 26px 40px;background:var(--bg);scroll-behavior:smooth}
+      .ofw-sec{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-md,10px);margin-bottom:18px;scroll-margin-top:12px}
+      .ofw-sec-h{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border)}
+      .ofw-sec-n{width:28px;height:28px;border-radius:8px;background:var(--cr-bg);color:var(--brand-text,#e74c3c);display:inline-flex;align-items:center;justify-content:center;font-family:var(--cond);font-size:15px;font-weight:800;flex-shrink:0}
+      .ofw-sec-t{font-size:14.5px;font-weight:700;color:var(--text)}
+      .ofw-sec-d{font-size:11.5px;color:var(--text3);margin-top:1px}
+      .ofw-sec-a{margin-left:auto;display:flex;gap:6px}
+      .ofw-sec-b{padding:16px 18px}
+      .ofw-grp{font-size:10px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;color:var(--text2);margin:18px 0 10px;display:flex;align-items:center;gap:8px}
+      .ofw-grp:first-child{margin-top:0}
+      .ofw-grp::after{content:'';flex:1;height:1px;background:var(--border)}
+      .ofw-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+      .ofw-grid .s2{grid-column:span 2}.ofw-grid .s3{grid-column:span 3}.ofw-grid .s4{grid-column:1 / -1}
+      #off-modal-wizard .off-fld input,#off-modal-wizard .off-fld select,#off-modal-wizard .off-fld textarea{background:var(--bg);border-color:var(--border2);padding:8px 10px;font-size:12.5px}
+      #off-modal-wizard .off-fld input[readonly]{color:var(--text2)}
+      #off-modal-wizard .off-fld label{display:flex;align-items:center;gap:6px}
+      .ofw-req{color:var(--brand-text,#e74c3c)}
+      #off-f-consegna,#off-f-garanzia{min-height:110px}
+      #off-f-installazione{min-height:56px}
+      .ofw-hint{font-size:10.5px;color:var(--text3);margin-top:2px}
+      /* contenuto */
+      #off-macrogruppi{counter-reset:mg}
+      #off-modal-wizard .off-mg{background:var(--bg);border-color:var(--border2)}
+      #off-modal-wizard .off-mg-hdr{background:var(--bg3);padding:10px 12px}
+      #off-modal-wizard .off-mg-hdr::before{counter-increment:mg;content:counter(mg);width:22px;height:22px;border-radius:6px;background:var(--bg);border:1px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;font-family:var(--cond);font-weight:800;font-size:12px;color:var(--text2);flex-shrink:0}
+      #off-modal-wizard .off-mg-body{counter-reset:pt;padding:10px 12px}
+      #off-modal-wizard .off-punto{background:var(--bg2);align-items:flex-start}
+      #off-modal-wizard .off-punto::before{counter-increment:pt;content:counter(mg) '.' counter(pt);font-family:var(--mono);font-size:10.5px;color:var(--text3);padding-top:7px;min-width:28px}
+      #off-modal-wizard .off-punto-text{font-size:12.5px;line-height:1.5}
+      #off-modal-wizard .off-punto-actions{flex-direction:row;opacity:.35;transition:opacity .12s}
+      #off-modal-wizard .off-punto:hover .off-punto-actions{opacity:1}
+      #off-modal-wizard .off-add-mg{align-self:stretch;width:100%;margin-top:4px}
+      /* quotazione */
+      .ofq{border:1px solid var(--border2);border-radius:var(--radius-sm,7px);overflow:hidden;margin-bottom:12px;background:var(--bg);position:relative}
+      .ofq::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--qc)}
+      .ofq-h{display:flex;align-items:center;gap:10px;padding:10px 14px 10px 16px;background:var(--bg3);border-bottom:1px solid var(--border)}
+      .ofq-n{font-family:var(--cond);font-size:13px;font-weight:800;color:var(--qc)}
+      .ofq-t{font-size:12.5px;font-weight:700;color:var(--text)}
+      .ofq-d{font-size:10.5px;color:var(--text3)}
+      .ofq-sub{margin-left:auto;text-align:right}
+      .ofq-sub b{display:block;font-family:var(--mono);font-size:13px;color:var(--text)}
+      .ofq-sub span{font-size:10px;color:var(--text3)}
+      .ofq table{width:100%;border-collapse:collapse}
+      .ofq td{border-bottom:1px solid var(--border)}
+      .ofq tr:last-child td{border-bottom:none}
+      .ofq td:first-child{width:56px;text-align:center;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--qc) !important;background:transparent !important}
+      .ofq td input{background:transparent !important;border:1px solid transparent !important;font-size:12.5px !important}
+      .ofq td input:hover{border-color:var(--border2) !important}
+      .ofq td input:focus{border-color:var(--accent) !important;background:var(--bg2) !important}
+      .ofq td:nth-child(3){width:170px}
+      .ofq-f{padding:8px 14px 10px 16px;border-top:1px solid var(--border)}
+      .ofq-empty{padding:12px 16px;font-size:11.5px;color:var(--text3)}
+      #off-modal-wizard .off-quot-totale{background:var(--cr-bg);border:1px solid var(--accent);border-radius:var(--radius-sm,7px);padding:14px 16px;margin-top:4px}
+      /* riepilogo */
+      .ofw-sum{border-left:1px solid var(--border);background:var(--bg2);padding:18px 16px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+      .ofw-sum-b{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm,7px);padding:12px 14px}
+      .ofw-sum-l{font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+      .ofw-sum-v{font-size:13px;font-weight:700;color:var(--text);word-break:break-word}
+      .ofw-sum-s{font-size:11.5px;color:var(--text2);margin-top:2px;word-break:break-word}
+      .ofw-sum-r{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--text2);padding:4px 0}
+      .ofw-sum-r b{font-family:var(--mono);color:var(--text);font-weight:600}
+      .ofw-sum-tot{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--border2);margin-top:6px;padding-top:8px}
+      .ofw-sum-tot span{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text2)}
+      .ofw-sum-tot b{font-family:var(--cond);font-size:24px;font-weight:800;color:var(--brand-text,#e74c3c)}
+      .ofw-chk{display:flex;flex-direction:column;gap:6px}
+      .ofw-chk div{display:flex;gap:8px;align-items:center;font-size:11.5px;color:var(--text2)}
+      .ofw-chk i{font-style:normal;width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0;background:var(--bg4);color:var(--text3)}
+      .ofw-chk div.ok i{background:var(--green);color:#0d0d0d}
+      .ofw-chk div.ok{color:var(--text)}
+      @media(max-width:1350px){#off-modal-wizard .off-mod-body{grid-template-columns:180px minmax(0,1fr)}.ofw-sum{display:none}}
+      @media(max-width:900px){#off-modal-wizard .off-mod-body{grid-template-columns:1fr}.ofw-nav{display:none}.ofw-grid{grid-template-columns:1fr 1fr}}
+    </style>
     <div class="off-mod-hdr">
       <div style="display:flex;align-items:center;gap:14px">
         <h3 id="off-wiz-title">Nuova offerta</h3>
@@ -1450,188 +1562,145 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
 
     <div class="off-mod-body">
 
-      <!-- Header dati generali -->
-      <div class="off-section-title">Dati offerta</div>
-      <div class="off-form-hdr">
-        <div class="off-fld">
-          <label>N° Offerta *</label>
-          <input type="text" id="off-f-numero" placeholder="2026-0001">
-        </div>
-        <div class="off-fld">
-          <label>Data *</label>
-          <input type="date" id="off-f-data">
-        </div>
-        <div class="off-fld off-fld-half">
-          <label>Cliente *</label>
-          <select id="off-f-cliente" onchange="offClienteCambiato()"><option value="">— seleziona —</option></select>
-        </div>
-        <div class="off-fld off-fld-full">
-          <label>Oggetto *</label>
-          <input type="text" id="off-f-oggetto" placeholder="Es: Incartonatrice astucciatrice">
-        </div>
-        <div class="off-fld off-fld-full" style="grid-column:1 / -1">
-          <label style="display:flex;align-items:center;gap:8px">
-            Contatto cliente
-            <button type="button" id="off-btn-swap-ref" onclick="offToggleModalitaContatto()" style="font-size:10px;padding:2px 8px;background:transparent;border:1px solid var(--border2);border-radius:4px;color:var(--text3);cursor:pointer;margin-left:auto;letter-spacing:.3px">✎ Manuale</button>
-          </label>
-          <select id="off-f-riferimento-sel" onchange="offContattoSelezionato()">
-            <option value="">— seleziona contatto —</option>
-          </select>
-          <input type="text" id="off-f-riferimento" placeholder="Nome contatto" style="display:none;margin-top:6px" readonly>
-        </div>
-        <div class="off-fld off-fld-half">
-          <label>Nome riferimento</label>
-          <input type="text" id="off-f-riferimento-show" placeholder="(dal contatto sopra)" readonly style="background:var(--bg)">
-        </div>
-        <div class="off-fld off-fld-half">
-          <label>Email riferimento</label>
-          <input type="email" id="off-f-email" placeholder="(dal contatto sopra)" readonly style="background:var(--bg)">
-        </div>
-        <div class="off-fld">
-          <label>Lingua</label>
-          <select id="off-f-lingua">
-            <option value="ita">Italiano</option>
-            <option value="eng">English</option>
-          </select>
-        </div>
-        <div class="off-fld">
-          <label>Stato</label>
-          <select id="off-f-stato">
-            <option value="Bozza">Bozza</option>
-            <option value="Inviata">Inviata</option>
-            <option value="Accettata">Accettata</option>
-            <option value="Rifiutata">Rifiutata</option>
-            <option value="Archiviata">Archiviata</option>
-          </select>
-        </div>
+      <!-- Indice -->
+      <nav class="ofw-nav">
+        <div class="ofw-nav-t">Sezioni</div>
+        <div class="ofw-step on" data-sec="ofw-s1" onclick="ofwGo('ofw-s1')"><span class="ofw-step-n">1</span><span>Dati offerta<span class="ofw-step-s" id="ofw-st1">cliente e oggetto</span></span></div>
+        <div class="ofw-step" data-sec="ofw-s2" onclick="ofwGo('ofw-s2')"><span class="ofw-step-n">2</span><span>Contenuto tecnico<span class="ofw-step-s" id="ofw-st2">sezioni e punti</span></span></div>
+        <div class="ofw-step" data-sec="ofw-s3" onclick="ofwGo('ofw-s3')"><span class="ofw-step-n">3</span><span>Quotazione<span class="ofw-step-s" id="ofw-st3">voci e importi</span></span></div>
+        <div class="ofw-step" data-sec="ofw-s4" onclick="ofwGo('ofw-s4')"><span class="ofw-step-n">4</span><span>Termini e condizioni<span class="ofw-step-s" id="ofw-st4">consegna, pagamento</span></span></div>
+        <div class="ofw-step" data-sec="ofw-s5" onclick="ofwGo('ofw-s5')"><span class="ofw-step-n">5</span><span>Note interne<span class="ofw-step-s">non stampate</span></span></div>
+      </nav>
+
+      <!-- Contenuto -->
+      <div class="ofw-main" id="ofw-main" onscroll="ofwSpy()">
+
+        <!-- 1. DATI -->
+        <section class="ofw-sec" id="ofw-s1">
+          <div class="ofw-sec-h"><span class="ofw-sec-n">1</span><div><div class="ofw-sec-t">Dati offerta</div><div class="ofw-sec-d">Intestazione del documento: chi la riceve e di cosa si parla</div></div></div>
+          <div class="ofw-sec-b">
+            <div class="ofw-grp">Documento</div>
+            <div class="ofw-grid">
+              <div class="off-fld"><label>N° offerta <span class="ofw-req">*</span></label><input type="text" id="off-f-numero" placeholder="2026-0001" style="font-family:var(--mono)"></div>
+              <div class="off-fld"><label>Data <span class="ofw-req">*</span></label><input type="date" id="off-f-data"></div>
+              <div class="off-fld"><label>Lingua PDF</label>
+                <select id="off-f-lingua"><option value="ita">Italiano</option><option value="eng">English</option></select></div>
+              <div class="off-fld"><label>Stato</label>
+                <select id="off-f-stato">
+                  <option value="Bozza">Bozza</option><option value="Inviata">Inviata</option><option value="Accettata">Accettata</option>
+                  <option value="Rifiutata">Rifiutata</option><option value="Archiviata">Archiviata</option>
+                </select></div>
+              <div class="off-fld s4"><label>Oggetto <span class="ofw-req">*</span></label><input type="text" id="off-f-oggetto" placeholder="Es: Incartonatrice astucciatrice"></div>
+            </div>
+            <div class="ofw-grp">Destinatario</div>
+            <div class="ofw-grid">
+              <div class="off-fld s2"><label>Cliente <span class="ofw-req">*</span></label>
+                <select id="off-f-cliente" onchange="offClienteCambiato()"><option value="">— seleziona —</option></select></div>
+              <div class="off-fld s2"><label>Contatto
+                  <button type="button" id="off-btn-swap-ref" onclick="offToggleModalitaContatto()" style="font-size:10px;padding:2px 8px;background:transparent;border:1px solid var(--border2);border-radius:4px;color:var(--text3);cursor:pointer;margin-left:auto;letter-spacing:.3px">✎ Manuale</button></label>
+                <select id="off-f-riferimento-sel" onchange="offContattoSelezionato()"><option value="">— seleziona contatto —</option></select>
+                <input type="text" id="off-f-riferimento" placeholder="Nome contatto" style="display:none" readonly></div>
+              <div class="off-fld s2"><label>Alla cortese attenzione di</label><input type="text" id="off-f-riferimento-show" placeholder="(dal contatto)" readonly></div>
+              <div class="off-fld s2"><label>Email</label><input type="email" id="off-f-email" placeholder="(dal contatto)" readonly></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. CONTENUTO -->
+        <section class="ofw-sec" id="ofw-s2">
+          <div class="ofw-sec-h"><span class="ofw-sec-n">2</span><div><div class="ofw-sec-t">Contenuto tecnico</div><div class="ofw-sec-d">Sezioni numerate del PDF. Trascina ⋮⋮ per riordinare i punti</div></div>
+            <div class="ofw-sec-a"><button class="btn btn-sm" type="button" onclick="ofwToggleAllMg(true)">Comprimi</button><button class="btn btn-sm" type="button" onclick="ofwToggleAllMg(false)">Espandi</button></div></div>
+          <div class="ofw-sec-b">
+            <div id="off-macrogruppi" style="display:flex;flex-direction:column;gap:10px"></div>
+            <button class="off-add-mg" onclick="offAddMacrogruppo()">+ Aggiungi sezione</button>
+          </div>
+        </section>
+
+        <!-- 3. QUOTAZIONE -->
+        <section class="ofw-sec" id="ofw-s3">
+          <div class="ofw-sec-h"><span class="ofw-sec-n">3</span><div><div class="ofw-sec-t">Quotazione</div><div class="ofw-sec-d">Importi in euro, IVA esclusa. Gli optional sono sommati al totale</div></div></div>
+          <div class="ofw-sec-b">
+            <div class="ofq" style="--qc:var(--brand-text,#e74c3c)">
+              <div class="ofq-h"><span class="ofq-n">1</span><div><div class="ofq-t">Fornitura / Macchina base</div><div class="ofq-d">cosa viene consegnato</div></div>
+                <div class="ofq-sub"><b id="off-sub-base">€ 0,00</b><span id="ofq-pct-base"></span></div></div>
+              <table><tbody id="off-q-base"></tbody></table>
+              <div class="ofq-f"><button class="off-add-punto" onclick="offAddQuotRow('base')">+ Voce fornitura</button></div>
+            </div>
+            <div class="ofq" style="--qc:var(--amber)">
+              <div class="ofq-h"><span class="ofq-n">2</span><div><div class="ofq-t">Optional / Accessori</div><div class="ofq-d">aggiunte su richiesta</div></div>
+                <div class="ofq-sub"><b id="off-sub-opz">€ 0,00</b><span id="ofq-pct-opz"></span></div></div>
+              <table><tbody id="off-q-opz"></tbody></table>
+              <div class="ofq-f"><button class="off-add-punto" onclick="offAddQuotRow('opz')">+ Optional</button></div>
+            </div>
+            <div class="ofq" style="--qc:#06b6d4">
+              <div class="ofq-h"><span class="ofq-n">3</span><div><div class="ofq-t">Servizi / Installazione</div><div class="ofq-d">montaggio, avviamento, formazione</div></div>
+                <div class="ofq-sub"><b id="off-sub-srv">€ 0,00</b><span id="ofq-pct-srv"></span></div></div>
+              <table><tbody id="off-q-srv"></tbody></table>
+              <div class="ofq-f"><button class="off-add-punto" onclick="offAddQuotRow('srv')">+ Servizio</button></div>
+            </div>
+            <div class="off-quot-totale"><span>Totale complessivo (IVA esclusa)</span><span id="off-totale-out">€ 0,00</span></div>
+          </div>
+        </section>
+
+        <!-- 4. TERMINI -->
+        <section class="ofw-sec" id="ofw-s4">
+          <div class="ofw-sec-h"><span class="ofw-sec-n">4</span><div><div class="ofw-sec-t">Termini e condizioni</div><div class="ofw-sec-d">Precompilati dai termini predefiniti, modificabili per questa offerta</div></div></div>
+          <div class="ofw-sec-b">
+            <div class="ofw-grp">Tempi e garanzia</div>
+            <div class="ofw-grid">
+              <div class="off-fld"><label>Validità offerta (giorni)</label><input type="number" id="off-f-validita" value="60" min="1"><div class="ofw-hint" id="ofw-scad"></div></div>
+              <div class="off-fld s3"><label>Collaudo</label><input type="text" id="off-f-collaudo" placeholder="Es: presso ns. sede alla presenza di Vs. personale"></div>
+              <div class="off-fld s2"><label>Consegna</label><textarea id="off-f-consegna" placeholder="Es: 3 mesi dal ricevimento dell'ordine ufficiale…"></textarea></div>
+              <div class="off-fld s2"><label>Garanzia</label><textarea id="off-f-garanzia" placeholder="Es: 12 mesi dal collaudo"></textarea></div>
+            </div>
+            <div class="ofw-grp">Prezzi e logistica</div>
+            <div class="ofw-grid">
+              <div class="off-fld"><label>Prezzi</label><input type="text" id="off-f-prezzi" placeholder="Es: netti franco ns. stabilimento"></div>
+              <div class="off-fld"><label>Porto</label><input type="text" id="off-f-porto" placeholder="Es: franco ns. stabilimento"></div>
+              <div class="off-fld"><label>Trasporto</label><input type="text" id="off-f-trasporto" placeholder="Es: a Vs. carico"></div>
+              <div class="off-fld"><label>Imballo</label><input type="text" id="off-f-imballo" placeholder="Es: escluso / incluso"></div>
+            </div>
+            <div class="ofw-grp">Installazione e assistenza</div>
+            <div class="ofw-grid">
+              <div class="off-fld s4"><label>Installazione</label><textarea id="off-f-installazione" placeholder="Es: esclusa; se richiesta al costo orario di € 70,00…"></textarea></div>
+              <div class="off-fld s2"><label>Tariffa assistenza</label><input type="text" id="off-f-tariffa" placeholder="Es: € 1.000,00 / giornata"></div>
+              <div class="off-fld s2"><label>Vitto e alloggio</label><input type="text" id="off-f-vittoalloggio" placeholder="Es: a carico del cliente"></div>
+            </div>
+            <div class="ofw-grp">Pagamento</div>
+            <div class="ofw-grid">
+              <div class="off-fld s4"><label>Termini di pagamento</label><textarea id="off-f-pagamenti" rows="3" placeholder="30% + IVA all'ordine&#10;60% + saldo IVA avviso merce pronta&#10;10% a 60 gg data fattura"></textarea></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. NOTE -->
+        <section class="ofw-sec" id="ofw-s5" style="border-color:rgba(245,166,35,.3)">
+          <div class="ofw-sec-h"><span class="ofw-sec-n" style="background:rgba(245,166,35,.12);color:var(--amber)">5</span><div><div class="ofw-sec-t">Note interne</div><div class="ofw-sec-d">Restano su SharePoint, non compaiono nel PDF</div></div></div>
+          <div class="ofw-sec-b"><div class="off-fld"><textarea id="off-f-note" rows="3" placeholder="Margini, accordi a voce, prossimi passi…"></textarea></div></div>
+        </section>
       </div>
 
-      <!-- Macrogruppi descrittivi -->
-      <div class="off-section-title">Contenuto offerta</div>
-      <div id="off-macrogruppi" style="display:flex;flex-direction:column;gap:10px"></div>
-      <button class="off-add-mg" onclick="offAddMacrogruppo()">+ Aggiungi sezione</button>
-
-      <!-- Quotazione -->
-      <div class="off-section-title" style="margin-top:18px">Quotazione</div>
-
-      <!-- Fornitura -->
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;padding:0">
-        <div style="padding:10px 14px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;border-radius:10px 10px 0 0">
-          <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--accent)">Fornitura / Macchina base</span>
-          <span style="font-size:11px;color:var(--text2)">Subtotale: <strong id="off-sub-base" style="color:var(--text);font-family:var(--mono)">€ 0,00</strong></span>
+      <!-- Riepilogo -->
+      <aside class="ofw-sum">
+        <div class="ofw-sum-b">
+          <div class="ofw-sum-l">Offerta</div>
+          <div class="ofw-sum-v" id="ofw-sum-num">—</div>
+          <div class="ofw-sum-s" id="ofw-sum-cli">Cliente non selezionato</div>
+          <div class="ofw-sum-s" id="ofw-sum-ogg" style="color:var(--text3)"></div>
         </div>
-        <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;font-size:12px">
-            <thead><tr style="background:var(--bg2)">
-              <th style="width:60px;padding:8px;text-align:center;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">N°</th>
-              <th style="padding:8px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">Descrizione</th>
-              <th style="width:160px;padding:8px;text-align:right;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">Importo €</th>
-              <th style="width:40px;border-bottom:1px solid var(--border)"></th>
-            </tr></thead>
-            <tbody id="off-q-base"></tbody>
-          </table>
+        <div class="ofw-sum-b">
+          <div class="ofw-sum-l">Importi</div>
+          <div class="ofw-sum-r"><span>Fornitura</span><b id="ofw-sum-base">€ 0,00</b></div>
+          <div class="ofw-sum-r"><span>Optional</span><b id="ofw-sum-opz">€ 0,00</b></div>
+          <div class="ofw-sum-r"><span>Servizi</span><b id="ofw-sum-srv">€ 0,00</b></div>
+          <div class="ofw-sum-tot"><span>Totale</span><b id="ofw-sum-tot">€ 0</b></div>
+          <div class="ofw-sum-s" style="font-size:10.5px;color:var(--text3)">IVA esclusa</div>
         </div>
-        <div style="padding:8px 14px;border-top:1px solid var(--border)"><button class="off-add-punto" onclick="offAddQuotRow('base')">+ Aggiungi voce fornitura</button></div>
-      </div>
-
-      <!-- Optional/Accessori -->
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;padding:0">
-        <div style="padding:10px 14px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;border-radius:10px 10px 0 0">
-          <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--accent)">Optional / Accessori</span>
-          <span style="font-size:11px;color:var(--text2)">Subtotale: <strong id="off-sub-opz" style="color:var(--text);font-family:var(--mono)">€ 0,00</strong></span>
+        <div class="ofw-sum-b">
+          <div class="ofw-sum-l">Pronta per l'invio?</div>
+          <div class="ofw-chk" id="ofw-chk"></div>
         </div>
-        <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;font-size:12px">
-            <thead><tr style="background:var(--bg2)">
-              <th style="width:60px;padding:8px;text-align:center;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">N°</th>
-              <th style="padding:8px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">Descrizione</th>
-              <th style="width:160px;padding:8px;text-align:right;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">Importo €</th>
-              <th style="width:40px;border-bottom:1px solid var(--border)"></th>
-            </tr></thead>
-            <tbody id="off-q-opz"></tbody>
-          </table>
-        </div>
-        <div style="padding:8px 14px;border-top:1px solid var(--border)"><button class="off-add-punto" onclick="offAddQuotRow('opz')">+ Aggiungi optional</button></div>
-      </div>
-
-      <!-- Servizi -->
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;padding:0">
-        <div style="padding:10px 14px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;border-radius:10px 10px 0 0">
-          <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--accent)">Servizi / Installazione</span>
-          <span style="font-size:11px;color:var(--text2)">Subtotale: <strong id="off-sub-srv" style="color:var(--text);font-family:var(--mono)">€ 0,00</strong></span>
-        </div>
-        <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;font-size:12px">
-            <thead><tr style="background:var(--bg2)">
-              <th style="width:60px;padding:8px;text-align:center;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">N°</th>
-              <th style="padding:8px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">Descrizione</th>
-              <th style="width:160px;padding:8px;text-align:right;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">Importo €</th>
-              <th style="width:40px;border-bottom:1px solid var(--border)"></th>
-            </tr></thead>
-            <tbody id="off-q-srv"></tbody>
-          </table>
-        </div>
-        <div style="padding:8px 14px;border-top:1px solid var(--border)"><button class="off-add-punto" onclick="offAddQuotRow('srv')">+ Aggiungi servizio</button></div>
-      </div>
-
-      <div class="off-quot-totale"><span>Totale complessivo (IVA esclusa)</span><span id="off-totale-out">€ 0,00</span></div>
-
-      <!-- Termini -->
-      <div class="off-section-title" style="margin-top:14px">Termini e condizioni</div>
-      <div class="off-form-hdr">
-        <div class="off-fld">
-          <label>Validità (giorni)</label>
-          <input type="number" id="off-f-validita" value="60" min="1">
-        </div>
-        <div class="off-fld off-fld-full">
-          <label>Consegna</label>
-          <textarea id="off-f-consegna" placeholder="Es: 3 mesi dal ricevimento dell'ordine ufficiale..."></textarea>
-        </div>
-        <div class="off-fld off-fld-full">
-          <label>Garanzia</label>
-          <textarea id="off-f-garanzia" placeholder="Es: 12 mesi dal collaudo"></textarea>
-        </div>
-        <div class="off-fld off-fld-half">
-          <label>Prezzi</label>
-          <input type="text" id="off-f-prezzi" placeholder="Es: netti franco nostro stabilimento">
-        </div>
-        <div class="off-fld off-fld-half">
-          <label>Collaudo</label>
-          <input type="text" id="off-f-collaudo" placeholder="Es: presso ns. sede alla presenza di Vs. personale">
-        </div>
-        <div class="off-fld off-fld-full">
-          <label>Installazione</label>
-          <textarea id="off-f-installazione" placeholder="Es: esclusa; se richiesta al costo orario di €70,00..."></textarea>
-        </div>
-        <div class="off-fld">
-          <label>Trasporto</label>
-          <input type="text" id="off-f-trasporto" placeholder="Es: A Vs. carico / escluso">
-        </div>
-        <div class="off-fld">
-          <label>Porto</label>
-          <input type="text" id="off-f-porto" placeholder="Es: franco nostro stabilimento">
-        </div>
-        <div class="off-fld">
-          <label>Imballo</label>
-          <input type="text" id="off-f-imballo" placeholder="Es: escluso / incluso">
-        </div>
-        <div class="off-fld">
-          <label>Tariffa assistenza</label>
-          <input type="text" id="off-f-tariffa" placeholder="Es: € 1.000,00 per giornata di lavoro e/o viaggio">
-        </div>
-        <div class="off-fld">
-          <label>Vitto e alloggio</label>
-          <input type="text" id="off-f-vittoalloggio" placeholder="Es: a carico del cliente">
-        </div>
-        <div class="off-fld off-fld-full">
-          <label>Termini pagamenti</label>
-          <textarea id="off-f-pagamenti" placeholder="30% + IVA all'ordine&#10;60% + saldo IVA avviso merce pronta&#10;10% a 60gg data fattura"></textarea>
-        </div>
-        <div class="off-fld off-fld-full">
-          <label>Note interne</label>
-          <textarea id="off-f-note" placeholder="Note non visibili nel PDF..."></textarea>
-        </div>
-      </div>
+      </aside>
     </div>
 
     <div class="off-mod-foot">
@@ -1643,7 +1712,7 @@ select.sel{background:var(--bg2);border:1px solid var(--border2);border-radius:7
         </button>
         <button class="btn btn-sm btn-primary" onclick="offSalva(true)">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><path d="M4 6V2h8v4M2 6h12a1 1 0 0 1 1 1v5H1V7a1 1 0 0 1 1-1zM4 11v3h8v-3"/></svg>
-          Salva e Genera PDF
+          Salva e genera PDF
         </button>
       </div>
     </div>
@@ -4678,6 +4747,112 @@ const OFF_STATE = {
   editId: null
 };
 
+// ── Editor offerta: indice, riepilogo e controlli ──
+function ofwGo(id){
+  var m=document.getElementById('ofw-main'), s=document.getElementById(id);
+  if(m&&s) m.scrollTo({top:s.offsetTop-12,behavior:'smooth'});
+}
+function ofwSpy(){
+  var m=document.getElementById('ofw-main'); if(!m) return;
+  var cur='ofw-s1';
+  ['ofw-s1','ofw-s2','ofw-s3','ofw-s4','ofw-s5'].forEach(function(id){
+    var s=document.getElementById(id); if(s && s.offsetTop-m.scrollTop<=80) cur=id;
+  });
+  if(m.scrollTop+m.clientHeight>=m.scrollHeight-4) cur='ofw-s5';
+  document.querySelectorAll('.ofw-step').forEach(function(e){ e.classList.toggle('on', e.dataset.sec===cur); });
+}
+function ofwToggleAllMg(coll){
+  document.querySelectorAll('#off-macrogruppi .off-mg').forEach(function(e){ e.classList.toggle('collapsed', coll); });
+}
+function ofwVal(id){ var e=document.getElementById(id); return e?String(e.value||'').trim():''; }
+function ofwUpdate(){
+  var cliSel=document.getElementById('off-f-cliente');
+  var cli=cliSel&&cliSel.value?(cliSel.options[cliSel.selectedIndex].dataset.name||cliSel.options[cliSel.selectedIndex].text):'';
+  var subs={base:0,opz:0,srv:0};
+  ['base','opz','srv'].forEach(function(k){ (OFF_WIZ.quotazione[k]||[]).forEach(function(r){ subs[k]+=parseFloat(r.importo)||0; }); });
+  var tot=subs.base+subs.opz+subs.srv;
+  var set=function(id,t){ var e=document.getElementById(id); if(e) e.textContent=t; };
+  set('ofw-sum-num', ofwVal('off-f-numero')||'—');
+  set('ofw-sum-cli', cli||'Cliente non selezionato');
+  set('ofw-sum-ogg', ofwVal('off-f-oggetto'));
+  ['base','opz','srv'].forEach(function(k){
+    set('ofw-sum-'+k, offFmtMoney(subs[k]));
+    set('ofq-pct-'+k, tot>0&&subs[k]>0 ? Math.round(subs[k]/tot*100)+'% del totale' : (OFF_WIZ.quotazione[k]||[]).length+' voci');
+  });
+  set('ofw-sum-tot', offFmtMoney(tot).replace(/,00$/,''));
+  // scadenza offerta
+  var d=ofwVal('off-f-data'), gg=parseInt(ofwVal('off-f-validita'))||0;
+  if(d&&gg){ var p=d.split('-'), x=new Date(+p[0],+p[1]-1,+p[2]+gg); set('ofw-scad','scade il '+x.toLocaleDateString('it-IT')); } else set('ofw-scad','');
+  // controlli
+  var punti=OFF_WIZ.macrogruppi.reduce(function(s,mg){ return s+mg.items.filter(function(it){return (it.text||'').trim();}).length; },0);
+  var vuote=OFF_WIZ.macrogruppi.filter(function(mg){ return !mg.items.some(function(it){return (it.text||'').trim();}); }).length;
+  var vociSenza=['base','opz','srv'].reduce(function(s,k){ return s+(OFF_WIZ.quotazione[k]||[]).filter(function(r){ return (r.desc||'').trim() && !(parseFloat(r.importo)>0); }).length; },0);
+  var dati=!!(ofwVal('off-f-numero')&&ofwVal('off-f-data')&&cliSel&&cliSel.value&&ofwVal('off-f-oggetto'));
+  var C=[
+    [dati,'Numero, data, cliente e oggetto'],
+    [!!(ofwVal('off-f-email')||ofwVal('off-f-riferimento')||ofwVal('off-f-riferimento-show')),'Contatto del cliente'],
+    [punti>0,punti>0?punti+' punti tecnici':'Contenuto tecnico'],
+    [vuote===0,vuote?(vuote===1?'1 sezione senza punti: nel PDF esce solo il titolo':vuote+' sezioni senza punti: nel PDF esce solo il titolo'):'Nessuna sezione vuota'],
+    [subs.base>0,'Importo della fornitura'],
+    [vociSenza===0,vociSenza?(vociSenza===1?'1 voce senza importo (nel PDF: —)':vociSenza+' voci senza importo (nel PDF: —)'):'Tutte le voci con importo'],
+    [!!ofwVal('off-f-pagamenti'),'Termini di pagamento']
+  ];
+  var chk=document.getElementById('ofw-chk');
+  if(chk) chk.innerHTML=C.map(function(c){ return '<div class="'+(c[0]?'ok':'')+'"><i>'+(c[0]?'✓':'')+'</i>'+offEsc(c[1])+'</div>'; }).join('');
+  // indice
+  var st=[dati, punti>0, tot>0, !!ofwVal('off-f-pagamenti')];
+  st.forEach(function(ok,i){ var e=document.querySelector('.ofw-step[data-sec="ofw-s'+(i+1)+'"]'); if(e) e.classList.toggle('ok',ok); });
+  set('ofw-st1', cli||'cliente e oggetto');
+  set('ofw-st2', OFF_WIZ.macrogruppi.length+' sezioni · '+punti+' punti');
+  set('ofw-st3', tot>0?offFmtMoney(tot):'voci e importi');
+  set('ofw-st4', ofwVal('off-f-pagamenti')?'compilati':'da completare');
+}
+(function(){
+  var w=document.getElementById('off-modal-wizard');
+  if(w){ w.addEventListener('input',function(){ ofwUpdate(); }); w.addEventListener('change',function(){ ofwUpdate(); }); }
+})();
+
+// ── Elenco: indicatori ──
+var _offQuick='';
+function offStatoColor(s){
+  s=(s||'').toLowerCase();
+  if(s.includes('invia')) return '#38bdf8';
+  if(s.includes('accett')) return '#3ecf8e';
+  if(s.includes('rifiu')) return '#f05c5c';
+  if(s.includes('archiv')) return '#9a8878';
+  return '#f5a623';
+}
+function offSetQuick(k){
+  _offQuick=(_offQuick===k?'':k);
+  var fs=document.getElementById('off-stato-filter');
+  if(fs) fs.value = ({bozze:'Bozza',inviate:'Inviata',accettate:'Accettata'})[_offQuick]||'';
+  offRender();
+}
+function offRenderKpis(){
+  var box=document.getElementById('off-kpis'); if(!box) return;
+  var anno=(document.getElementById('off-anno-filter')||{}).value||'';
+  var L=OFF_STATE.list.filter(function(o){ return !anno || (o.data||'').startsWith(anno); });
+  var sum=function(a){ return a.reduce(function(s,o){return s+(o.totale||0);},0); };
+  var by=function(s){ return L.filter(function(o){return o.stato===s;}); };
+  var bz=by('Bozza'), inv=by('Inviata'), acc=by('Accettata'), rif=by('Rifiutata');
+  var dec=acc.length+rif.length, conv=dec?Math.round(acc.length/dec*100):null;
+  var fmt=function(v){ return offFmtMoney(Math.round(v)).replace(/,00$/,''); };
+  var K=[
+    {k:'',v:L.length,l:'Offerte',s:anno?'nel '+anno:'tutti gli anni',c:'var(--text)'},
+    {k:'bozze',v:bz.length,l:'In bozza',s:fmt(sum(bz))+' da completare',c:'#f5a623'},
+    {k:'inviate',v:inv.length,l:'In attesa di risposta',s:fmt(sum(inv))+' in gioco',c:'#38bdf8'},
+    {k:'accettate',v:fmt(sum(acc)),l:'Accettate',s:acc.length+' offerte',c:'#3ecf8e'},
+    {k:null,v:conv===null?'—':conv+'%',l:'Tasso di successo',s:dec?acc.length+' su '+dec+' decise':'nessuna decisa',c:'var(--text)'}
+  ];
+  box.innerHTML=K.map(function(x){
+    var click=x.k!==null, on=click&&x.k&&_offQuick===x.k;
+    return '<div class="ofx-kpi'+(click?' click':'')+(on?' on':'')+'"'+(click?' onclick="offSetQuick(\''+x.k+'\')"':'')+'>'+
+      '<div class="ofx-kpi-v" style="color:'+x.c+'">'+x.v+'</div><div class="ofx-kpi-l">'+x.l+'</div><div class="ofx-kpi-s">'+x.s+'</div></div>';
+  }).join('');
+  box.style.display='';
+}
+function offGiorni(d){ if(!d) return null; var p=d.substring(0,10).split('-'); var x=new Date(+p[0],+p[1]-1,+p[2]); var t=new Date(); t.setHours(0,0,0,0); return Math.round((t-x)/86400000); }
+
 function offFmtDate(d){
   if(!d) return '—';
   const dt = new Date(d);
@@ -4685,7 +4860,8 @@ function offFmtDate(d){
 }
 function offFmtMoney(n){
   if(n==null||isNaN(n)) return '—';
-  return '€ '+Number(n).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
+  try{ return '€ '+Number(n).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2,useGrouping:'always'}); }
+  catch(e){ return '€ '+Number(n).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 }
 function offEsc(s){
   if(s==null) return '';
@@ -4844,6 +5020,7 @@ function offRender(){
   }
   empty.style.display='none';
   wrap.style.display='';
+  offRenderKpis();
 
   const col = OFF_STATE.sortCol;
   const dir = OFF_STATE.sortDir;
@@ -4875,31 +5052,30 @@ function offRender(){
   });
 
   const html = sorted.map(o=>{
-    return `<tr>
-      <td style="font-weight:700;color:var(--accent)">${offEsc(o.numero)}</td>
-      <td style="color:var(--text)">${offEsc(o.cliente)||'—'}</td>
-      <td style="color:var(--text2)">${offEsc(o.oggetto)||'—'}</td>
-      <td style="color:var(--text2)">${offFmtDate(o.data)}</td>
-      <td style="text-align:right;font-weight:600;color:var(--text)">${offFmtMoney(o.totale)}</td>
-      <td><span class="sp-stato-badge ${offStatoCls(o.stato)}">${offEsc(o.stato)}</span></td>
-      <td style="text-align:center">
-        <button class="btn btn-sm" onclick="offNuova('${o.id}')" title="Modifica" style="padding:3px 7px">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><path d="M11 2l3 3-9 9H2v-3z"/></svg>
+    const c = offStatoColor(o.stato);
+    const gg = offGiorni(o.data);
+    const age = o.stato==='Inviata' && gg!==null ? `<div class="ofx-age${gg>30?' w':''}">inviata da ${gg} g</div>` : '';
+    return `<tr onclick="offNuova('${o.id}')">
+      <td><span class="ofx-num">${offEsc(o.numero)}</span></td>
+      <td><div class="ofx-cli">${offEsc(o.cliente)||'—'}</div><div class="ofx-ogg">${offEsc(o.oggetto)||'<span style="color:var(--text3)">senza oggetto</span>'}</div></td>
+      <td style="color:var(--text2);white-space:nowrap">${offFmtDate(o.data)}</td>
+      <td class="ofx-tot">${offFmtMoney(o.totale)}</td>
+      <td><span class="ofx-badge" style="color:${c};border-color:${c}55;background:${c}18">${offEsc(o.stato)||'Bozza'}</span>${age}</td>
+      <td onclick="event.stopPropagation()"><div class="ofx-act">
+        <button class="btn btn-sm" onclick="offGeneraPDF('${o.id}')" title="Genera PDF" style="color:var(--brand-text,#e74c3c)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M4 6V2h8v4M2 6h12a1 1 0 0 1 1 1v5H1V7a1 1 0 0 1 1-1zM4 11v3h8v-3"/></svg> PDF
         </button>
-        <button class="btn btn-sm" onclick="offDuplica('${o.id}')" title="Duplica" style="padding:3px 7px">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><rect x="5" y="5" width="9" height="9" rx="1"/><path d="M2 11V3a1 1 0 0 1 1-1h8"/></svg>
+        <button class="btn btn-sm" onclick="offDuplica('${o.id}')" title="Duplica">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><rect x="5" y="5" width="9" height="9" rx="1"/><path d="M2 11V3a1 1 0 0 1 1-1h8"/></svg>
         </button>
-        <button class="btn btn-sm" onclick="offGeneraPDF('${o.id}')" title="Genera PDF" style="padding:3px 7px;color:var(--accent)">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><path d="M4 6V2h8v4M2 6h12a1 1 0 0 1 1 1v5H1V7a1 1 0 0 1 1-1zM4 11v3h8v-3"/></svg>
+        <button class="btn btn-sm" onclick="offElimina('${o.id}')" title="Elimina" style="color:var(--red)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><path d="M2 4h12M5 4V2.5A.5.5 0 0 1 5.5 2h5a.5.5 0 0 1 .5.5V4M6 7v5M10 7v5M3.5 4l.5 9a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l.5-9"/></svg>
         </button>
-        <button class="btn btn-sm" onclick="offElimina('${o.id}')" title="Elimina" style="padding:3px 7px;color:#dc2626">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><path d="M2 4h12M5 4V2.5A.5.5 0 0 1 5.5 2h5a.5.5 0 0 1 .5.5V4M6 7v5M10 7v5M3.5 4l.5 9a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l.5-9"/></svg>
-        </button>
-      </td>
+      </div></td>
     </tr>`;
   }).join('');
 
-  document.getElementById('off-list-body').innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">Nessuna offerta corrispondente ai filtri</td></tr>';
+  document.getElementById('off-list-body').innerHTML = html || '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:30px">Nessuna offerta corrispondente ai filtri</td></tr>';
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -5300,6 +5476,8 @@ async function offNuova(id){
 
   document.getElementById('off-modal-overlay').classList.add('open');
   document.getElementById('off-modal-wizard').classList.add('open');
+  var _m=document.getElementById('ofw-main'); if(_m) _m.scrollTop=0;
+  ofwSpy(); ofwUpdate();
 }
 
 function offPopolaForm(o){
@@ -5384,6 +5562,7 @@ function offRenderMacrogruppi(){
       </div>
     </div>`;
   }).join('');
+  if(typeof ofwUpdate==='function') ofwUpdate();
 }
 
 function offToggleMg(mgId, ev){
@@ -5525,7 +5704,7 @@ function offRenderQuotazione(){
     if(!tbody){ console.warn('tbody mancante per sezione:', sez); return; }
     console.log(`Sezione ${sez}: ${OFF_WIZ.quotazione[sez].length} righe`);
     tbody.innerHTML = OFF_WIZ.quotazione[sez].map((r,idx)=>{
-      const numProg = sezPrefix[sez] + '.' + idx;
+      const numProg = sezPrefix[sez] + '.' + (idx+1);
       return `<tr data-rowid="${r.id}">
         <td style="font-weight:700;color:var(--accent);text-align:center;padding:6px 8px;background:var(--bg3)">${numProg}</td>
         <td style="padding:5px 8px"><input type="text" value="${offEsc(r.desc)}" oninput="offUpdQuotRow('${sez}','${r.id}','desc',this.value)" placeholder="Descrizione voce" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:6px 8px;font-size:12px;outline:none"></td>
@@ -5570,6 +5749,7 @@ function offCalcTotale(){
     if(subEl) subEl.textContent = offFmtMoney(subs[sez]);
   });
   document.getElementById('off-totale-out').textContent = offFmtMoney(tot);
+  if(typeof ofwUpdate==='function') ofwUpdate();
   return tot;
 }
 
@@ -5719,6 +5899,8 @@ async function offDuplica(id){
 
   document.getElementById('off-modal-overlay').classList.add('open');
   document.getElementById('off-modal-wizard').classList.add('open');
+  var _m=document.getElementById('ofw-main'); if(_m) _m.scrollTop=0;
+  ofwSpy(); ofwUpdate();
 }
 
 // ── Template ──
@@ -5794,6 +5976,8 @@ async function offCreaDaTemplate(tmplId){
 
   document.getElementById('off-modal-overlay').classList.add('open');
   document.getElementById('off-modal-wizard').classList.add('open');
+  var _m=document.getElementById('ofw-main'); if(_m) _m.scrollTop=0;
+  ofwSpy(); ofwUpdate();
 }
 
 // Placeholder PDF (step 3)
